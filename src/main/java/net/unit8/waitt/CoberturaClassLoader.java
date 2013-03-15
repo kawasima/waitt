@@ -43,8 +43,6 @@ public class CoberturaClassLoader extends WebappClassLoader {
         if (Iterables.any(instrumentedPackageNames, new Predicate<String>() {
             @Override
             public boolean apply(String pkgName) {
-                if (className.startsWith("jp.co."))
-                    System.err.println(pkgName + ":" + className);
                 return className.startsWith(pkgName);
             }
         })) {

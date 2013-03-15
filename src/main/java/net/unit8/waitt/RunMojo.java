@@ -35,7 +35,7 @@ import java.util.Arrays;
 import java.util.Set;
 
 /**
- * Cobertura maven plugin
+ * Web Application Integration Test Tool maven plugin.
  *
  * @author kawasima
  */
@@ -82,6 +82,8 @@ public class RunMojo extends AbstractMojo {
             webappLoader.setLoaderClass(CoberturaClassLoader.class.getName());
             webappLoader.setDelegate(((StandardContext) context).getDelegate());
             context.setLoader(webappLoader);
+
+            tomcat.addWebapp("/coverage", COVERAGE_REPORT_DIR.getAbsolutePath());
             new CoverageMonitor(webappLoader).start();
             tomcat.start();
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + "/"));
