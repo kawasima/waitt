@@ -2,6 +2,7 @@ package net.unit8.waitt;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
 import net.sourceforge.cobertura.coveragedata.ProjectData;
 import net.sourceforge.cobertura.util.IOUtil;
 import org.apache.catalina.loader.WebappClassLoader;
@@ -9,6 +10,7 @@ import org.apache.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Set;
@@ -30,7 +32,10 @@ public class CoberturaClassLoader extends WebappClassLoader {
 
     public CoberturaClassLoader(ClassLoader parent) {
         super(parent);
-        projectData = new ProjectData();
+        File dataFile = CoverageDataFileHandler.getDefaultDataFile();
+        projectData = CoverageDataFileHandler.loadCoverageData(dataFile);
+        if (projectData == null)
+            projectData = new ProjectData();
     }
 
     @SuppressWarnings("unchecked")
@@ -54,7 +59,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
 
     private Class defineClass(String className, boolean resolve) throws ClassNotFoundException {
         Class clazz;
-        String path = className.replace('.', '/') + ".class";;
+        String path = className.replace('.', '/') + ".class";
 
         InputStream is = parent.getResourceAsStream(path);
         ClassWriter cw;
