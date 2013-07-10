@@ -96,31 +96,43 @@ public class RunMojo extends AbstractMojo {
     private static final int REPORT_INTERVAL_SECONDS = 30;
     protected String appBase;
 
+    private void readArtifacts(String subDirectory, List<Artifact> artifacts, List<File> classpathFiles)
+            throws MojoExecutionException {
+        PlexusContainer container = session.getContainer();
+        Properties execution = session.getExecutionProperties();
+        ProfileManager profileManager = new DefaultProfileManager(container, execution);
+
+        File modulePom = StringUtils.isEmpty(subDirectory) ? new File("pom.xml") : new File(subDirectory, "pom.xml");
+        try {
+            MavenProject subProject = projectBuilder.buildWithDependencies(modulePom, localRepository, profileManager);
+            subProject.setRemoteArtifactRepositories(remoteRepositories);
+            if (StringUtils.equals(subProject.getPackaging(), "war")) {
+                appBase = StringUtils.isEmpty(subDirectory) ?
+                        new File("src/main/webapp").getAbsolutePath() :
+                        new File(subDirectory, "src/main/webapp").getAbsolutePath();
+            }
+            artifacts.addAll(subProject.getCompileArtifacts());
+            artifacts.addAll(subProject.getRuntimeArtifacts());
+            classpathFiles.add(new File(subProject.getBuild().getOutputDirectory()));
+        } catch (Exception e) {
+            throw new MojoExecutionException("module(" + subDirectory + ") build failure", e);
+        }
+    }
     public void execute() throws MojoExecutionException, MojoFailureException {
         CoberturaClassLoader.instrumentedPackageNames = scanPackage(
                 new File(project.getBuild().getSourceDirectory()));
         List<Artifact> artifacts = new ArrayList<Artifact>();
         List<File> classpathFiles = new ArrayList<File>();
         projectBuilderConfiguration.setLocalRepository(localRepository);
-        PlexusContainer container = session.getContainer();
-        Properties execution = session.getExecutionProperties();
-        ProfileManager profileManager = new DefaultProfileManager(container, execution);
 
-        for (String module : project.getModel().getModules()) {
-            File modulePom = new File(module, "pom.xml");
-            try {
-                MavenProject subProject = projectBuilder.buildWithDependencies(modulePom, localRepository, profileManager);
-                subProject.setRemoteArtifactRepositories(remoteRepositories);
-                if (StringUtils.equals(subProject.getPackaging(), "war")) {
-                    appBase = new File(module, "src/main/webapp").getAbsolutePath();
-                }
-                artifacts.addAll(subProject.getCompileArtifacts());
-                artifacts.addAll(subProject.getRuntimeArtifacts());
-                classpathFiles.add(new File(subProject.getBuild().getOutputDirectory()));
-            } catch (Exception e) {
-                throw new MojoExecutionException("module(" + module + ") build failure", e);
+        if (project.getModel().getModules().isEmpty()) {
+            readArtifacts("", artifacts, classpathFiles);
+        } else {
+            for (String module : project.getModel().getModules()) {
+                readArtifacts(module, artifacts, classpathFiles);
             }
         }
+
         List<URL> classpathUrls = new ArrayList<URL>();
         Set<String> uniqueArtifacts = new HashSet<String>();
 
@@ -167,12 +179,15 @@ public class RunMojo extends AbstractMojo {
             webappLoader.setLoaderClass(CoberturaClassLoader.class.getName());
             webappLoader.setDelegate(((StandardContext) context).getDelegate());
             context.setLoader(webappLoader);
+            context.setSessionCookieDomain(null);
+
             tomcat.addWebapp("/coverage", COVERAGE_REPORT_DIR.getAbsolutePath());
             WaittServlet waittServlet = new WaittServlet(server);
             Context adminContext = tomcat.addContext("/waitt", "");
             tomcat.addServlet(adminContext, "waittServlet", waittServlet);
             adminContext.addServletMapping("/*", "waittServlet");
             new CoverageMonitor(webappLoader).start();
+
             tomcat.start();
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + "/"));
             server.await();

@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <tomcatVersion>7.0.37</tomcatVersion>
+        <tomcatVersion>7.0.39</tomcatVersion>
         <mavenVersion>2.2.1</mavenVersion>
         <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
     </properties>
