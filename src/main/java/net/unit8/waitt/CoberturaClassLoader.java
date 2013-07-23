@@ -1,5 +1,6 @@
 package net.unit8.waitt;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
@@ -7,14 +8,14 @@ import net.sourceforge.cobertura.coveragedata.ProjectData;
 import net.sourceforge.cobertura.util.IOUtil;
 import org.apache.catalina.loader.WebappClassLoader;
 import org.apache.log4j.Logger;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
 
-import java.io.File;
-import java.io.InputStream;
+import java.io.*;
+import java.net.URLClassLoader;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 /**
  * @author kawasima
@@ -23,21 +24,40 @@ import java.util.Vector;
 public class CoberturaClassLoader extends WebappClassLoader {
     private static final Logger logger = Logger.getLogger(CoberturaClassLoader.class);
 
-    public static Set<String> instrumentedPackageNames;
-    private Collection ignoreRegexes = new Vector();
-
-    private Collection ignoreBranchesRegexes = new Vector();
+    private Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
+    private boolean ignoreTrivial = false;
+    private Set<String> ignoreMethodAnnotations = new HashSet<String>();
+    private boolean threadsafeRigorous = false;
+    private boolean failOnError = false;
 
     private ProjectData projectData = null;
+    private Instrumenter instrumenter = null;
 
     public CoberturaClassLoader(ClassLoader parent) {
         super(parent);
+    }
+
+    private void initInstrumenter() {
+        try {
+            Instrumenter.class.getClassLoader(); // TODO magic call
+            instrumenter = (Instrumenter) getParent().loadClass("net.unit8.waitt.CoberturaInstrumenterWrapper").newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("Can't find CoberturaInstrumentWrapper.", e);
+        }
+        instrumenter.setIgnoreRegexes(ignoreRegexes);
+
         File dataFile = CoverageDataFileHandler.getDefaultDataFile();
         projectData = CoverageDataFileHandler.loadCoverageData(dataFile);
         if (projectData == null)
             projectData = new ProjectData();
-    }
 
+        instrumenter.setIgnoreTrivial(ignoreTrivial);
+        instrumenter
+                .setIgnoreMethodAnnotations(ignoreMethodAnnotations);
+        instrumenter.setThreadsafeRigorous(threadsafeRigorous);
+        instrumenter.setFailOnError(failOnError);
+        instrumenter.setProjectData(projectData);
+    }
     @SuppressWarnings("unchecked")
     public Class loadClass(final String className, boolean resolve)
             throws ClassNotFoundException {
@@ -45,7 +65,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
         if (clazz != null) {
             return clazz;
         }
-        if (Iterables.any(instrumentedPackageNames, new Predicate<String>() {
+        if (Iterables.any(TargetPackages.getInstance().get(), new Predicate<String>() {
             @Override
             public boolean apply(String pkgName) {
                 return className.startsWith(pkgName);
@@ -58,34 +78,36 @@ public class CoberturaClassLoader extends WebappClassLoader {
     }
 
     private Class defineClass(String className, boolean resolve) throws ClassNotFoundException {
-        Class clazz;
+        Class clazz = null;
         String path = className.replace('.', '/') + ".class";
 
+        if (instrumenter == null) {
+            synchronized (this) {
+                initInstrumenter();
+            }
+        }
         InputStream is = parent.getResourceAsStream(path);
-        ClassWriter cw;
-        ClassInstrumenter cv;
+
+        byte[] instrumentationResult = null;
         try {
-            ClassReader cr = new ClassReader(is);
-            cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-            cv = new ClassInstrumenter(projectData, cw, ignoreRegexes, ignoreBranchesRegexes);
-            cr.accept(cv, 0);
+            instrumentationResult = instrumenter.instrumentClassByte(is);
         } catch(Throwable t) {
-            throw new ClassNotFoundException(t.getMessage());
+            throw new ClassNotFoundException(t.getMessage() + " from " + Joiner.on(":").join(((URLClassLoader) parent).getURLs()), t);
         } finally {
             IOUtil.closeInputStream(is);
         }
 
         if (is != null) {
-            clazz = defineClass(className, cw.toByteArray());
+            clazz = defineClass(className, instrumentationResult);
             if (resolve) {
                 resolveClass(clazz);
             }
-            return clazz;
         }
-        return null;
+
+        return clazz;
     }
 
-    protected Class defineClass(String className, byte[] bytes) {
+    Class defineClass(String className, byte[] bytes) {
         return defineClass(className, bytes, 0, bytes.length);
     }
 

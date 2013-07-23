@@ -3,20 +3,22 @@ package net.unit8.waitt;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
 import net.sourceforge.cobertura.coveragedata.ProjectData;
 import net.sourceforge.cobertura.reporting.ComplexityCalculator;
 import net.sourceforge.cobertura.reporting.html.HTMLReport;
 import net.sourceforge.cobertura.util.FileFinder;
 import org.apache.catalina.Context;
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.core.AprLifecycleListener;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.commons.io.output.NullOutputStream;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
@@ -28,6 +30,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -48,6 +51,8 @@ import java.io.PrintStream;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Web Application Integration Test Tool maven plugin.
@@ -89,6 +94,9 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true)
     private List<ArtifactRepository> remoteRepositories;
 
+    @Parameter(defaultValue="${descriptor}")
+    private PluginDescriptor descriptor;
+
     protected ProjectBuilderConfiguration projectBuilderConfiguration = new DefaultProjectBuilderConfiguration();
 
     private static final String CONTEXT_PATH = "";
@@ -102,12 +110,12 @@ public class RunMojo extends AbstractMojo {
         Properties execution = session.getExecutionProperties();
         ProfileManager profileManager = new DefaultProfileManager(container, execution);
 
-        File modulePom = StringUtils.isEmpty(subDirectory) ? new File("pom.xml") : new File(subDirectory, "pom.xml");
+        File modulePom = Strings.isNullOrEmpty(subDirectory) ? new File("pom.xml") : new File(subDirectory, "pom.xml");
         try {
             MavenProject subProject = projectBuilder.buildWithDependencies(modulePom, localRepository, profileManager);
             subProject.setRemoteArtifactRepositories(remoteRepositories);
-            if (StringUtils.equals(subProject.getPackaging(), "war")) {
-                appBase = StringUtils.isEmpty(subDirectory) ?
+            if ("war".equals(subProject.getPackaging())) {
+                appBase = Strings.isNullOrEmpty(subDirectory) ?
                         new File("src/main/webapp").getAbsolutePath() :
                         new File(subDirectory, "src/main/webapp").getAbsolutePath();
             }
@@ -119,8 +127,10 @@ public class RunMojo extends AbstractMojo {
         }
     }
     public void execute() throws MojoExecutionException, MojoFailureException {
-        CoberturaClassLoader.instrumentedPackageNames = scanPackage(
-                new File(project.getBuild().getSourceDirectory()));
+        Logger logger = Logger.getLogger(CoverageDataFileHandler.class.getCanonicalName());
+        logger.setLevel(Level.WARNING);
+        TargetPackages.getInstance().set(
+                scanPackage(new File(project.getBuild().getSourceDirectory())));
         List<Artifact> artifacts = new ArrayList<Artifact>();
         List<File> classpathFiles = new ArrayList<File>();
         projectBuilderConfiguration.setLocalRepository(localRepository);
@@ -132,7 +142,6 @@ public class RunMojo extends AbstractMojo {
                 readArtifacts(module, artifacts, classpathFiles);
             }
         }
-
         List<URL> classpathUrls = new ArrayList<URL>();
         Set<String> uniqueArtifacts = new HashSet<String>();
 
@@ -142,21 +151,29 @@ public class RunMojo extends AbstractMojo {
                 classpathUrls.add(url);
             }
             for (Artifact artifact : artifacts) {
+                if ("provided".equals(artifact.getScope()))
+                    continue;
+
                 String versionlessKey = ArtifactUtils.versionlessKey(artifact);
                 if (!uniqueArtifacts.contains(versionlessKey)) {
                     classpathUrls.add(artifact.getFile().toURI().toURL());
                     uniqueArtifacts.add(versionlessKey);
                 }
             }
+            for (URL url : ((URLClassLoader)Thread.currentThread().getContextClassLoader()).getURLs()) {
+                if (url.toString().contains("/org/ow2/asm/")
+                        || url.toString().contains("/waitt-maven-plugin/")
+                        || url.toString().contains("/net/sourceforge/cobertura/")) {
+                    classpathUrls.add(url);
+                }
+            }
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Error during setting up classpath", e);
         }
 
-        ClassLoader parentClassLoader = new URLClassLoader(
+        ClassLoader parentClassLoader = new ParentLastClassLoader(
                 classpathUrls.toArray(new URL[ classpathUrls.size()]),
-                Thread.currentThread().getContextClassLoader()
-        );
-
+                Thread.currentThread().getContextClassLoader());
         if (appBase == null)
             appBase = new File("src/main/webapp").getAbsolutePath();
         getLog().info("App base: " + appBase);
@@ -176,18 +193,29 @@ public class RunMojo extends AbstractMojo {
         try {
             Context context = tomcat.addWebapp(CONTEXT_PATH, appBase);
             WebappLoader webappLoader = new WebappLoader(parentClassLoader);
-            webappLoader.setLoaderClass(CoberturaClassLoader.class.getName());
+            webappLoader.setLoaderClass("net.unit8.waitt.CoberturaClassLoader");
             webappLoader.setDelegate(((StandardContext) context).getDelegate());
             context.setLoader(webappLoader);
             context.setSessionCookieDomain(null);
 
-            tomcat.addWebapp("/coverage", COVERAGE_REPORT_DIR.getAbsolutePath());
+            /* Cobertura coverage report */
+            Context coverageContext = tomcat.addContext("/coverage", COVERAGE_REPORT_DIR.getAbsolutePath());
+            Wrapper defaultServlet = coverageContext.createWrapper();
+            defaultServlet.setName("default");
+            defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
+            defaultServlet.addInitParameter("debug", "0");
+            defaultServlet.addInitParameter("listings", "false");
+            defaultServlet.setLoadOnStartup(1);
+            coverageContext.addChild(defaultServlet);
+            coverageContext.addServletMapping("/", "default");
+            coverageContext.addWelcomeFile("index.html");
+
             WaittServlet waittServlet = new WaittServlet(server);
             Context adminContext = tomcat.addContext("/waitt", "");
             tomcat.addServlet(adminContext, "waittServlet", waittServlet);
             adminContext.addServletMapping("/*", "waittServlet");
-            new CoverageMonitor(webappLoader).start();
 
+            new CoverageMonitor(webappLoader).start();
             tomcat.start();
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + "/"));
             server.await();
