@@ -70,6 +70,9 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "9000")
     private int endPort;
 
+    @Parameter(defaultValue = "")
+    private String contextPath;
+
     @Component
     protected MavenProject project;
 
@@ -99,7 +102,6 @@ public class RunMojo extends AbstractMojo {
 
     protected ProjectBuilderConfiguration projectBuilderConfiguration = new DefaultProjectBuilderConfiguration();
 
-    private static final String CONTEXT_PATH = "";
     private static final File COVERAGE_REPORT_DIR = new File("target/coverage");
     private static final int REPORT_INTERVAL_SECONDS = 30;
     protected String appBase;
@@ -182,6 +184,8 @@ public class RunMojo extends AbstractMojo {
             scanPort();
         tomcat.setPort(port);
 
+        if (contextPath == null || contextPath.equals("/"))
+            contextPath = "";
         System.setProperty("catalina.home", ".");
         tomcat.setBaseDir(".");
         tomcat.getHost().setAppBase(appBase);
@@ -191,7 +195,7 @@ public class RunMojo extends AbstractMojo {
         server.addLifecycleListener(listener);
 
         try {
-            Context context = tomcat.addWebapp(CONTEXT_PATH, appBase);
+            Context context = tomcat.addWebapp(contextPath, appBase);
             WebappLoader webappLoader = new WebappLoader(parentClassLoader);
             webappLoader.setLoaderClass("net.unit8.waitt.CoberturaClassLoader");
             webappLoader.setDelegate(((StandardContext) context).getDelegate());
@@ -217,7 +221,7 @@ public class RunMojo extends AbstractMojo {
 
             new CoverageMonitor(webappLoader).start();
             tomcat.start();
-            Desktop.getDesktop().browse(URI.create("http://localhost:" + port + "/"));
+            Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath));
             server.await();
         } catch (Exception e) {
             throw new MojoExecutionException("Tomcat start failure", e);
@@ -255,6 +259,8 @@ public class RunMojo extends AbstractMojo {
             return;
         }
         File[] files = dir.listFiles();
+        if (files == null)
+            return;
         if (Iterables.all(Arrays.asList(files), new Predicate<File>() {
             @Override
             public boolean apply(File f) {
@@ -331,16 +337,14 @@ public class RunMojo extends AbstractMojo {
                     System.setOut(sysout);
                     try {
                         new HTMLReport(data, COVERAGE_REPORT_DIR, finder, complexity, "UTF-8");
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                    } catch (Exception ignore) {
+                        /* ignore */
                     }
                 }
 
                 try {
                     Thread.sleep(REPORT_INTERVAL_SECONDS * 1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                } catch (InterruptedException ignore) { /* ignore */ }
             }
         }
 

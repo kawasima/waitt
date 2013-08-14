@@ -39,7 +39,6 @@ public class CoberturaClassLoader extends WebappClassLoader {
 
     private void initInstrumenter() {
         try {
-            Instrumenter.class.getClassLoader(); // TODO magic call
             instrumenter = (Instrumenter) getParent().loadClass("net.unit8.waitt.CoberturaInstrumenterWrapper").newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Can't find CoberturaInstrumentWrapper.", e);
