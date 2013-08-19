@@ -1,11 +1,5 @@
 package net.unit8.waitt;
 
-import com.google.common.base.Function;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.base.Strings;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
 import net.sourceforge.cobertura.coveragedata.ProjectData;
 import net.sourceforge.cobertura.reporting.ComplexityCalculator;
@@ -18,7 +12,6 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.commons.io.output.NullOutputStream;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
@@ -112,12 +105,12 @@ public class RunMojo extends AbstractMojo {
         Properties execution = session.getExecutionProperties();
         ProfileManager profileManager = new DefaultProfileManager(container, execution);
 
-        File modulePom = Strings.isNullOrEmpty(subDirectory) ? new File("pom.xml") : new File(subDirectory, "pom.xml");
+        File modulePom = (subDirectory == null || subDirectory.isEmpty()) ? new File("pom.xml") : new File(subDirectory, "pom.xml");
         try {
             MavenProject subProject = projectBuilder.buildWithDependencies(modulePom, localRepository, profileManager);
             subProject.setRemoteArtifactRepositories(remoteRepositories);
             if ("war".equals(subProject.getPackaging())) {
-                appBase = Strings.isNullOrEmpty(subDirectory) ?
+                appBase = (subDirectory == null || subDirectory.isEmpty()) ?
                         new File("src/main/webapp").getAbsolutePath() :
                         new File(subDirectory, "src/main/webapp").getAbsolutePath();
             }
@@ -241,7 +234,7 @@ public class RunMojo extends AbstractMojo {
     }
 
     public Set<String> scanPackage(File sourceDirectory) {
-        Set<String> packages = Sets.newHashSet();
+        Set<String> packages = new HashSet<String>();
         File[] directories = sourceDirectory.listFiles(new FileFilter() {
             @Override
             public boolean accept(File f) {
@@ -261,22 +254,14 @@ public class RunMojo extends AbstractMojo {
         File[] files = dir.listFiles();
         if (files == null)
             return;
-        if (Iterables.all(Arrays.asList(files), new Predicate<File>() {
-            @Override
-            public boolean apply(File f) {
-                return f != null && f.isDirectory();
-            }
-        })) {
+
+        Boolean isAllDirectory = true;
+        for (File f : files) {
+            isAllDirectory = (f != null && f.isDirectory());
+        }
+        if (isAllDirectory) {
             for (File f : files) {
-                String prefix = Optional
-                        .fromNullable(pkg)
-                        .transform(new Function<String, String>() {
-                            @Override
-                            public String apply(String s) {
-                                return s + ".";
-                            }
-                        })
-                        .or("");
+                String prefix = (pkg == null) ? "" : pkg + ".";
                 scanPackageInner(f, prefix + dir.getName(), packages);
             }
         } else {

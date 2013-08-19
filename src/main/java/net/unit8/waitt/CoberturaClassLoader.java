@@ -1,8 +1,5 @@
 package net.unit8.waitt;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
 import net.sourceforge.cobertura.coveragedata.ProjectData;
 import net.sourceforge.cobertura.util.IOUtil;
@@ -64,12 +61,11 @@ public class CoberturaClassLoader extends WebappClassLoader {
         if (clazz != null) {
             return clazz;
         }
-        if (Iterables.any(TargetPackages.getInstance().get(), new Predicate<String>() {
-            @Override
-            public boolean apply(String pkgName) {
-                return className.startsWith(pkgName);
-            }
-        })) {
+        Boolean isTargetPackage = false;
+        for (String pkgName : TargetPackages.getInstance().get()) {
+            isTargetPackage |= className.startsWith(pkgName);
+        }
+        if (isTargetPackage) {
             return defineClass(className, resolve);
         } else {
             return getParent().loadClass(className);
@@ -91,7 +87,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
         try {
             instrumentationResult = instrumenter.instrumentClassByte(is);
         } catch(Throwable t) {
-            throw new ClassNotFoundException(t.getMessage() + " from " + Joiner.on(":").join(((URLClassLoader) parent).getURLs()), t);
+            throw new ClassNotFoundException(t.getMessage() + " from " + ((URLClassLoader) parent).getURLs(), t);
         } finally {
             IOUtil.closeInputStream(is);
         }

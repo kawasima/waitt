@@ -77,7 +77,12 @@ public class ParentLastClassLoader extends URLClassLoader{
                     loadedClass = findClass(name);
                     if (resolve)
                         resolveClass(loadedClass);
-                } catch( ClassNotFoundException e ) { /* ignore */ }
+                } catch( ClassNotFoundException e) {
+                    /* ignore */
+                } catch(IllegalAccessError e) {
+                    /* Load from parent loader */
+                    loadedClass = getParent().loadClass(name);
+                }
 
                 // If not found locally, use normal parent delegation in URLClassloader
                 if( loadedClass == null ) {
