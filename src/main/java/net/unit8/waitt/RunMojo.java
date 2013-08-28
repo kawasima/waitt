@@ -186,6 +186,8 @@ public class RunMojo extends AbstractMojo {
         StandardServer server = (StandardServer) tomcat.getServer();
         AprLifecycleListener listener = new AprLifecycleListener();
         server.addLifecycleListener(listener);
+        tomcat.getConnector().setURIEncoding("UTF-8");
+        tomcat.getConnector().setUseBodyEncodingForURI(true);
 
         try {
             Context context = tomcat.addWebapp(contextPath, appBase);
@@ -241,8 +243,10 @@ public class RunMojo extends AbstractMojo {
                 return f != null && f.isDirectory();
             }
         });
-        for (File dir : directories) {
-            scanPackageInner(dir, null, packages);
+        if (directories != null) {
+            for (File dir : directories) {
+                scanPackageInner(dir, null, packages);
+            }
         }
         return packages;
     }
@@ -316,7 +320,6 @@ public class RunMojo extends AbstractMojo {
                     PrintStream sysout = System.out;
                     System.setOut(new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM));
 
-                    //TouchCollector.applyTouchesOnProjectData(data);
                     ProjectData.saveGlobalProjectData();
 
                     System.setOut(sysout);
