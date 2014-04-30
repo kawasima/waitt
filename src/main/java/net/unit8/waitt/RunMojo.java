@@ -269,7 +269,8 @@ public class RunMojo extends AbstractMojo {
                 scanPackageInner(f, prefix + dir.getName(), packages);
             }
         } else {
-            packages.add(pkg);
+
+            packages.add(pkg == null ? dir.getName() : pkg);
         }
     }
 
