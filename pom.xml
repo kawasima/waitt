@@ -6,7 +6,7 @@
 
     <groupId>net.unit8.maven.plugins</groupId>
     <artifactId>waitt-maven-plugin</artifactId>
-    <version>0.1.3-SNAPSHOT</version>
+    <version>0.1.3</version>
     <packaging>maven-plugin</packaging>
 
     <parent>
