@@ -12,7 +12,7 @@ public class CoberturaInstrumenterWrapper extends CoberturaInstrumenter implemen
     public byte[] instrumentClassByte(InputStream is)
             throws IOException {
         CoberturaInstrumenter.InstrumentationResult result = super.instrumentClass(is);
-        return result.getContent();
+        return result == null ? null : result.getContent();
     }
 
 }

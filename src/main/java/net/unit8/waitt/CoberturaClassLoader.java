@@ -86,6 +86,9 @@ public class CoberturaClassLoader extends WebappClassLoader {
         byte[] instrumentationResult = null;
         try {
             instrumentationResult = instrumenter.instrumentClassByte(is);
+            if (instrumentationResult == null) {
+                return getParent().loadClass(className);
+            }
         } catch(Throwable t) {
             throw new ClassNotFoundException(t.getMessage() + " from " + ((URLClassLoader) parent).getURLs(), t);
         } finally {
