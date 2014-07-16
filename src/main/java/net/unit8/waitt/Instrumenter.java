@@ -27,4 +27,6 @@ public interface Instrumenter {
     public void setProjectData(ProjectData projectData);
 
     public void setThreadsafeRigorous(boolean threadsafeRigorous);
+
+    public ProjectData getProjectData();
 }

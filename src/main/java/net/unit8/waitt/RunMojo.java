@@ -1,10 +1,5 @@
 package net.unit8.waitt;
 
-import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
-import net.sourceforge.cobertura.coveragedata.ProjectData;
-import net.sourceforge.cobertura.reporting.ComplexityCalculator;
-import net.sourceforge.cobertura.reporting.html.HTMLReport;
-import net.sourceforge.cobertura.util.FileFinder;
 import org.apache.catalina.Context;
 import org.apache.catalina.Wrapper;
 import org.apache.catalina.core.AprLifecycleListener;
@@ -24,6 +19,7 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -38,14 +34,17 @@ import org.codehaus.plexus.PlexusContainer;
 
 import java.awt.*;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.lang.reflect.Constructor;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.*;
 
 /**
  * Web Application Integration Test Tool maven plugin.
@@ -75,6 +74,9 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "${session}", required = true, readonly = true)
     protected MavenSession session;
 
+    @Parameter(defaultValue = "target/coverage")
+    protected File coverageReportDirectory;
+
     @Component
     private ArtifactResolver artifactResolver;
 
@@ -95,8 +97,6 @@ public class RunMojo extends AbstractMojo {
 
     protected ProjectBuilderConfiguration projectBuilderConfiguration = new DefaultProjectBuilderConfiguration();
 
-    private static final File COVERAGE_REPORT_DIR = new File("target/coverage");
-    private static final int REPORT_INTERVAL_SECONDS = 30;
     protected String appBase;
 
     private void readArtifacts(String subDirectory, List<Artifact> artifacts, List<File> classpathFiles)
@@ -122,10 +122,9 @@ public class RunMojo extends AbstractMojo {
         }
     }
     public void execute() throws MojoExecutionException, MojoFailureException {
-        Logger logger = Logger.getLogger(CoverageDataFileHandler.class.getCanonicalName());
-        logger.setLevel(Level.WARNING);
+        initLogger();
         TargetPackages.getInstance().set(
-                scanPackage(new File(project.getBuild().getSourceDirectory())));
+                PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
         List<Artifact> artifacts = new ArrayList<Artifact>();
         List<File> classpathFiles = new ArrayList<File>();
         projectBuilderConfiguration.setLocalRepository(localRepository);
@@ -145,6 +144,13 @@ public class RunMojo extends AbstractMojo {
                 URL url = classpathFile.toURI().toURL();
                 classpathUrls.add(url);
             }
+            for (URL url : ((URLClassLoader)Thread.currentThread().getContextClassLoader()).getURLs()) {
+                if (url.toString().contains("/org/ow2/asm/")
+                        || url.toString().contains("/waitt-maven-plugin/")
+                        || url.toString().contains("/net/sourceforge/cobertura/")) {
+                    classpathUrls.add(url);
+                }
+            }
             for (Artifact artifact : artifacts) {
                 if ("provided".equals(artifact.getScope()))
                     continue;
@@ -153,13 +159,6 @@ public class RunMojo extends AbstractMojo {
                 if (!uniqueArtifacts.contains(versionlessKey)) {
                     classpathUrls.add(artifact.getFile().toURI().toURL());
                     uniqueArtifacts.add(versionlessKey);
-                }
-            }
-            for (URL url : ((URLClassLoader)Thread.currentThread().getContextClassLoader()).getURLs()) {
-                if (url.toString().contains("/org/ow2/asm/")
-                        || url.toString().contains("/waitt-maven-plugin/")
-                        || url.toString().contains("/net/sourceforge/cobertura/")) {
-                    classpathUrls.add(url);
                 }
             }
         } catch (MalformedURLException e) {
@@ -191,30 +190,21 @@ public class RunMojo extends AbstractMojo {
 
         try {
             Context context = tomcat.addWebapp(contextPath, appBase);
-            WebappLoader webappLoader = new WebappLoader(parentClassLoader);
+            final WebappLoader webappLoader = new WebappLoader(parentClassLoader);
             webappLoader.setLoaderClass("net.unit8.waitt.CoberturaClassLoader");
             webappLoader.setDelegate(((StandardContext) context).getDelegate());
             context.setLoader(webappLoader);
             context.setSessionCookieDomain(null);
 
-            /* Cobertura coverage report */
-            Context coverageContext = tomcat.addContext("/coverage", COVERAGE_REPORT_DIR.getAbsolutePath());
-            Wrapper defaultServlet = coverageContext.createWrapper();
-            defaultServlet.setName("default");
-            defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
-            defaultServlet.addInitParameter("debug", "0");
-            defaultServlet.addInitParameter("listings", "false");
-            defaultServlet.setLoadOnStartup(1);
-            coverageContext.addChild(defaultServlet);
-            coverageContext.addServletMapping("/", "default");
-            coverageContext.addWelcomeFile("index.html");
+            initCoverageContext(tomcat);
 
             WaittServlet waittServlet = new WaittServlet(server);
             Context adminContext = tomcat.addContext("/waitt", "");
             tomcat.addServlet(adminContext, "waittServlet", waittServlet);
             adminContext.addServletMapping("/*", "waittServlet");
 
-            new CoverageMonitor(webappLoader).start();
+            initCoverageMonitor(webappLoader);
+
             tomcat.start();
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath));
             server.await();
@@ -222,6 +212,97 @@ public class RunMojo extends AbstractMojo {
             throw new MojoExecutionException("Tomcat start failure", e);
         }
     }
+
+    private void initLogger() {
+        Logger logger = Logger.getLogger("");
+        logger.setLevel(ALL);
+        for (Handler handler : logger.getHandlers()) {
+            logger.removeHandler(handler);
+        }
+        final Log mavenLogger = getLog();
+
+        logger.addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord logRecord) {
+                if (logRecord.getLoggerName().startsWith("sun.awt."))
+                    return;
+                Level lv = logRecord.getLevel();
+                if (Arrays.asList(ALL, CONFIG, FINE, FINER, FINEST).contains(lv)) {
+                    mavenLogger.debug(logRecord.getMessage());
+                } else if (lv.equals(INFO)) {
+                    mavenLogger.info(logRecord.getMessage());
+                } else if (lv.equals(WARNING)) {
+                    Throwable t = logRecord.getThrown();
+                    if (t == null)
+                        mavenLogger.warn(logRecord.getMessage());
+                    else
+                        mavenLogger.warn(logRecord.getMessage(), t);
+                } else if (lv.equals(SEVERE)) {
+                    Throwable t = logRecord.getThrown();
+                    if (t == null)
+                        mavenLogger.error(logRecord.getMessage());
+                    else
+                        mavenLogger.error(logRecord.getMessage(), t);
+                }
+            }
+
+            @Override public void flush() {}
+            @Override public void close() throws SecurityException {}
+        });
+    }
+    private void initCoverageContext(Tomcat tomcat) {
+        /* Cobertura coverage report */
+        if (!coverageReportDirectory.exists()) {
+            // ignore error when create coverage directory.
+            assert(coverageReportDirectory.mkdirs());
+        }
+
+        Context coverageContext = tomcat.addContext("/coverage", coverageReportDirectory.getAbsolutePath());
+        Wrapper defaultServlet = coverageContext.createWrapper();
+        defaultServlet.setName("default");
+        defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
+        defaultServlet.addInitParameter("debug", "0");
+        defaultServlet.addInitParameter("listings", "false");
+        defaultServlet.setLoadOnStartup(1);
+        coverageContext.addChild(defaultServlet);
+        coverageContext.addServletMapping("/", "default");
+        coverageContext.addWelcomeFile("index.html");
+    }
+
+    private void initCoverageMonitor(final WebappLoader webappLoader) {
+        final CoverageMonitorConfiguration config = new CoverageMonitorConfiguration();
+        config.setCoverageReportDirectory(coverageReportDirectory);
+        config.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    ClassLoader cl = webappLoader.getClassLoader();
+                    if (cl != null) {
+                        try {
+                            Class<?> monitorClass = cl.loadClass("net.unit8.waitt.CoverageMonitor");
+                            Constructor<?> constructor = monitorClass.getConstructor(
+                                    WebappLoader.class,
+                                    CoverageMonitorConfiguration.class);
+                            new Thread((Runnable) constructor.newInstance(webappLoader, config))
+                                    .start();
+                        } catch(Exception e) {
+                            getLog().warn(e);
+                        }
+                        break;
+                    }
+                    try {
+                        Thread.sleep(5000);
+                    }
+                    catch (InterruptedException e) {
+                        assert false;
+                    }
+                }
+            }
+        }).start();
+    }
+
     protected void scanPort() {
         for (int p = startPort; p <= endPort; p++) {
             try {
@@ -233,45 +314,6 @@ public class RunMojo extends AbstractMojo {
             }
         }
         throw new RuntimeException("Can't find available port from " + startPort + " to " + endPort);
-    }
-
-    public Set<String> scanPackage(File sourceDirectory) {
-        Set<String> packages = new HashSet<String>();
-        File[] directories = sourceDirectory.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File f) {
-                return f != null && f.isDirectory();
-            }
-        });
-        if (directories != null) {
-            for (File dir : directories) {
-                scanPackageInner(dir, null, packages);
-            }
-        }
-        return packages;
-    }
-
-    private void scanPackageInner(File dir, String pkg, Set<String> packages) {
-        if (!dir.isDirectory()) {
-            return;
-        }
-        File[] files = dir.listFiles();
-        if (files == null)
-            return;
-
-        Boolean isAllDirectory = true;
-        for (File f : files) {
-            isAllDirectory = (f != null && f.isDirectory());
-        }
-        if (isAllDirectory) {
-            for (File f : files) {
-                String prefix = (pkg == null) ? "" : pkg + ".";
-                scanPackageInner(f, prefix + dir.getName(), packages);
-            }
-        } else {
-
-            packages.add(pkg == null ? dir.getName() : pkg);
-        }
     }
 
     private Set resolveExecutableDependencies( Artifact executablePomArtifact )
@@ -300,42 +342,5 @@ public class RunMojo extends AbstractMojo {
                     e);
         }
         return executableDependencies;
-    }
-
-    public static class CoverageMonitor extends Thread {
-        private WebappLoader webappLoader;
-        ComplexityCalculator complexity;
-        FileFinder finder;
-        public CoverageMonitor(WebappLoader webappLoader) {
-            this.webappLoader = webappLoader;
-            finder = new FileFinder();
-            finder.addSourceDirectory("src/main/java");
-            complexity = new ComplexityCalculator(finder);
-        }
-        @Override
-        public void run() {
-            while(true) {
-                CoberturaClassLoader cl = (CoberturaClassLoader)webappLoader.getClassLoader();
-                if (cl != null) {
-                    ProjectData data = cl.getProjectData();
-                    PrintStream sysout = System.out;
-                    System.setOut(new PrintStream(NullOutputStream.NULL_OUTPUT_STREAM));
-
-                    ProjectData.saveGlobalProjectData();
-
-                    System.setOut(sysout);
-                    try {
-                        new HTMLReport(data, COVERAGE_REPORT_DIR, finder, complexity, "UTF-8");
-                    } catch (Exception ignore) {
-                        /* ignore */
-                    }
-                }
-
-                try {
-                    Thread.sleep(REPORT_INTERVAL_SECONDS * 1000);
-                } catch (InterruptedException ignore) { /* ignore */ }
-            }
-        }
-
     }
 }
