@@ -15,6 +15,12 @@
         <version>9</version>
     </parent>
 
+    <scm>
+        <connection>scm:git:git@github.com:kawasima/waitt-maven-plugin.git</connection>
+        <url>scm:git:git@github.com:kawasima/waitt-maven-plugin.git</url>
+        <developerConnection>scm:git:git@github.com:kawasima/waitt-maven-plugin.git</developerConnection>
+    </scm>
+
     <properties>
         <tomcatVersion>7.0.53</tomcatVersion>
         <mavenVersion>2.2.1</mavenVersion>
