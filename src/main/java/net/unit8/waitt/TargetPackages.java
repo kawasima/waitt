@@ -5,8 +5,9 @@ import java.util.Set;
 /**
  * @author kawasima
  */
+@SuppressWarnings("CanBeFinal")
 public class TargetPackages {
-    private static TargetPackages targetPackages = new TargetPackages();
+    private static final TargetPackages targetPackages = new TargetPackages();
     private Set<String> packages;
 
     public static TargetPackages getInstance() {

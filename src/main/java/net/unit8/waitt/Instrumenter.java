@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
  *
  * @author kawasima
  */
+@SuppressWarnings("SameParameterValue")
 public interface Instrumenter {
     public void setIgnoreRegexes(Collection<Pattern> ignoreRegexes);
 
@@ -24,7 +25,9 @@ public interface Instrumenter {
 
     public void setFailOnError(boolean failOnError);
 
-    public void setProjectData(ProjectData projectData);
+    // --Commented out by Inspection (14/07/17 15:42):public void setProjectData(ProjectData projectData);
 
     public void setThreadsafeRigorous(boolean threadsafeRigorous);
+
+    public ProjectData getProjectData();
 }

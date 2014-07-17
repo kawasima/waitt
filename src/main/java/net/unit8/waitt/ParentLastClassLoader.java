@@ -4,13 +4,15 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
+import java.util.logging.Logger;
 
 /**
  * @author kawasima
  */
 public class ParentLastClassLoader extends URLClassLoader{
-    static Method findLoadedClassMethod;
-    static Method findBootstrapClassOrNullMethod;
+    private static final Logger logger = Logger.getLogger(ParentLastClassLoader.class.getName());
+    static final Method findLoadedClassMethod;
+    static final Method findBootstrapClassOrNullMethod;
 
     static {
         try {
@@ -54,8 +56,6 @@ public class ParentLastClassLoader extends URLClassLoader{
         synchronized (this) {
             Class loadedClass = findLoadedClass(name);
 
-
-
             if (loadedClass == null) {
                 try {
                     ClassLoader parent = getParent();
@@ -75,6 +75,7 @@ public class ParentLastClassLoader extends URLClassLoader{
                     if (name.equals("net.unit8.waitt.Instrumenter"))
                         throw new ClassNotFoundException("");
                     loadedClass = findClass(name);
+                    logger.fine("[loaded] " + name + " from ParentLastClassLoader");
                     if (resolve)
                         resolveClass(loadedClass);
                 } catch( ClassNotFoundException e) {
@@ -82,12 +83,14 @@ public class ParentLastClassLoader extends URLClassLoader{
                 } catch(IllegalAccessError e) {
                     /* Load from parent loader */
                     loadedClass = getParent().loadClass(name);
+                    logger.fine("[loaded] " + name +" from WebappClassLoader");
                 }
 
                 // If not found locally, use normal parent delegation in URLClassloader
                 if( loadedClass == null ) {
                     // throws ClassNotFoundException if not found in delegation hierarchy at all
                     loadedClass = super.loadClass(name, resolve);
+                    logger.fine("[loaded] " + name + " from WebappClassLoader");
                 }
             }
             // will never return null (ClassNotFoundException will be thrown)

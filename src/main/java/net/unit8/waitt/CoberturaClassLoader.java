@@ -1,17 +1,14 @@
 package net.unit8.waitt;
 
-import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
-import net.sourceforge.cobertura.coveragedata.ProjectData;
 import net.sourceforge.cobertura.util.IOUtil;
 import org.apache.catalina.loader.WebappClassLoader;
-import org.apache.log4j.Logger;
 
-import java.io.*;
-import java.net.URLClassLoader;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -19,19 +16,16 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("rawtypes")
 public class CoberturaClassLoader extends WebappClassLoader {
-    private static final Logger logger = Logger.getLogger(CoberturaClassLoader.class);
+    private static final Logger logger = Logger.getLogger(CoberturaClassLoader.class.getName());
 
-    private Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
-    private boolean ignoreTrivial = false;
-    private Set<String> ignoreMethodAnnotations = new HashSet<String>();
-    private boolean threadsafeRigorous = false;
-    private boolean failOnError = false;
+    private final Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
+    private final Set<String> ignoreMethodAnnotations = new HashSet<String>();
 
-    private ProjectData projectData = null;
     private Instrumenter instrumenter = null;
 
     public CoberturaClassLoader(ClassLoader parent) {
         super(parent);
+        initInstrumenter();
     }
 
     private void initInstrumenter() {
@@ -41,19 +35,13 @@ public class CoberturaClassLoader extends WebappClassLoader {
             throw new RuntimeException("Can't find CoberturaInstrumentWrapper.", e);
         }
         instrumenter.setIgnoreRegexes(ignoreRegexes);
-
-        File dataFile = CoverageDataFileHandler.getDefaultDataFile();
-        projectData = CoverageDataFileHandler.loadCoverageData(dataFile);
-        if (projectData == null)
-            projectData = new ProjectData();
-
-        instrumenter.setIgnoreTrivial(ignoreTrivial);
+        instrumenter.setIgnoreTrivial(false);
         instrumenter
                 .setIgnoreMethodAnnotations(ignoreMethodAnnotations);
-        instrumenter.setThreadsafeRigorous(threadsafeRigorous);
-        instrumenter.setFailOnError(failOnError);
-        instrumenter.setProjectData(projectData);
+        instrumenter.setThreadsafeRigorous(false);
+        instrumenter.setFailOnError(false);
     }
+
     @SuppressWarnings("unchecked")
     public Class loadClass(final String className, boolean resolve)
             throws ClassNotFoundException {
@@ -66,6 +54,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
             isTargetPackage |= className.startsWith(pkgName);
         }
         if (isTargetPackage) {
+            logger.fine("[loaded] " + className + " from CoberturaClassLoader");
             return defineClass(className, resolve);
         } else {
             return getParent().loadClass(className);
@@ -75,12 +64,6 @@ public class CoberturaClassLoader extends WebappClassLoader {
     private Class defineClass(String className, boolean resolve) throws ClassNotFoundException {
         Class clazz = null;
         String path = className.replace('.', '/') + ".class";
-
-        if (instrumenter == null) {
-            synchronized (this) {
-                initInstrumenter();
-            }
-        }
         InputStream is = parent.getResourceAsStream(path);
 
         byte[] instrumentationResult = null;
@@ -90,7 +73,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
                 return getParent().loadClass(className);
             }
         } catch(Throwable t) {
-            throw new ClassNotFoundException(t.getMessage() + " from " + ((URLClassLoader) parent).getURLs(), t);
+            throw new ClassNotFoundException(t.getMessage() + " from " + parent, t);
         } finally {
             IOUtil.closeInputStream(is);
         }
@@ -109,7 +92,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
         return defineClass(className, bytes, 0, bytes.length);
     }
 
-    public ProjectData getProjectData() {
-        return projectData;
+    public Instrumenter getInstrumenter() {
+        return instrumenter;
     }
 }
