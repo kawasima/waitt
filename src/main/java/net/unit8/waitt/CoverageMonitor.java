@@ -8,6 +8,7 @@ import net.sourceforge.cobertura.reporting.html.HTMLReport;
 import net.sourceforge.cobertura.util.FileFinder;
 import org.apache.catalina.loader.WebappLoader;
 
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -16,10 +17,10 @@ import java.util.logging.Logger;
 public class CoverageMonitor implements Runnable {
     private static final Logger logger = Logger.getLogger(CoverageMonitor.class.getName());
 
-    private ComplexityCalculator complexity;
-    private FileFinder finder;
-    private WebappLoader webappLoader;
-    private CoverageMonitorConfiguration config;
+    private final ComplexityCalculator complexity;
+    private final FileFinder finder;
+    private final WebappLoader webappLoader;
+    private final CoverageMonitorConfiguration config;
 
     public CoverageMonitor(WebappLoader webappLoader, CoverageMonitorConfiguration config) {
         this.webappLoader = webappLoader;
@@ -52,7 +53,7 @@ public class CoverageMonitor implements Runnable {
             }
 
             try {
-                Thread.sleep(config.getReportIntervalSeconds() * 1000);
+                TimeUnit.SECONDS.sleep(config.getReportIntervalSeconds());
             } catch (InterruptedException ignore) { /* ignore */ }
         }
     }

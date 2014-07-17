@@ -11,8 +11,8 @@ import java.util.logging.Logger;
  */
 public class ParentLastClassLoader extends URLClassLoader{
     private static final Logger logger = Logger.getLogger(ParentLastClassLoader.class.getName());
-    static Method findLoadedClassMethod;
-    static Method findBootstrapClassOrNullMethod;
+    static final Method findLoadedClassMethod;
+    static final Method findBootstrapClassOrNullMethod;
 
     static {
         try {
@@ -75,7 +75,7 @@ public class ParentLastClassLoader extends URLClassLoader{
                     if (name.equals("net.unit8.waitt.Instrumenter"))
                         throw new ClassNotFoundException("");
                     loadedClass = findClass(name);
-                    logger.fine("[loaded] " + name +" from ParentLastClassLoader");
+                    logger.fine("[loaded] " + name + " from ParentLastClassLoader");
                     if (resolve)
                         resolveClass(loadedClass);
                 } catch( ClassNotFoundException e) {
@@ -90,7 +90,7 @@ public class ParentLastClassLoader extends URLClassLoader{
                 if( loadedClass == null ) {
                     // throws ClassNotFoundException if not found in delegation hierarchy at all
                     loadedClass = super.loadClass(name, resolve);
-                    logger.fine("[loaded] " + name +" from WebappClassLoader");
+                    logger.fine("[loaded] " + name + " from WebappClassLoader");
                 }
             }
             // will never return null (ClassNotFoundException will be thrown)

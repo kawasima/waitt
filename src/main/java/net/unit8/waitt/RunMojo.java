@@ -1,7 +1,6 @@
 package net.unit8.waitt;
 
-import org.apache.catalina.Context;
-import org.apache.catalina.Wrapper;
+import org.apache.catalina.*;
 import org.apache.catalina.core.AprLifecycleListener;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardServer;
@@ -12,7 +11,6 @@ import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -29,7 +27,6 @@ import org.apache.maven.project.DefaultProjectBuilderConfiguration;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuilderConfiguration;
-import org.apache.maven.project.artifact.MavenMetadataSource;
 import org.codehaus.plexus.PlexusContainer;
 
 import java.awt.*;
@@ -39,6 +36,8 @@ import java.lang.reflect.Constructor;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -51,6 +50,7 @@ import static java.util.logging.Level.*;
  *
  * @author kawasima
  */
+@SuppressWarnings("unchecked")
 @Mojo(name = "run")
 public class RunMojo extends AbstractMojo {
     @Parameter
@@ -92,12 +92,13 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true)
     private List<ArtifactRepository> remoteRepositories;
 
-    @Parameter(defaultValue="${descriptor}")
+    @Parameter(defaultValue = "${descriptor}")
     private PluginDescriptor descriptor;
 
-    protected ProjectBuilderConfiguration projectBuilderConfiguration = new DefaultProjectBuilderConfiguration();
+    protected final ProjectBuilderConfiguration projectBuilderConfiguration = new DefaultProjectBuilderConfiguration();
 
     protected String appBase;
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     private void readArtifacts(String subDirectory, List<Artifact> artifacts, List<File> classpathFiles)
             throws MojoExecutionException {
@@ -121,52 +122,18 @@ public class RunMojo extends AbstractMojo {
             throw new MojoExecutionException("module(" + subDirectory + ") build failure", e);
         }
     }
+
+    /**
+     * Start tomcat.
+     *
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     */
     public void execute() throws MojoExecutionException, MojoFailureException {
         initLogger();
-        TargetPackages.getInstance().set(
-                PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
-        List<Artifact> artifacts = new ArrayList<Artifact>();
-        List<File> classpathFiles = new ArrayList<File>();
-        projectBuilderConfiguration.setLocalRepository(localRepository);
-
-        if (project.getModel().getModules().isEmpty()) {
-            readArtifacts("", artifacts, classpathFiles);
-        } else {
-            for (String module : project.getModel().getModules()) {
-                readArtifacts(module, artifacts, classpathFiles);
-            }
-        }
-        List<URL> classpathUrls = new ArrayList<URL>();
-        Set<String> uniqueArtifacts = new HashSet<String>();
-
-        try {
-            for (File classpathFile : classpathFiles) {
-                URL url = classpathFile.toURI().toURL();
-                classpathUrls.add(url);
-            }
-            for (URL url : ((URLClassLoader)Thread.currentThread().getContextClassLoader()).getURLs()) {
-                if (url.toString().contains("/org/ow2/asm/")
-                        || url.toString().contains("/waitt-maven-plugin/")
-                        || url.toString().contains("/net/sourceforge/cobertura/")) {
-                    classpathUrls.add(url);
-                }
-            }
-            for (Artifact artifact : artifacts) {
-                if ("provided".equals(artifact.getScope()))
-                    continue;
-
-                String versionlessKey = ArtifactUtils.versionlessKey(artifact);
-                if (!uniqueArtifacts.contains(versionlessKey)) {
-                    classpathUrls.add(artifact.getFile().toURI().toURL());
-                    uniqueArtifacts.add(versionlessKey);
-                }
-            }
-        } catch (MalformedURLException e) {
-            throw new MojoExecutionException("Error during setting up classpath", e);
-        }
-
+        List<URL> classpathUrls = resolveClasspaths();
         ClassLoader parentClassLoader = new ParentLastClassLoader(
-                classpathUrls.toArray(new URL[ classpathUrls.size()]),
+                classpathUrls.toArray(new URL[classpathUrls.size()]),
                 Thread.currentThread().getContextClassLoader());
         if (appBase == null)
             appBase = new File("src/main/webapp").getAbsolutePath();
@@ -198,15 +165,24 @@ public class RunMojo extends AbstractMojo {
 
             initCoverageContext(tomcat);
 
-            WaittServlet waittServlet = new WaittServlet(server);
+            WaittServlet waittServlet = new WaittServlet(server, executorService);
             Context adminContext = tomcat.addContext("/waitt", "");
-            tomcat.addServlet(adminContext, "waittServlet", waittServlet);
+            adminContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
+            Tomcat.addServlet(adminContext, "waittServlet", waittServlet);
             adminContext.addServletMapping("/*", "waittServlet");
 
             initCoverageMonitor(webappLoader);
-
             tomcat.start();
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath));
+            server.addLifecycleListener(new LifecycleListener() {
+                @Override
+                public void lifecycleEvent(LifecycleEvent event) {
+                    if (event.getType().equals(Lifecycle.BEFORE_STOP_EVENT)) {
+                        executorService.shutdownNow();
+                        getLog().info("Stop monitoring threads.");
+                    }
+                }
+            });
             server.await();
         } catch (Exception e) {
             throw new MojoExecutionException("Tomcat start failure", e);
@@ -246,18 +222,70 @@ public class RunMojo extends AbstractMojo {
                 }
             }
 
-            @Override public void flush() {}
-            @Override public void close() throws SecurityException {}
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
         });
     }
+
+    private List<URL> resolveClasspaths() throws MojoExecutionException {
+        TargetPackages.getInstance().set(
+                PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
+        List<Artifact> artifacts = new ArrayList<Artifact>();
+        List<File> classpathFiles = new ArrayList<File>();
+        projectBuilderConfiguration.setLocalRepository(localRepository);
+
+        if (project.getModel().getModules().isEmpty()) {
+            readArtifacts("", artifacts, classpathFiles);
+        } else {
+            for (String module : project.getModel().getModules()) {
+                readArtifacts(module, artifacts, classpathFiles);
+            }
+        }
+        List<URL> classpathUrls = new ArrayList<URL>();
+        Set<String> uniqueArtifacts = new HashSet<String>();
+
+        try {
+            for (File classpathFile : classpathFiles) {
+                URL url = classpathFile.toURI().toURL();
+                classpathUrls.add(url);
+            }
+            for (URL url : ((URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs()) {
+                if (url.toString().contains("/org/ow2/asm/")
+                        || url.toString().contains("/waitt-maven-plugin/")
+                        || url.toString().contains("/net/sourceforge/cobertura/")) {
+                    classpathUrls.add(url);
+                }
+            }
+            for (Artifact artifact : artifacts) {
+                if ("provided".equals(artifact.getScope()))
+                    continue;
+
+                String versionlessKey = ArtifactUtils.versionlessKey(artifact);
+                if (!uniqueArtifacts.contains(versionlessKey)) {
+                    classpathUrls.add(artifact.getFile().toURI().toURL());
+                    uniqueArtifacts.add(versionlessKey);
+                }
+            }
+            return classpathUrls;
+        } catch (MalformedURLException e) {
+            throw new MojoExecutionException("Error during setting up classpath", e);
+        }
+    }
+
     private void initCoverageContext(Tomcat tomcat) {
         /* Cobertura coverage report */
         if (!coverageReportDirectory.exists()) {
             // ignore error when create coverage directory.
-            assert(coverageReportDirectory.mkdirs());
+            assert (coverageReportDirectory.mkdirs());
         }
 
         Context coverageContext = tomcat.addContext("/coverage", coverageReportDirectory.getAbsolutePath());
+        coverageContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
         Wrapper defaultServlet = coverageContext.createWrapper();
         defaultServlet.setName("default");
         defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
@@ -273,34 +301,33 @@ public class RunMojo extends AbstractMojo {
         final CoverageMonitorConfiguration config = new CoverageMonitorConfiguration();
         config.setCoverageReportDirectory(coverageReportDirectory);
         config.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    ClassLoader cl = webappLoader.getClassLoader();
-                    if (cl != null) {
-                        try {
-                            Class<?> monitorClass = cl.loadClass("net.unit8.waitt.CoverageMonitor");
-                            Constructor<?> constructor = monitorClass.getConstructor(
-                                    WebappLoader.class,
-                                    CoverageMonitorConfiguration.class);
-                            new Thread((Runnable) constructor.newInstance(webappLoader, config))
-                                    .start();
-                        } catch(Exception e) {
-                            getLog().warn(e);
+        executorService.execute(
+            new Runnable() {
+                @Override
+                public void run() {
+                    while (true) {
+                        ClassLoader cl = webappLoader.getClassLoader();
+                        if (cl != null) {
+                            try {
+                                Class<?> monitorClass = cl.loadClass("net.unit8.waitt.CoverageMonitor");
+                                Constructor<?> constructor = monitorClass.getConstructor(
+                                        WebappLoader.class,
+                                        CoverageMonitorConfiguration.class);
+                                executorService.execute((Runnable) constructor.newInstance(webappLoader, config));
+                            } catch (Exception e) {
+                                getLog().warn(e);
+                            }
+                            break;
                         }
-                        break;
-                    }
-                    try {
-                        Thread.sleep(5000);
-                    }
-                    catch (InterruptedException e) {
-                        assert false;
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            assert false;
+                        }
                     }
                 }
             }
-        }).start();
+        );
     }
 
     protected void scanPort() {
@@ -314,33 +341,5 @@ public class RunMojo extends AbstractMojo {
             }
         }
         throw new RuntimeException("Can't find available port from " + startPort + " to " + endPort);
-    }
-
-    private Set resolveExecutableDependencies( Artifact executablePomArtifact )
-            throws MojoExecutionException {
-        Set executableDependencies;
-        try {
-            MavenProject project = projectBuilder.buildFromRepository(
-                    executablePomArtifact,
-                    remoteRepositories,
-                    localRepository);
-            List dependencies = project.getDependencies();
-            Set dependencyArtifacts = MavenMetadataSource.createArtifacts(artifactFactory, dependencies, null, null, null);
-            dependencyArtifacts.add(project.getArtifact());
-            ArtifactResolutionResult result = artifactResolver.resolveTransitively(
-                    dependencyArtifacts,
-                    executablePomArtifact,
-                    Collections.EMPTY_MAP,
-                    localRepository,
-                    remoteRepositories,
-                    metadataSource, null,
-                    Collections.EMPTY_LIST);
-            executableDependencies = result.getArtifacts();
-        } catch (Exception e) {
-            throw new MojoExecutionException(
-                    "Encountered problems resolving dependencies of the executable " + "in preparation for its execution.",
-                    e);
-        }
-        return executableDependencies;
     }
 }

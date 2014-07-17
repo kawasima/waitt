@@ -4,7 +4,6 @@ import net.sourceforge.cobertura.util.IOUtil;
 import org.apache.catalina.loader.WebappClassLoader;
 
 import java.io.InputStream;
-import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -19,11 +18,8 @@ import java.util.regex.Pattern;
 public class CoberturaClassLoader extends WebappClassLoader {
     private static final Logger logger = Logger.getLogger(CoberturaClassLoader.class.getName());
 
-    private Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
-    private boolean ignoreTrivial = false;
-    private Set<String> ignoreMethodAnnotations = new HashSet<String>();
-    private boolean threadsafeRigorous = false;
-    private boolean failOnError = false;
+    private final Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
+    private final Set<String> ignoreMethodAnnotations = new HashSet<String>();
 
     private Instrumenter instrumenter = null;
 
@@ -39,12 +35,11 @@ public class CoberturaClassLoader extends WebappClassLoader {
             throw new RuntimeException("Can't find CoberturaInstrumentWrapper.", e);
         }
         instrumenter.setIgnoreRegexes(ignoreRegexes);
-
-        instrumenter.setIgnoreTrivial(ignoreTrivial);
+        instrumenter.setIgnoreTrivial(false);
         instrumenter
                 .setIgnoreMethodAnnotations(ignoreMethodAnnotations);
-        instrumenter.setThreadsafeRigorous(threadsafeRigorous);
-        instrumenter.setFailOnError(failOnError);
+        instrumenter.setThreadsafeRigorous(false);
+        instrumenter.setFailOnError(false);
     }
 
     @SuppressWarnings("unchecked")
@@ -78,7 +73,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
                 return getParent().loadClass(className);
             }
         } catch(Throwable t) {
-            throw new ClassNotFoundException(t.getMessage() + " from " + ((URLClassLoader) parent).getURLs(), t);
+            throw new ClassNotFoundException(t.getMessage() + " from " + parent, t);
         } finally {
             IOUtil.closeInputStream(is);
         }
