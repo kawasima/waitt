@@ -12,6 +12,9 @@ Add plugin to your pom.xml.
     <groupId>net.unit8.maven.plugins</groupId>
     <artifactId>waitt-maven-plugin</artifactId>
     <version>0.2.0</version>
+    <configuration>
+        <path>/action/welcome.do</path>
+    </configuration>
 </plugin>
 ```
 
