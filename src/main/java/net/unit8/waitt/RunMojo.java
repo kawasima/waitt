@@ -1,6 +1,34 @@
 package net.unit8.waitt;
 
-import org.apache.catalina.*;
+import static java.util.logging.Level.*;
+
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+
+import org.apache.catalina.Context;
+import org.apache.catalina.Lifecycle;
+import org.apache.catalina.LifecycleEvent;
+import org.apache.catalina.LifecycleListener;
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.core.AprLifecycleListener;
 import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardServer;
@@ -29,22 +57,6 @@ import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuilderConfiguration;
 import org.codehaus.plexus.PlexusContainer;
 
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.net.*;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-
-import static java.util.logging.Level.*;
-
 /**
  * Web Application Integration Test Tool maven plugin.
  *
@@ -64,6 +76,9 @@ public class RunMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "")
     private String contextPath;
+
+    @Parameter(defaultValue = "")
+    private String path;
 
     @Component
     protected MavenProject project;
@@ -173,7 +188,7 @@ public class RunMojo extends AbstractMojo {
 
             initCoverageMonitor(webappLoader);
             tomcat.start();
-            Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath));
+            Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
             server.addLifecycleListener(new LifecycleListener() {
                 @Override
                 public void lifecycleEvent(LifecycleEvent event) {
