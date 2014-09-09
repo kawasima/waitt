@@ -80,6 +80,9 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "")
     private String path;
 
+    @Parameter(defaultValue = "true")
+    private boolean delegate;
+
     @Component
     protected MavenProject project;
 
@@ -174,7 +177,7 @@ public class RunMojo extends AbstractMojo {
             Context context = tomcat.addWebapp(contextPath, appBase);
             final WebappLoader webappLoader = new WebappLoader(parentClassLoader);
             webappLoader.setLoaderClass("net.unit8.waitt.CoberturaClassLoader");
-            webappLoader.setDelegate(((StandardContext) context).getDelegate());
+            webappLoader.setDelegate(delegate);
             context.setLoader(webappLoader);
             context.setSessionCookieDomain(null);
 
