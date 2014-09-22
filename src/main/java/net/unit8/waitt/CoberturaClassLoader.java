@@ -73,7 +73,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
                 return getParent().loadClass(className);
             }
         } catch(Throwable t) {
-            throw new ClassNotFoundException(t.getMessage() + " from " + parent, t);
+            throw new ClassNotFoundException(className + " from " + parent, t);
         } finally {
             IOUtil.closeInputStream(is);
         }
