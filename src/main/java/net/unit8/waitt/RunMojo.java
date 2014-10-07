@@ -1,22 +1,35 @@
 package net.unit8.waitt;
 
-import static java.util.logging.Level.*;
+import org.apache.catalina.*;
+import org.apache.catalina.core.AprLifecycleListener;
+import org.apache.catalina.core.StandardHost;
+import org.apache.catalina.core.StandardServer;
+import org.apache.catalina.loader.WebappLoader;
+import org.apache.catalina.startup.Tomcat;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.ArtifactUtils;
+import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
+import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
+import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.*;
+import org.apache.maven.repository.RepositorySystem;
 
-import java.awt.Desktop;
+import javax.servlet.ServletException;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.net.MalformedURLException;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.net.*;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Handler;
@@ -24,38 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import org.apache.catalina.Context;
-import org.apache.catalina.Lifecycle;
-import org.apache.catalina.LifecycleEvent;
-import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.Wrapper;
-import org.apache.catalina.core.AprLifecycleListener;
-import org.apache.catalina.core.StandardContext;
-import org.apache.catalina.core.StandardServer;
-import org.apache.catalina.loader.WebappLoader;
-import org.apache.catalina.startup.Tomcat;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.ArtifactUtils;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.descriptor.PluginDescriptor;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.profiles.DefaultProfileManager;
-import org.apache.maven.profiles.ProfileManager;
-import org.apache.maven.project.DefaultProjectBuilderConfiguration;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.project.MavenProjectBuilder;
-import org.apache.maven.project.ProjectBuilderConfiguration;
-import org.codehaus.plexus.PlexusContainer;
+import static java.util.logging.Level.*;
 
 /**
  * Web Application Integration Test Tool maven plugin.
@@ -83,11 +65,17 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean delegate;
 
+    @Parameter
+    private List<Webapp> webapps;
+
     @Component
     protected MavenProject project;
 
     @Component
-    protected MavenProjectBuilder projectBuilder;
+    protected ProjectBuilder projectBuilder;
+
+    @Component
+    protected RepositorySystem repositorySystem;
 
     @Parameter(defaultValue = "${session}", required = true, readonly = true)
     protected MavenSession session;
@@ -95,46 +83,34 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "target/coverage")
     protected File coverageReportDirectory;
 
-    @Component
-    private ArtifactResolver artifactResolver;
-
-    @Component
-    private ArtifactFactory artifactFactory;
-
-    @Component
-    private ArtifactMetadataSource metadataSource;
-
-    @Parameter(defaultValue = "${localRepository}", readonly = true, required = true)
-    private ArtifactRepository localRepository;
-
-    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true)
-    private List<ArtifactRepository> remoteRepositories;
-
-    @Parameter(defaultValue = "${descriptor}")
-    private PluginDescriptor descriptor;
-
-    protected final ProjectBuilderConfiguration projectBuilderConfiguration = new DefaultProjectBuilderConfiguration();
-
     protected String appBase;
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     private void readArtifacts(String subDirectory, List<Artifact> artifacts, List<File> classpathFiles)
             throws MojoExecutionException {
-        PlexusContainer container = session.getContainer();
-        Properties execution = session.getExecutionProperties();
-        ProfileManager profileManager = new DefaultProfileManager(container, execution);
-
         File modulePom = (subDirectory == null || subDirectory.isEmpty()) ? new File("pom.xml") : new File(subDirectory, "pom.xml");
+
         try {
-            MavenProject subProject = projectBuilder.buildWithDependencies(modulePom, localRepository, profileManager);
-            subProject.setRemoteArtifactRepositories(remoteRepositories);
+            ProjectBuildingRequest request = session.getProjectBuildingRequest()
+                    .setProcessPlugins(false)
+                    .setResolveDependencies(true);
+
+            ProjectBuildingResult result = projectBuilder.build(modulePom, request);
+            MavenProject subProject = result.getProject();
+
             if ("war".equals(subProject.getPackaging())) {
                 appBase = (subDirectory == null || subDirectory.isEmpty()) ?
                         new File("src/main/webapp").getAbsolutePath() :
                         new File(subDirectory, "src/main/webapp").getAbsolutePath();
             }
-            artifacts.addAll(subProject.getCompileArtifacts());
-            artifacts.addAll(subProject.getRuntimeArtifacts());
+            for (Artifact dependency : subProject.getArtifacts()) {
+                String scope = dependency.getScope();
+                if (Artifact.SCOPE_COMPILE.equals(scope)
+                        || Artifact.SCOPE_RUNTIME.equals(scope)
+                        || Artifact.SCOPE_SYSTEM.equals(scope)) {
+                    artifacts.add(dependency);
+                }
+            }
             classpathFiles.add(new File(subProject.getBuild().getOutputDirectory()));
         } catch (Exception e) {
             throw new MojoExecutionException("module(" + subDirectory + ") build failure", e);
@@ -157,6 +133,7 @@ public class RunMojo extends AbstractMojo {
             appBase = new File("src/main/webapp").getAbsolutePath();
         getLog().info("App base: " + appBase);
         Tomcat tomcat = new Tomcat();
+        ((StandardHost)tomcat.getHost()).setUnpackWARs(false);
         if (port == 0)
             scanPort();
         tomcat.setPort(port);
@@ -183,10 +160,13 @@ public class RunMojo extends AbstractMojo {
 
             initCoverageContext(tomcat);
 
+            for (Webapp webapp : webapps) {
+                initExtraWebapp(tomcat, webapp);
+            }
             WaittServlet waittServlet = new WaittServlet(server, executorService);
             Context adminContext = tomcat.addContext("/waitt", "");
             adminContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
-            Tomcat.addServlet(adminContext, "waittServlet", waittServlet);
+            tomcat.addServlet(adminContext, "waittServlet", waittServlet);
             adminContext.addServletMapping("/*", "waittServlet");
 
             initCoverageMonitor(webappLoader);
@@ -207,6 +187,63 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
+    private void initExtraWebapp(Tomcat tomcat, Webapp webapp) throws MalformedURLException, ServletException{
+        Artifact artifact = repositorySystem.createArtifact(
+                webapp.getGroupId(),
+                webapp.getArtifactId(),
+                webapp.getVersion(),
+                "war");
+        ArtifactResolutionRequest warArtifactRequest = new ArtifactResolutionRequest()
+                .setArtifact(artifact);
+        repositorySystem.resolve(warArtifactRequest);
+        Dependency d = new Dependency();
+        d.setGroupId(webapp.getGroupId());
+        d.setArtifactId(webapp.getArtifactId());
+        d.setVersion(webapp.getVersion());
+        d.setType("jar");
+        ArtifactResolutionRequest artifactRequest = new ArtifactResolutionRequest();
+        artifactRequest
+                .setArtifact(repositorySystem.createDependencyArtifact(d))
+                .setResolveTransitively(true)
+                .setResolveRoot(false)
+                .setLocalRepository(session.getLocalRepository())
+                .setRemoteRepositories(project.getRemoteArtifactRepositories());
+        ArtifactResolutionResult artifactResult = repositorySystem.resolve(artifactRequest);
+
+        List<URL> classpathUrls = new ArrayList<URL>();
+        for (Artifact dependency : artifactResult.getArtifacts()) {
+            if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
+                continue;
+            classpathUrls.add(dependency.getFile().toURI().toURL());
+        }
+
+        for (Dependency dependency : webapp.getDependencies()) {
+            ArtifactResolutionRequest depRequest = new ArtifactResolutionRequest();
+            depRequest
+                    .setArtifact(repositorySystem.createDependencyArtifact(dependency))
+                    .setResolveRoot(true)
+                    .setResolveTransitively(true)
+                    .setLocalRepository(session.getLocalRepository())
+                    .setRemoteRepositories(project.getRemoteArtifactRepositories());
+            ArtifactResolutionResult depResult = repositorySystem.resolve(depRequest);
+            for (Artifact depArtifact : depResult.getArtifacts()) {
+                if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
+                    continue;
+                classpathUrls.add(depArtifact.getFile().toURI().toURL());
+            }
+        }
+
+        Context extContext = tomcat.addWebapp(webapp.getPath(), artifact.getFile().getAbsolutePath());
+        extContext.addParameter("antiJARLocking", "false");
+        extContext.addParameter("antiResourceLocking", "false");
+        extContext.addParameter("unpackWARs", "false");
+        extContext.setLoader(new WebappLoader(
+                new URLClassLoader(classpathUrls.toArray(new URL[classpathUrls.size()]),
+                        Thread.currentThread().getContextClassLoader())));
+        for (Map.Entry<String,String> entry : webapp.getConfiguration().entrySet()) {
+            System.setProperty(entry.getKey(), entry.getValue());
+        }
+    }
     private void initLogger() {
         Logger logger = Logger.getLogger("");
         logger.setLevel(ALL);
@@ -255,7 +292,6 @@ public class RunMojo extends AbstractMojo {
                 PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
         List<Artifact> artifacts = new ArrayList<Artifact>();
         List<File> classpathFiles = new ArrayList<File>();
-        projectBuilderConfiguration.setLocalRepository(localRepository);
 
         if (project.getModel().getModules().isEmpty()) {
             readArtifacts("", artifacts, classpathFiles);

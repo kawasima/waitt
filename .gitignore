@@ -5,3 +5,5 @@ target
 .settings
 work
 cobertura.ser
+log
+screenshots

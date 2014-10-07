@@ -21,7 +21,7 @@
 
     <properties>
         <tomcatVersion>7.0.53</tomcatVersion>
-        <mavenVersion>2.2.1</mavenVersion>
+        <mavenVersion>3.0.5</mavenVersion>
         <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
     </properties>
 
@@ -66,12 +66,6 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>${mavenVersion}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-project</artifactId>
             <version>${mavenVersion}</version>
             <scope>provided</scope>
         </dependency>
