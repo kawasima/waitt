@@ -171,6 +171,7 @@ public class RunMojo extends AbstractMojo {
 
             initCoverageMonitor(webappLoader);
             tomcat.start();
+            path = path == null ? "" : path;
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
             server.addLifecycleListener(new LifecycleListener() {
                 @Override
@@ -217,19 +218,21 @@ public class RunMojo extends AbstractMojo {
             classpathUrls.add(dependency.getFile().toURI().toURL());
         }
 
-        for (Dependency dependency : webapp.getDependencies()) {
-            ArtifactResolutionRequest depRequest = new ArtifactResolutionRequest();
-            depRequest
-                    .setArtifact(repositorySystem.createDependencyArtifact(dependency))
-                    .setResolveRoot(true)
-                    .setResolveTransitively(true)
-                    .setLocalRepository(session.getLocalRepository())
-                    .setRemoteRepositories(project.getRemoteArtifactRepositories());
-            ArtifactResolutionResult depResult = repositorySystem.resolve(depRequest);
-            for (Artifact depArtifact : depResult.getArtifacts()) {
-                if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
-                    continue;
-                classpathUrls.add(depArtifact.getFile().toURI().toURL());
+        if (webapp.getDependencies() != null) {
+            for (Dependency dependency : webapp.getDependencies()) {
+                ArtifactResolutionRequest depRequest = new ArtifactResolutionRequest();
+                depRequest
+                        .setArtifact(repositorySystem.createDependencyArtifact(dependency))
+                        .setResolveRoot(true)
+                        .setResolveTransitively(true)
+                        .setLocalRepository(session.getLocalRepository())
+                        .setRemoteRepositories(project.getRemoteArtifactRepositories());
+                ArtifactResolutionResult depResult = repositorySystem.resolve(depRequest);
+                for (Artifact depArtifact : depResult.getArtifacts()) {
+                    if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
+                        continue;
+                    classpathUrls.add(depArtifact.getFile().toURI().toURL());
+                }
             }
         }
 
