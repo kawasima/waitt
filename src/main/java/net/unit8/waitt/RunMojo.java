@@ -160,8 +160,10 @@ public class RunMojo extends AbstractMojo {
 
             initCoverageContext(tomcat);
 
-            for (Webapp webapp : webapps) {
-                initExtraWebapp(tomcat, webapp);
+            if (webapps != null) {
+                for (Webapp webapp : webapps) {
+                    initExtraWebapp(tomcat, webapp);
+                }
             }
             WaittServlet waittServlet = new WaittServlet(server, executorService);
             Context adminContext = tomcat.addContext("/waitt", "");
