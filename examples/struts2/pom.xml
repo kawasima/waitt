@@ -8,7 +8,7 @@
     <name>struts2-example</name>
 
     <properties>
-        <waittVersion>0.3.1</waittVersion>
+        <waittVersion>0.3.2</waittVersion>
         <struts2Version>2.3.16.3</struts2Version>
     </properties>
 
@@ -24,7 +24,7 @@
                             <path>/db</path>
                             <groupId>net.unit8</groupId>
                             <artifactId>teslogger-db-inspection</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                             <configuration>
                                 <teslogger.db.url>jdbc:oracle:thin:scott/tiger@localhost:1521/XE</teslogger.db.url>
                             </configuration>
