@@ -197,8 +197,15 @@ public class RunMojo extends AbstractMojo {
                 webapp.getVersion(),
                 "war");
         ArtifactResolutionRequest warArtifactRequest = new ArtifactResolutionRequest()
+                .setRemoteRepositories(project.getRemoteArtifactRepositories())
                 .setArtifact(artifact);
-        repositorySystem.resolve(warArtifactRequest);
+        ArtifactResolutionResult warArtifactResult = repositorySystem.resolve(warArtifactRequest);
+        if (warArtifactResult.hasExceptions()) {
+            for (Exception e : warArtifactResult.getExceptions()) {
+                getLog().error("resolve error.", e);
+            }
+        }
+
         Dependency d = new Dependency();
         d.setGroupId(webapp.getGroupId());
         d.setArtifactId(webapp.getArtifactId());
