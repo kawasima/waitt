@@ -1,7 +1,5 @@
 package net.unit8.waitt;
 
-import org.apache.catalina.Server;
-
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -19,10 +17,10 @@ import java.util.logging.Logger;
 public class WaittServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(WaittServlet.class.getName());
 
-    private final Server server;
+    private final EmbeddedServer server;
     private final ExecutorService executorService;
 
-    WaittServlet(Server server, ExecutorService executorService) {
+    WaittServlet(EmbeddedServer server, ExecutorService executorService) {
         this.server = server;
         this.executorService = executorService;
     }

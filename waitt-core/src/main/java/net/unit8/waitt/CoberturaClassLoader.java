@@ -1,7 +1,6 @@
 package net.unit8.waitt;
 
 import net.sourceforge.cobertura.util.IOUtil;
-import org.apache.catalina.loader.WebappClassLoader;
 
 import java.io.InputStream;
 import java.util.Collection;
@@ -15,17 +14,32 @@ import java.util.regex.Pattern;
  * @author kawasima
  */
 @SuppressWarnings("rawtypes")
-public class CoberturaClassLoader extends WebappClassLoader {
+public class CoberturaClassLoader extends ClassLoader {
     private static final Logger logger = Logger.getLogger(CoberturaClassLoader.class.getName());
+    private static CoberturaClassLoader instance;
 
     private final Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
     private final Set<String> ignoreMethodAnnotations = new HashSet<String>();
 
     private Instrumenter instrumenter = null;
 
-    public CoberturaClassLoader(ClassLoader parent) {
+    private CoberturaClassLoader(ClassLoader parent) {
         super(parent);
         initInstrumenter();
+    }
+
+    public static synchronized CoberturaClassLoader create(ClassLoader parent) {
+        if (instance == null) {
+            instance = new CoberturaClassLoader(parent);
+        }
+        return instance;
+    }
+
+    public static CoberturaClassLoader getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("CoberturaClassLoader hasn't been instantiated yet.");
+        }
+        return instance;
     }
 
     private void initInstrumenter() {
@@ -64,7 +78,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
     private Class defineClass(String className, boolean resolve) throws ClassNotFoundException {
         Class clazz = null;
         String path = className.replace('.', '/') + ".class";
-        InputStream is = parent.getResourceAsStream(path);
+        InputStream is = getParent().getResourceAsStream(path);
 
         byte[] instrumentationResult = null;
         try {
@@ -73,7 +87,7 @@ public class CoberturaClassLoader extends WebappClassLoader {
                 return getParent().loadClass(className);
             }
         } catch(Throwable t) {
-            throw new ClassNotFoundException(className + " from " + parent, t);
+            throw new ClassNotFoundException(className + " from " + getParent(), t);
         } finally {
             IOUtil.closeInputStream(is);
         }

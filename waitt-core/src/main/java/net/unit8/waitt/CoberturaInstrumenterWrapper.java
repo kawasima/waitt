@@ -18,9 +18,13 @@ public class CoberturaInstrumenterWrapper extends CoberturaInstrumenter implemen
 
     public CoberturaInstrumenterWrapper() {
         File dataFile = CoverageDataFileHandler.getDefaultDataFile();
-        setProjectData(CoverageDataFileHandler.loadCoverageData(dataFile));
-        if (getProjectData() == null)
+        if (dataFile.exists()) {
+            setProjectData(CoverageDataFileHandler.loadCoverageData(dataFile));
+        }
+
+        if (getProjectData() == null) {
             setProjectData(new ProjectData());
+        }
     }
 
     public byte[] instrumentClassByte(InputStream is)

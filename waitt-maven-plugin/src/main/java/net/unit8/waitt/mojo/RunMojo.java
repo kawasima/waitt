@@ -1,11 +1,6 @@
-package net.unit8.waitt;
+package net.unit8.waitt.mojo;
 
-import org.apache.catalina.*;
-import org.apache.catalina.core.AprLifecycleListener;
-import org.apache.catalina.core.StandardHost;
-import org.apache.catalina.core.StandardServer;
-import org.apache.catalina.loader.WebappLoader;
-import org.apache.catalina.startup.Tomcat;
+import net.unit8.waitt.*;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
@@ -22,6 +17,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.*;
 import org.apache.maven.repository.RepositorySystem;
 
+import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 import java.awt.*;
 import java.io.File;
@@ -65,8 +61,13 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean delegate;
 
+    @Parameter(defaultValue = "true")
+    private boolean interactive;
+
+    /*
     @Parameter
     private List<Webapp> webapps;
+    */
 
     @Component
     protected MavenProject project;
@@ -125,71 +126,72 @@ public class RunMojo extends AbstractMojo {
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
         initLogger();
-        List<URL> classpathUrls = resolveClasspaths();
-        ClassLoader parentClassLoader = new ParentLastClassLoader(
-                classpathUrls.toArray(new URL[classpathUrls.size()]),
-                Thread.currentThread().getContextClassLoader());
-        if (appBase == null)
-            appBase = new File("src/main/webapp").getAbsolutePath();
-        getLog().info("App base: " + appBase);
-        Tomcat tomcat = new Tomcat();
-        ((StandardHost)tomcat.getHost()).setUnpackWARs(false);
+        ServiceLoader<EmbeddedServer> serviceLoaders = ServiceLoader.load(EmbeddedServer.class);
+        Iterator<EmbeddedServer> iter = serviceLoaders.iterator();
+        if (!iter.hasNext()) {
+            throw new MojoExecutionException("Embedded server is not found.");
+        }
+        EmbeddedServer embeddedServer = iter.next();
+        /*
+        if (interactive) {
+            for (EmbeddedServer server : serviceLoaders) {
+
+            }
+        }
+        */
         if (port == 0)
             scanPort();
-        tomcat.setPort(port);
+        embeddedServer.setPort(port);
 
         if (contextPath == null || contextPath.equals("/"))
             contextPath = "";
-        System.setProperty("catalina.home", ".");
-        tomcat.setBaseDir(".");
-        tomcat.getHost().setAppBase(appBase);
-
-        StandardServer server = (StandardServer) tomcat.getServer();
-        AprLifecycleListener listener = new AprLifecycleListener();
-        server.addLifecycleListener(listener);
-        tomcat.getConnector().setURIEncoding("UTF-8");
-        tomcat.getConnector().setUseBodyEncodingForURI(true);
+        embeddedServer.setBaseDir(".");
 
         try {
-            Context context = tomcat.addWebapp(contextPath, appBase);
-            final WebappLoader webappLoader = new WebappLoader(parentClassLoader);
-            webappLoader.setLoaderClass("net.unit8.waitt.CoberturaClassLoader");
-            webappLoader.setDelegate(delegate);
-            context.setLoader(webappLoader);
-            context.setSessionCookieDomain(null);
+            List<URL> classpathUrls = resolveClasspaths();
+            ClassLoader parentClassLoader = new ParentLastClassLoader(
+                    classpathUrls.toArray(new URL[classpathUrls.size()]),
+                    Thread.currentThread().getContextClassLoader());
+            if (appBase == null)
+                appBase = new File("src/main/webapp").getAbsolutePath();
+            getLog().info("App base: " + appBase);
+            getLog().info("Classpath:" + Arrays.asList(((URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs()));
+            embeddedServer.setClassLoader(parentClassLoader);
 
-            initCoverageContext(tomcat);
-
+            embeddedServer.addContext(contextPath, appBase);
+            /*
             if (webapps != null) {
                 for (Webapp webapp : webapps) {
                     initExtraWebapp(tomcat, webapp);
                 }
             }
+            */
+
+            /*
             WaittServlet waittServlet = new WaittServlet(server, executorService);
             Context adminContext = tomcat.addContext("/waitt", "");
             adminContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
             tomcat.addServlet(adminContext, "waittServlet", waittServlet);
             adminContext.addServletMapping("/*", "waittServlet");
 
-            initCoverageMonitor(webappLoader);
+
             tomcat.start();
+            */
+
+            initCoverageContext(embeddedServer);
+
+            initCoverageMonitor();
+            embeddedServer.start();
             path = path == null ? "" : path;
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
-            server.addLifecycleListener(new LifecycleListener() {
-                @Override
-                public void lifecycleEvent(LifecycleEvent event) {
-                    if (event.getType().equals(Lifecycle.BEFORE_STOP_EVENT)) {
-                        executorService.shutdownNow();
-                        getLog().info("Stop monitoring threads.");
-                    }
-                }
-            });
-            server.await();
+            /*
+            */
         } catch (Exception e) {
             throw new MojoExecutionException("Tomcat start failure", e);
         }
     }
 
+    /*
     private void initExtraWebapp(Tomcat tomcat, Webapp webapp) throws MalformedURLException, ServletException{
         Artifact artifact = repositorySystem.createArtifact(
                 webapp.getGroupId(),
@@ -256,6 +258,8 @@ public class RunMojo extends AbstractMojo {
             System.setProperty(entry.getKey(), entry.getValue());
         }
     }
+    */
+
     private void initLogger() {
         Logger logger = Logger.getLogger("");
         logger.setLevel(ALL);
@@ -343,27 +347,18 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
-    private void initCoverageContext(Tomcat tomcat) {
-        /* Cobertura coverage report */
+    private void initCoverageContext(EmbeddedServer embeddedServer) throws ServletException {
+        // Cobertura coverage report
         if (!coverageReportDirectory.exists()) {
             // ignore error when create coverage directory.
             assert (coverageReportDirectory.mkdirs());
         }
 
-        Context coverageContext = tomcat.addContext("/coverage", coverageReportDirectory.getAbsolutePath());
-        coverageContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
-        Wrapper defaultServlet = coverageContext.createWrapper();
-        defaultServlet.setName("default");
-        defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
-        defaultServlet.addInitParameter("debug", "0");
-        defaultServlet.addInitParameter("listings", "false");
-        defaultServlet.setLoadOnStartup(1);
-        coverageContext.addChild(defaultServlet);
-        coverageContext.addServletMapping("/", "default");
-        coverageContext.addWelcomeFile("index.html");
+        embeddedServer.addContext("/coverage", coverageReportDirectory.getAbsolutePath());
+        //coverageContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
     }
 
-    private void initCoverageMonitor(final WebappLoader webappLoader) {
+    private void initCoverageMonitor() {
         final CoverageMonitorConfiguration config = new CoverageMonitorConfiguration();
         config.setCoverageReportDirectory(coverageReportDirectory);
         config.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
@@ -371,19 +366,23 @@ public class RunMojo extends AbstractMojo {
             new Runnable() {
                 @Override
                 public void run() {
+                    Class loaderClass;
+                    try {
+                        loaderClass = Class.forName("net.unit8.waitt.CoberturaClassLoader");
+                    } catch (ClassNotFoundException e) {
+                        throw new IllegalStateException(e);
+                    }
                     while (true) {
-                        ClassLoader cl = webappLoader.getClassLoader();
-                        if (cl != null) {
-                            try {
-                                Class<?> monitorClass = cl.loadClass("net.unit8.waitt.CoverageMonitor");
-                                Constructor<?> constructor = monitorClass.getConstructor(
-                                        WebappLoader.class,
-                                        CoverageMonitorConfiguration.class);
-                                executorService.execute((Runnable) constructor.newInstance(webappLoader, config));
-                            } catch (Exception e) {
-                                getLog().warn(e);
-                            }
+                        try {
+                            ClassLoader cl = (ClassLoader) loaderClass.getMethod("getInstance").invoke(null);
+                            Class<?> monitorClass = cl.loadClass("net.unit8.waitt.CoverageMonitor");
+                            Constructor<?> constructor = monitorClass.getConstructor(
+                                    ClassLoader.class,
+                                    CoverageMonitorConfiguration.class);
+                            executorService.execute((Runnable) constructor.newInstance(cl, config));
                             break;
+                        } catch (Exception e) {
+                            getLog().warn(e);
                         }
                         try {
                             Thread.sleep(5000);

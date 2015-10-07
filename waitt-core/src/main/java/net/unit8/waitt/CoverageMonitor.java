@@ -6,7 +6,6 @@ import net.sourceforge.cobertura.coveragedata.TouchCollector;
 import net.sourceforge.cobertura.reporting.ComplexityCalculator;
 import net.sourceforge.cobertura.reporting.html.HTMLReport;
 import net.sourceforge.cobertura.util.FileFinder;
-import org.apache.catalina.loader.WebappLoader;
 
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -19,11 +18,11 @@ public class CoverageMonitor implements Runnable {
 
     private final ComplexityCalculator complexity;
     private final FileFinder finder;
-    private final WebappLoader webappLoader;
+    private final ClassLoader classLoader;
     private final CoverageMonitorConfiguration config;
 
-    public CoverageMonitor(WebappLoader webappLoader, CoverageMonitorConfiguration config) {
-        this.webappLoader = webappLoader;
+    public CoverageMonitor(ClassLoader classLoader, CoverageMonitorConfiguration config) {
+        this.classLoader = classLoader;
         this.config = config;
 
         finder = new FileFinder();
@@ -37,13 +36,12 @@ public class CoverageMonitor implements Runnable {
     @Override
     public void run() {
         while(true) {
-            ClassLoader cl = webappLoader.getClassLoader();
-            if (!(cl instanceof CoberturaClassLoader)) {
+            if (!(classLoader instanceof CoberturaClassLoader)) {
                 logger.warning("CoverageMonitor wasn't loaded from CoberturaClassLoader.");
                 break;
             }
 
-            ProjectData data = ((CoberturaClassLoader)cl).getInstrumenter().getProjectData();
+            ProjectData data = ((CoberturaClassLoader) classLoader).getInstrumenter().getProjectData();
             TouchCollector.applyTouchesOnProjectData(data);
             CoverageDataFileHandler.saveCoverageData(data, CoverageDataFileHandler.getDefaultDataFile());
             try {
