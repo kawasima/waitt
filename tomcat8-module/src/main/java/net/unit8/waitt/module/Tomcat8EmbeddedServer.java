@@ -10,6 +10,7 @@ import org.apache.catalina.startup.Tomcat;
 
 import javax.servlet.ServletException;
 import java.io.File;
+import net.unit8.waitt.ClassLoaderFactory;
 
 /**
  * Tomcat8 server.
@@ -19,6 +20,7 @@ import java.io.File;
 public class Tomcat8EmbeddedServer implements EmbeddedServer {
     Tomcat tomcat;
     ClassLoader classLoader;
+    String webappLoaderName = null;
 
     public Tomcat8EmbeddedServer() {
         tomcat = new Tomcat();
@@ -27,6 +29,7 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         StandardServer server = (StandardServer) tomcat.getServer();
         AprLifecycleListener listener = new AprLifecycleListener();
         server.addLifecycleListener(listener);
+        server.setParentClassLoader(getClass().getClassLoader());
         tomcat.getConnector().setURIEncoding("UTF-8");
         tomcat.getConnector().setUseBodyEncodingForURI(true);
     }
@@ -43,7 +46,11 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         tomcat.setBaseDir(baseDir);
     }
 
-    public void addContext(String contextPath, String appBase) throws ServletException {
+    public void setClassLoaderFactory(ClassLoaderFactory factory) {
+        ClassLoaderFactoryHolder.setClassLoaderFactory(factory);
+    }
+    
+    public void setMainContext(String contextPath, String appBase, ClassLoader classLoader) {
         File appBaseDir = new File(appBase);
         if (!appBaseDir.exists()) {
             if (!appBaseDir.mkdirs()) {
@@ -51,9 +58,17 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
             }
         }
         tomcat.getHost().setAppBase(appBase);
-        Context context = tomcat.addWebapp(contextPath, appBase);
+        Context context = null;
+        try {
+            context = tomcat.addWebapp(contextPath, appBase);
+        } catch (ServletException e) {
+            throw new IllegalStateException(e);
+        }
         final WebappLoader webappLoader = new WebappLoader(classLoader);
-        webappLoader.setLoaderClass("net.unit8.waitt.module.Tomcat8WebappClassLoaderWrapper");
+        if (ClassLoaderFactoryHolder.getClassLoaderFactory() != null) {
+            webappLoader.setLoaderClass("net.unit8.waitt.module.Tomcat8WebappClassLoaderWrapper");
+        }
+        
         webappLoader.setDelegate(true); // TODO use a mojo setting.
         context.setLoader(webappLoader);
         context.setSessionCookieDomain(null);
@@ -67,11 +82,28 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         context.addChild(defaultServlet);
         context.addServletMapping("/", "default1");
         context.addWelcomeFile("index.html");
-
     }
+    
+    public void addContext(String contextPath, String docBase) {
+        Context context = null;
+        try {
+            context = tomcat.addWebapp(contextPath, docBase);
+        } catch (ServletException e) {
+            throw new IllegalStateException(e);
+        }
+        
+        context.setSessionCookieDomain(null);
+        Wrapper defaultServlet = context.createWrapper();
 
-    public void setClassLoader(ClassLoader loader) {
-        this.classLoader = loader;
+        defaultServlet.setName("default1");
+        defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
+        defaultServlet.addInitParameter("debug", "0");
+        defaultServlet.addInitParameter("listings", "false");
+        defaultServlet.setLoadOnStartup(1);
+        context.addChild(defaultServlet);
+        context.addServletMapping("/", "default1");
+        context.addWelcomeFile("index.html");
+
     }
 
     public void start() {
@@ -87,10 +119,13 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         });
         try {
             server.start();
-            server.await();
         } catch (LifecycleException e) {
             throw new IllegalStateException(e);
         }
+    }
+    
+    public void await() {
+        tomcat.getServer().await();
     }
 
     public void stop() {

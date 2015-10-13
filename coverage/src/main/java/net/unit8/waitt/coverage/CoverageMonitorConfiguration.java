@@ -1,4 +1,4 @@
-package net.unit8.waitt;
+package net.unit8.waitt.coverage;
 
 import java.io.File;
 import java.io.Serializable;

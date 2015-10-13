@@ -1,4 +1,4 @@
-package net.unit8.waitt;
+package net.unit8.waitt.coverage;
 
 import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
 import net.sourceforge.cobertura.coveragedata.ProjectData;
@@ -27,6 +27,7 @@ public class CoberturaInstrumenterWrapper extends CoberturaInstrumenter implemen
         }
     }
 
+    @Override
     public byte[] instrumentClassByte(InputStream is)
             throws IOException {
         CoberturaInstrumenter.InstrumentationResult result = super.instrumentClass(is);
@@ -40,6 +41,7 @@ public class CoberturaInstrumenterWrapper extends CoberturaInstrumenter implemen
         this.projectData = projectData;
     }
 
+    @Override
     public ProjectData getProjectData() {
         return projectData;
     }

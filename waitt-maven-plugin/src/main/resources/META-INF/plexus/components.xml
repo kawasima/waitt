@@ -1,0 +1,21 @@
+<component-set>
+  <components>
+    <component>
+      <role>net.unit8.waitt.mojo.ArtifactResolver</role>
+      <role-hint>default</role-hint>
+      <implementation>net.unit8.waitt.mojo.DefaultArtifactResolver</implementation>
+      <instantiation-strategy>per-lookup</instantiation-strategy>
+      <requirements>
+          <requirement>
+              <role>org.apache.maven.repository.RepositorySystem</role>
+          </requirement>
+          <requirement>
+              <role>org.apache.maven.project.MavenProject</role>
+          </requirement>
+          <requirement>
+              <role>org.apache.maven.execution.MavenSession</role>
+          </requirement>
+      </requirements>
+    </component>
+  </components>
+</component-set>

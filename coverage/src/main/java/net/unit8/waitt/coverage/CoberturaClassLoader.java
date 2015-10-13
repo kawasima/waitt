@@ -1,4 +1,4 @@
-package net.unit8.waitt;
+package net.unit8.waitt.coverage;
 
 import net.sourceforge.cobertura.util.IOUtil;
 
@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import net.unit8.waitt.TargetPackages;
 
 /**
  * @author kawasima
@@ -43,11 +44,7 @@ public class CoberturaClassLoader extends ClassLoader {
     }
 
     private void initInstrumenter() {
-        try {
-            instrumenter = (Instrumenter) getParent().loadClass("net.unit8.waitt.CoberturaInstrumenterWrapper").newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException("Can't find CoberturaInstrumentWrapper.", e);
-        }
+        instrumenter = new CoberturaInstrumenterWrapper();
         instrumenter.setIgnoreRegexes(ignoreRegexes);
         instrumenter.setIgnoreTrivial(false);
         instrumenter

@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>net.unit8.waitt</groupId>
-    <artifactId>waitt-core</artifactId>
-    <version>0.4.0-SNAPSHOT</version>
+    <artifactId>waitt-exception-collector</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -13,40 +13,29 @@
         <version>9</version>
     </parent>
 
-    <properties>
-        <maven.compiler.source>1.6</maven.compiler.source>
-        <maven.compiler.target>1.6</maven.compiler.target>
-    </properties>
-
     <scm>
         <connection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</connection>
         <url>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</url>
         <developerConnection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</developerConnection>
     </scm>
 
-    <dependencies>
+    <properties>
+        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.target>1.6</maven.compiler.target>
+        <waittVersion>0.4.0-SNAPSHOT</waittVersion>
+    </properties>
 
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.5</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jaxen</groupId>
-            <artifactId>jaxen</artifactId>
-            <version>1.1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>com.googlecode.java-diff-utils</groupId>
-            <artifactId>diffutils</artifactId>
-            <version>1.2.1</version>
-        </dependency>
+    <dependencies>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.unit8.waitt</groupId>
+            <artifactId>waitt-core</artifactId>
+            <version>${waittVersion}</version>
         </dependency>
     </dependencies>
 </project>

@@ -1,12 +1,41 @@
 package net.unit8.waitt.mojo;
 
-import net.unit8.waitt.*;
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import static java.util.logging.Level.ALL;
+import static java.util.logging.Level.CONFIG;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINER;
+import static java.util.logging.Level.FINEST;
+import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
+import net.unit8.waitt.EmbeddedServer;
+import net.unit8.waitt.PackageScanner;
+import net.unit8.waitt.TargetPackages;
+import net.unit8.waitt.feature.ServerMonitor;
+import net.unit8.waitt.mojo.configuration.Feature;
+import net.unit8.waitt.mojo.configuration.Server;
+import net.unit8.waitt.mojo.configuration.ServerSpec;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
-import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -14,26 +43,13 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.*;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.ProjectBuilder;
+import org.apache.maven.project.ProjectBuildingRequest;
+import org.apache.maven.project.ProjectBuildingResult;
 import org.apache.maven.repository.RepositorySystem;
-
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.net.*;
-import java.util.*;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-
-import static java.util.logging.Level.*;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
+import org.codehaus.plexus.components.interactivity.Prompter;
 
 /**
  * Web Application Integration Test Tool maven plugin.
@@ -43,6 +59,9 @@ import static java.util.logging.Level.*;
 @SuppressWarnings("unchecked")
 @Mojo(name = "run")
 public class RunMojo extends AbstractMojo {
+    @Component
+    private Prompter prompter;
+
     @Parameter
     private int port;
 
@@ -64,10 +83,11 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "true")
     private boolean interactive;
 
-    /*
     @Parameter
-    private List<Webapp> webapps;
-    */
+    private List<Server> servers;
+    
+    @Parameter
+    private List<Feature> features;
 
     @Component
     protected MavenProject project;
@@ -75,17 +95,22 @@ public class RunMojo extends AbstractMojo {
     @Component
     protected ProjectBuilder projectBuilder;
 
-    @Component
-    protected RepositorySystem repositorySystem;
-
     @Parameter(defaultValue = "${session}", required = true, readonly = true)
     protected MavenSession session;
+
+    @Component
+    protected RepositorySystem repositorySystem;
 
     @Parameter(defaultValue = "target/coverage")
     protected File coverageReportDirectory;
 
+    @Component
+    protected ArtifactResolver artifactResolver;
+    
+    
+    private List<ServerMonitor> serverMonitors = new ArrayList<ServerMonitor>();
+    
     protected String appBase;
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     private void readArtifacts(String subDirectory, List<Artifact> artifacts, List<File> classpathFiles)
             throws MojoExecutionException {
@@ -118,27 +143,36 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
+    private void loadFeature(ClassRealm waittRealm) {
+        if (features == null) return;
+        for (Feature feature : features) {
+            Artifact artifact = repositorySystem.createArtifact(feature.getGroupId(), feature.getArtifactId(), feature.getVersion(), "jar");
+            ClassRealm realm = artifactResolver.resolve(artifact, waittRealm);
+            try {
+                ServiceLoader<ServerMonitor> serverMonitorLoader = ServiceLoader.load(ServerMonitor.class, realm);
+
+                for (ServerMonitor serverMonitor : serverMonitorLoader) {
+                    serverMonitors.add(serverMonitor);
+                }
+            } catch (Exception e) {
+                getLog().error(e);
+            }
+        }
+    }
+    
     /**
-     * Start tomcat.
+     * Start embedded server.
      *
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
     public void execute() throws MojoExecutionException, MojoFailureException {
         initLogger();
-        ServiceLoader<EmbeddedServer> serviceLoaders = ServiceLoader.load(EmbeddedServer.class);
-        Iterator<EmbeddedServer> iter = serviceLoaders.iterator();
-        if (!iter.hasNext()) {
-            throw new MojoExecutionException("Embedded server is not found.");
-        }
-        EmbeddedServer embeddedServer = iter.next();
-        /*
-        if (interactive) {
-            for (EmbeddedServer server : serviceLoaders) {
+        ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
+        ServerProvider serverProvider = new ServerProvider(session, repositorySystem, waittRealm, project.getRemoteArtifactRepositories());
+        ServerSpec serverSpec = serverProvider.getServer(servers.get(0));
+        EmbeddedServer embeddedServer = serverSpec.getEmbeddedServer();
 
-            }
-        }
-        */
         if (port == 0)
             scanPort();
         embeddedServer.setPort(port);
@@ -147,118 +181,33 @@ public class RunMojo extends AbstractMojo {
             contextPath = "";
         embeddedServer.setBaseDir(".");
 
+        loadFeature(waittRealm);
+        for (ServerMonitor serverMonitor : serverMonitors) {
+            serverMonitor.config(embeddedServer);
+        }
+
         try {
+            ClassRealm webappRealm = serverSpec.getClassRealm().createChildRealm("Application");
             List<URL> classpathUrls = resolveClasspaths();
-            ClassLoader parentClassLoader = new ParentLastClassLoader(
-                    classpathUrls.toArray(new URL[classpathUrls.size()]),
-                    Thread.currentThread().getContextClassLoader());
+            for (URL url : classpathUrls) {
+                webappRealm.addURL(url);
+            }
             if (appBase == null)
                 appBase = new File("src/main/webapp").getAbsolutePath();
             getLog().info("App base: " + appBase);
-            getLog().info("Classpath:" + Arrays.asList(((URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs()));
-            embeddedServer.setClassLoader(parentClassLoader);
-
-            embeddedServer.addContext(contextPath, appBase);
-            /*
-            if (webapps != null) {
-                for (Webapp webapp : webapps) {
-                    initExtraWebapp(tomcat, webapp);
-                }
-            }
-            */
-
-            /*
-            WaittServlet waittServlet = new WaittServlet(server, executorService);
-            Context adminContext = tomcat.addContext("/waitt", "");
-            adminContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
-            tomcat.addServlet(adminContext, "waittServlet", waittServlet);
-            adminContext.addServletMapping("/*", "waittServlet");
-
-
-            tomcat.start();
-            */
-
-            initCoverageContext(embeddedServer);
-
-            initCoverageMonitor();
+            embeddedServer.setMainContext(contextPath, appBase, webappRealm);
             embeddedServer.start();
+
+            for (ServerMonitor serverMonitor : serverMonitors) {
+                serverMonitor.start(embeddedServer);
+            }
             path = path == null ? "" : path;
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
-            /*
-            */
+            embeddedServer.await();
         } catch (Exception e) {
             throw new MojoExecutionException("Tomcat start failure", e);
         }
     }
-
-    /*
-    private void initExtraWebapp(Tomcat tomcat, Webapp webapp) throws MalformedURLException, ServletException{
-        Artifact artifact = repositorySystem.createArtifact(
-                webapp.getGroupId(),
-                webapp.getArtifactId(),
-                webapp.getVersion(),
-                "war");
-        ArtifactResolutionRequest warArtifactRequest = new ArtifactResolutionRequest()
-                .setRemoteRepositories(project.getRemoteArtifactRepositories())
-                .setArtifact(artifact);
-        ArtifactResolutionResult warArtifactResult = repositorySystem.resolve(warArtifactRequest);
-        if (warArtifactResult.hasExceptions()) {
-            for (Exception e : warArtifactResult.getExceptions()) {
-                getLog().error("resolve error.", e);
-            }
-        }
-
-        Dependency d = new Dependency();
-        d.setGroupId(webapp.getGroupId());
-        d.setArtifactId(webapp.getArtifactId());
-        d.setVersion(webapp.getVersion());
-        d.setType("jar");
-        ArtifactResolutionRequest artifactRequest = new ArtifactResolutionRequest();
-        artifactRequest
-                .setArtifact(repositorySystem.createDependencyArtifact(d))
-                .setResolveTransitively(true)
-                .setResolveRoot(false)
-                .setLocalRepository(session.getLocalRepository())
-                .setRemoteRepositories(project.getRemoteArtifactRepositories());
-        ArtifactResolutionResult artifactResult = repositorySystem.resolve(artifactRequest);
-
-        List<URL> classpathUrls = new ArrayList<URL>();
-        for (Artifact dependency : artifactResult.getArtifacts()) {
-            if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
-                continue;
-            classpathUrls.add(dependency.getFile().toURI().toURL());
-        }
-
-        if (webapp.getDependencies() != null) {
-            for (Dependency dependency : webapp.getDependencies()) {
-                ArtifactResolutionRequest depRequest = new ArtifactResolutionRequest();
-                depRequest
-                        .setArtifact(repositorySystem.createDependencyArtifact(dependency))
-                        .setResolveRoot(true)
-                        .setResolveTransitively(true)
-                        .setLocalRepository(session.getLocalRepository())
-                        .setRemoteRepositories(project.getRemoteArtifactRepositories());
-                ArtifactResolutionResult depResult = repositorySystem.resolve(depRequest);
-                for (Artifact depArtifact : depResult.getArtifacts()) {
-                    if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
-                        continue;
-                    classpathUrls.add(depArtifact.getFile().toURI().toURL());
-                }
-            }
-        }
-
-        Context extContext = tomcat.addWebapp(webapp.getPath(), artifact.getFile().getAbsolutePath());
-        extContext.addParameter("antiJARLocking", "false");
-        extContext.addParameter("antiResourceLocking", "false");
-        extContext.addParameter("unpackWARs", "false");
-        extContext.setLoader(new WebappLoader(
-                new URLClassLoader(classpathUrls.toArray(new URL[classpathUrls.size()]),
-                        Thread.currentThread().getContextClassLoader())));
-        for (Map.Entry<String,String> entry : webapp.getConfiguration().entrySet()) {
-            System.setProperty(entry.getKey(), entry.getValue());
-        }
-    }
-    */
 
     private void initLogger() {
         Logger logger = Logger.getLogger("");
@@ -347,15 +296,15 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
-    private void initCoverageContext(EmbeddedServer embeddedServer) throws ServletException {
+    /*
+    private void initCoverageContext(EmbeddedServer embeddedServer) {
         // Cobertura coverage report
         if (!coverageReportDirectory.exists()) {
             // ignore error when create coverage directory.
             assert (coverageReportDirectory.mkdirs());
         }
 
-        embeddedServer.addContext("/coverage", coverageReportDirectory.getAbsolutePath());
-        //coverageContext.setParentClassLoader(Thread.currentThread().getContextClassLoader());
+        embeddedServer.addContext("/coverage", coverageReportDirectory.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
     }
 
     private void initCoverageMonitor() {
@@ -394,7 +343,7 @@ public class RunMojo extends AbstractMojo {
             }
         );
     }
-
+*/
     protected void scanPort() {
         for (int p = startPort; p <= endPort; p++) {
             try {
@@ -407,4 +356,99 @@ public class RunMojo extends AbstractMojo {
         }
         throw new RuntimeException("Can't find available port from " + startPort + " to " + endPort);
     }
+    
+            /*
+        if (interactive && iter.hasNext()) {
+            List<EmbeddedServer> embeddedServerList = new ArrayList<EmbeddedServer>();
+            embeddedServerList.add(embeddedServer);
+            while(iter.hasNext()) {
+                embeddedServerList.add(iter.next());
+            }
+            try {
+                System.out.println("Detect multiple servers...");
+                for (int i=0; i<embeddedServerList.size(); i++) {
+                    System.out.println("  " + i + ". " + embeddedServerList.get(i).getName());
+                }
+                String res = prompter.prompt("What number of server do you use? : ");
+                try {
+                    int num = Integer.parseInt(res);
+                    embeddedServer = embeddedServerList.get(num);
+                } catch (NumberFormatException ignore) {
+
+                }
+            } catch(PrompterException e) {
+                throw new MojoExecutionException("", e);
+            }
+        }
+        */
+    /*
+    private void initExtraWebapp(Tomcat tomcat, Webapp webapp) throws MalformedURLException, ServletException{
+        Artifact artifact = repositorySystem.createArtifact(
+                webapp.getGroupId(),
+                webapp.getArtifactId(),
+                webapp.getVersion(),
+                "war");
+        ArtifactResolutionRequest warArtifactRequest = new ArtifactResolutionRequest()
+                .setRemoteRepositories(project.getRemoteArtifactRepositories())
+                .setArtifact(artifact);
+        ArtifactResolutionResult warArtifactResult = repositorySystem.resolve(warArtifactRequest);
+        if (warArtifactResult.hasExceptions()) {
+            for (Exception e : warArtifactResult.getExceptions()) {
+                getLog().error("resolve error.", e);
+            }
+        }
+
+        Dependency d = new Dependency();
+        d.setGroupId(webapp.getGroupId());
+        d.setArtifactId(webapp.getArtifactId());
+        d.setVersion(webapp.getVersion());
+        d.setType("jar");
+        ArtifactResolutionRequest artifactRequest = new ArtifactResolutionRequest();
+        artifactRequest
+                .setArtifact(repositorySystem.createDependencyArtifact(d))
+                .setResolveTransitively(true)
+                .setResolveRoot(false)
+                .setLocalRepository(session.getLocalRepository())
+                .setRemoteRepositories(project.getRemoteArtifactRepositories());
+        ArtifactResolutionResult artifactResult = repositorySystem.resolve(artifactRequest);
+
+        List<URL> classpathUrls = new ArrayList<URL>();
+        for (Artifact dependency : artifactResult.getArtifacts()) {
+            if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
+                continue;
+            classpathUrls.add(dependency.getFile().toURI().toURL());
+        }
+
+        if (webapp.getDependencies() != null) {
+            for (Dependency dependency : webapp.getDependencies()) {
+                ArtifactResolutionRequest depRequest = new ArtifactResolutionRequest();
+                depRequest
+                        .setArtifact(repositorySystem.createDependencyArtifact(dependency))
+                        .setResolveRoot(true)
+                        .setResolveTransitively(true)
+                        .setLocalRepository(session.getLocalRepository())
+                        .setRemoteRepositories(project.getRemoteArtifactRepositories());
+                ArtifactResolutionResult depResult = repositorySystem.resolve(depRequest);
+                for (Artifact depArtifact : depResult.getArtifacts()) {
+                    if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
+                        continue;
+                    classpathUrls.add(depArtifact.getFile().toURI().toURL());
+                }
+            }
+        }
+
+        Context extContext = tomcat.addWebapp(webapp.getPath(), artifact.getFile().getAbsolutePath());
+        extContext.addParameter("antiJARLocking", "false");
+        extContext.addParameter("antiResourceLocking", "false");
+        extContext.addParameter("unpackWARs", "false");
+        extContext.setLoader(new WebappLoader(
+                new URLClassLoader(classpathUrls.toArray(new URL[classpathUrls.size()]),
+                        Thread.currentThread().getContextClassLoader())));
+        for (Map.Entry<String,String> entry : webapp.getConfiguration().entrySet()) {
+            System.setProperty(entry.getKey(), entry.getValue());
+        }
+    }
+    */
+
+
 }

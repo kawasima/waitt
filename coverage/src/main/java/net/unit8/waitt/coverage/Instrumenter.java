@@ -1,4 +1,4 @@
-package net.unit8.waitt;
+package net.unit8.waitt.coverage;
 
 import net.sourceforge.cobertura.coveragedata.ProjectData;
 

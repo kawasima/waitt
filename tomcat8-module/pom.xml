@@ -59,6 +59,7 @@
             <groupId>net.unit8.waitt</groupId>
             <artifactId>waitt-core</artifactId>
             <version>${waittVersion}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
