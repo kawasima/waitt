@@ -8,7 +8,7 @@
         <filter-class>spark.servlet.SparkFilter</filter-class>
         <init-param>
             <param-name>applicationClass</param-name>
-            <param-value>net.unit8.waitt.dashboard.DashboardApplication</param-value>
+            <param-value>net.unit8.waitt.feature.dashboard.DashboardApplication</param-value>
         </init-param>
     </filter>
 

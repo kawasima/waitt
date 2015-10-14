@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.unit8.waitt</groupId>
+    <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>war</packaging>
@@ -34,7 +34,7 @@
         </dependency>
         <dependency>
             <groupId>net.unit8.waitt</groupId>
-            <artifactId>waitt-core</artifactId>
+            <artifactId>waitt-api</artifactId>
             <version>${waittVersion}</version>
         </dependency>
         <dependency>
@@ -58,6 +58,10 @@
                     <groupId>org.eclipse.jetty.websocket</groupId>
                     <artifactId>websocket-servlet</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -65,6 +69,17 @@
             <artifactId>spark-template-thymeleaf</artifactId>
             <version>2.3</version>
         </dependency>
+        <dependency>
+            <groupId>org.gridkit.jvmtool</groupId>
+            <artifactId>hprof-heap</artifactId>
+            <version>0.3.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.7.12</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -76,11 +91,21 @@
                 <configuration>
                     <servers>
                         <server>
-                            <groupId>net.unit8.waitt</groupId>
+                            <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat8</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
                         </server>
                     </servers>
+                    <features>
+                        <feature>
+                            <groupId>net.unit8.waitt.feature</groupId>
+                            <artifactId>waitt-tracer</artifactId>
+                            <version>0.1.0-SNAPSHOT</version>
+                            <configuration>
+                                <elasticsearch.url>http://172.17.0.6:9200</elasticsearch.url>
+                            </configuration>
+                        </feature>
+                    </features>
                 </configuration>
             </plugin>
         </plugins>

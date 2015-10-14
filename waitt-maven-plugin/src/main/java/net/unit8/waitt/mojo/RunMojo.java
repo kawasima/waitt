@@ -1,5 +1,7 @@
 package net.unit8.waitt.mojo;
 
+import net.unit8.waitt.mojo.component.ServerProvider;
+import net.unit8.waitt.mojo.component.ArtifactResolver;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
@@ -16,22 +18,17 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
-import static java.util.logging.Level.ALL;
-import static java.util.logging.Level.CONFIG;
-import static java.util.logging.Level.FINE;
-import static java.util.logging.Level.FINER;
-import static java.util.logging.Level.FINEST;
-import static java.util.logging.Level.INFO;
-import static java.util.logging.Level.SEVERE;
-import static java.util.logging.Level.WARNING;
+import static java.util.logging.Level.*;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import net.unit8.waitt.EmbeddedServer;
-import net.unit8.waitt.PackageScanner;
-import net.unit8.waitt.TargetPackages;
-import net.unit8.waitt.feature.ServerMonitor;
-import net.unit8.waitt.mojo.configuration.Feature;
-import net.unit8.waitt.mojo.configuration.Server;
+import net.unit8.waitt.api.ConfigurableFeature;
+import net.unit8.waitt.api.EmbeddedServer;
+import net.unit8.waitt.api.LogListener;
+import net.unit8.waitt.api.ServerMonitor;
+import net.unit8.waitt.api.configuration.WebappConfiguration;
+import net.unit8.waitt.api.configuration.Feature;
+import net.unit8.waitt.api.configuration.Server;
+import net.unit8.waitt.mojo.configuration.ExtraWebapp;
 import net.unit8.waitt.mojo.configuration.ServerSpec;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
@@ -78,9 +75,6 @@ public class RunMojo extends AbstractMojo {
     private String path;
 
     @Parameter(defaultValue = "true")
-    private boolean delegate;
-
-    @Parameter(defaultValue = "true")
     private boolean interactive;
 
     @Parameter
@@ -107,8 +101,13 @@ public class RunMojo extends AbstractMojo {
     @Component
     protected ArtifactResolver artifactResolver;
     
+    @Component
+    protected ServerProvider serverProvider;
     
-    private List<ServerMonitor> serverMonitors = new ArrayList<ServerMonitor>();
+    
+    private final List<ServerMonitor> serverMonitors = new ArrayList<ServerMonitor>();
+    private final List<LogListener> logListeners = new ArrayList<LogListener>();
+    private final List<ExtraWebapp> extraWebapps = new ArrayList<ExtraWebapp>();
     
     protected String appBase;
 
@@ -143,19 +142,39 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
-    private void loadFeature(ClassRealm waittRealm) {
+    private void loadFeature(ClassRealm waittRealm, WebappConfiguration config) {
         if (features == null) return;
         for (Feature feature : features) {
-            Artifact artifact = repositorySystem.createArtifact(feature.getGroupId(), feature.getArtifactId(), feature.getVersion(), "jar");
+            String type = feature.getType();
+            if (type == null) {
+                type = "jar";
+            }
+            Artifact artifact = repositorySystem.createArtifact(feature.getGroupId(), feature.getArtifactId(), feature.getVersion(), type);
             ClassRealm realm = artifactResolver.resolve(artifact, waittRealm);
-            try {
-                ServiceLoader<ServerMonitor> serverMonitorLoader = ServiceLoader.load(ServerMonitor.class, realm);
 
+            if ("war".equals(artifact.getType())) {
+                String name = artifact.getArtifactId();
+                if (name.startsWith("waitt-")) {
+                    name = name.substring("waitt-".length());
+                }
+                extraWebapps.add(new ExtraWebapp(name, artifact.getFile().getAbsolutePath(), realm));
+            } else {
+                config.getFeatures().add(feature);
+                ServiceLoader<ServerMonitor> serverMonitorLoader = ServiceLoader.load(ServerMonitor.class, realm);
                 for (ServerMonitor serverMonitor : serverMonitorLoader) {
+                    if (serverMonitor instanceof ConfigurableFeature) {
+                        ((ConfigurableFeature) serverMonitor).config(config);
+                    }
                     serverMonitors.add(serverMonitor);
                 }
-            } catch (Exception e) {
-                getLog().error(e);
+                
+                ServiceLoader<LogListener> logListenerLoader = ServiceLoader.load(LogListener.class, realm);
+                for (LogListener logListener : logListenerLoader) {
+                    if (logListener instanceof ConfigurableFeature) {
+                        ((ConfigurableFeature) logListener).config(config);
+                    }
+                    logListeners.add(logListener);
+                }
             }
         }
     }
@@ -166,11 +185,19 @@ public class RunMojo extends AbstractMojo {
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
+    @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         initLogger();
+        if (appBase == null)
+            appBase = new File("src/main/webapp").getAbsolutePath();
+        WebappConfiguration webappConfig = new WebappConfiguration();
+        webappConfig.setApplicationName(project.getName());
+        webappConfig.setBaseDirectory(new File(appBase));
+        webappConfig.setPackages(PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
+        webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
+
         ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
-        ServerProvider serverProvider = new ServerProvider(session, repositorySystem, waittRealm, project.getRemoteArtifactRepositories());
-        ServerSpec serverSpec = serverProvider.getServer(servers.get(0));
+        ServerSpec serverSpec = serverProvider.getServer(servers.get(0), waittRealm);
         EmbeddedServer embeddedServer = serverSpec.getEmbeddedServer();
 
         if (port == 0)
@@ -181,10 +208,7 @@ public class RunMojo extends AbstractMojo {
             contextPath = "";
         embeddedServer.setBaseDir(".");
 
-        loadFeature(waittRealm);
-        for (ServerMonitor serverMonitor : serverMonitors) {
-            serverMonitor.config(embeddedServer);
-        }
+        loadFeature(waittRealm, webappConfig);
 
         try {
             ClassRealm webappRealm = serverSpec.getClassRealm().createChildRealm("Application");
@@ -192,10 +216,16 @@ public class RunMojo extends AbstractMojo {
             for (URL url : classpathUrls) {
                 webappRealm.addURL(url);
             }
-            if (appBase == null)
-                appBase = new File("src/main/webapp").getAbsolutePath();
-            getLog().info("App base: " + appBase);
+
+            for (ServerMonitor serverMonitor : serverMonitors) {
+                serverMonitor.init(embeddedServer);
+            }
+
             embeddedServer.setMainContext(contextPath, appBase, webappRealm);
+            for (ExtraWebapp extraWebapp : extraWebapps) {
+                extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
+                embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
+            }
             embeddedServer.start();
 
             for (ServerMonitor serverMonitor : serverMonitors) {
@@ -250,11 +280,38 @@ public class RunMojo extends AbstractMojo {
             public void close() throws SecurityException {
             }
         });
+        
+        logger.addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if (record.getLoggerName().startsWith("sun.awt."))
+                    return;
+                Level lv = record.getLevel();
+                for (LogListener logListener : logListeners) {                            
+                    if (Arrays.asList(ALL, CONFIG, FINE, FINER, FINEST).contains(lv)) {
+                        logListener.debug(record.getMessage(), record.getThrown());
+                    } else if (lv.equals(INFO)) {
+                        logListener.info(record.getMessage(), record.getThrown());
+                    } else if (lv.equals(WARNING)) {
+                        logListener.warn(record.getMessage(), record.getThrown());
+                    } else if (lv.equals(SEVERE)) {
+                        logListener.error(record.getMessage(), record.getThrown());
+                    }
+                }
+            }
+
+            @Override
+            public void flush() {
+                
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
+        });
     }
 
     private List<URL> resolveClasspaths() throws MojoExecutionException {
-        TargetPackages.getInstance().set(
-                PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
         List<Artifact> artifacts = new ArrayList<Artifact>();
         List<File> classpathFiles = new ArrayList<File>();
 
@@ -296,54 +353,6 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
-    /*
-    private void initCoverageContext(EmbeddedServer embeddedServer) {
-        // Cobertura coverage report
-        if (!coverageReportDirectory.exists()) {
-            // ignore error when create coverage directory.
-            assert (coverageReportDirectory.mkdirs());
-        }
-
-        embeddedServer.addContext("/coverage", coverageReportDirectory.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
-    }
-
-    private void initCoverageMonitor() {
-        final CoverageMonitorConfiguration config = new CoverageMonitorConfiguration();
-        config.setCoverageReportDirectory(coverageReportDirectory);
-        config.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
-        executorService.execute(
-            new Runnable() {
-                @Override
-                public void run() {
-                    Class loaderClass;
-                    try {
-                        loaderClass = Class.forName("net.unit8.waitt.CoberturaClassLoader");
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalStateException(e);
-                    }
-                    while (true) {
-                        try {
-                            ClassLoader cl = (ClassLoader) loaderClass.getMethod("getInstance").invoke(null);
-                            Class<?> monitorClass = cl.loadClass("net.unit8.waitt.CoverageMonitor");
-                            Constructor<?> constructor = monitorClass.getConstructor(
-                                    ClassLoader.class,
-                                    CoverageMonitorConfiguration.class);
-                            executorService.execute((Runnable) constructor.newInstance(cl, config));
-                            break;
-                        } catch (Exception e) {
-                            getLog().warn(e);
-                        }
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException e) {
-                            assert false;
-                        }
-                    }
-                }
-            }
-        );
-    }
-*/
     protected void scanPort() {
         for (int p = startPort; p <= endPort; p++) {
             try {
@@ -381,74 +390,5 @@ public class RunMojo extends AbstractMojo {
             }
         }
         */
-    /*
-    private void initExtraWebapp(Tomcat tomcat, Webapp webapp) throws MalformedURLException, ServletException{
-        Artifact artifact = repositorySystem.createArtifact(
-                webapp.getGroupId(),
-                webapp.getArtifactId(),
-                webapp.getVersion(),
-                "war");
-        ArtifactResolutionRequest warArtifactRequest = new ArtifactResolutionRequest()
-                .setRemoteRepositories(project.getRemoteArtifactRepositories())
-                .setArtifact(artifact);
-        ArtifactResolutionResult warArtifactResult = repositorySystem.resolve(warArtifactRequest);
-        if (warArtifactResult.hasExceptions()) {
-            for (Exception e : warArtifactResult.getExceptions()) {
-                getLog().error("resolve error.", e);
-            }
-        }
-
-        Dependency d = new Dependency();
-        d.setGroupId(webapp.getGroupId());
-        d.setArtifactId(webapp.getArtifactId());
-        d.setVersion(webapp.getVersion());
-        d.setType("jar");
-        ArtifactResolutionRequest artifactRequest = new ArtifactResolutionRequest();
-        artifactRequest
-                .setArtifact(repositorySystem.createDependencyArtifact(d))
-                .setResolveTransitively(true)
-                .setResolveRoot(false)
-                .setLocalRepository(session.getLocalRepository())
-                .setRemoteRepositories(project.getRemoteArtifactRepositories());
-        ArtifactResolutionResult artifactResult = repositorySystem.resolve(artifactRequest);
-
-        List<URL> classpathUrls = new ArrayList<URL>();
-        for (Artifact dependency : artifactResult.getArtifacts()) {
-            if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
-                continue;
-            classpathUrls.add(dependency.getFile().toURI().toURL());
-        }
-
-        if (webapp.getDependencies() != null) {
-            for (Dependency dependency : webapp.getDependencies()) {
-                ArtifactResolutionRequest depRequest = new ArtifactResolutionRequest();
-                depRequest
-                        .setArtifact(repositorySystem.createDependencyArtifact(dependency))
-                        .setResolveRoot(true)
-                        .setResolveTransitively(true)
-                        .setLocalRepository(session.getLocalRepository())
-                        .setRemoteRepositories(project.getRemoteArtifactRepositories());
-                ArtifactResolutionResult depResult = repositorySystem.resolve(depRequest);
-                for (Artifact depArtifact : depResult.getArtifacts()) {
-                    if (Artifact.SCOPE_PROVIDED.equals(artifact.getScope()))
-                        continue;
-                    classpathUrls.add(depArtifact.getFile().toURI().toURL());
-                }
-            }
-        }
-
-        Context extContext = tomcat.addWebapp(webapp.getPath(), artifact.getFile().getAbsolutePath());
-        extContext.addParameter("antiJARLocking", "false");
-        extContext.addParameter("antiResourceLocking", "false");
-        extContext.addParameter("unpackWARs", "false");
-        extContext.setLoader(new WebappLoader(
-                new URLClassLoader(classpathUrls.toArray(new URL[classpathUrls.size()]),
-                        Thread.currentThread().getContextClassLoader())));
-        for (Map.Entry<String,String> entry : webapp.getConfiguration().entrySet()) {
-            System.setProperty(entry.getKey(), entry.getValue());
-        }
-    }
-    */
-
 
 }

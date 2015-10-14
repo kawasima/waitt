@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>WAITT dashboard</title>
+        <link rel="stylesheet" href="//cdn.jsdelivr.net/semantic-ui/2.1.4/semantic.min.css" type="text/css"/>
+    </head>
+    <body>
+        <div class="ui segment" th:fragment="overview">
+            WAITT Dashboard
+        </div>
+        <div class="ui segment" th:fragment="env">
+            <table class="ui striped table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody th:each="env : ${environments.entrySet()}">
+                    <tr>
+                        <td th:text="${env.getKey()}"></td>
+                        <td th:text="${env.getValue()}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="ui segment" th:fragment="heap">
+            <table class="ui striped table">
+                <thead>
+                    <tr>
+                        <th>Total size</th>
+                        <th>Instance count</th>
+                        <th>Class name</th>
+                    </tr>
+                </thead>
+                <tbody th:each="rec : ${heapdump}">
+                    <tr>
+                        <td th:text="${rec.totalSize}"></td>
+                        <td th:text="${rec.instanceCount}"></td>
+                        <td th:text="${rec.className}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

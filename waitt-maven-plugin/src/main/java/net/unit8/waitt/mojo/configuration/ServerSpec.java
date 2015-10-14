@@ -1,6 +1,6 @@
 package net.unit8.waitt.mojo.configuration;
 
-import net.unit8.waitt.EmbeddedServer;
+import net.unit8.waitt.api.EmbeddedServer;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 /**

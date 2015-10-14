@@ -20,7 +20,6 @@
     </scm>
 
     <properties>
-        <tomcatVersion>7.0.53</tomcatVersion>
         <mavenVersion>3.0.5</mavenVersion>
         <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
         <maven.compiler.source>1.6</maven.compiler.source>
@@ -91,7 +90,7 @@
         </dependency>
         <dependency>
             <groupId>net.unit8.waitt</groupId>
-            <artifactId>waitt-core</artifactId>
+            <artifactId>waitt-api</artifactId>
             <version>0.4.0-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -116,6 +115,12 @@
             <artifactId>junit</artifactId>
             <version>4.11</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.6</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
