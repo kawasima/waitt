@@ -26,12 +26,10 @@ public class DefaultArtifactResolver implements ArtifactResolver {
     @Component
     protected RepositorySystem repositorySystem;
     
-    @Component
     protected MavenProject project;
-    
-    @Component
     protected MavenSession session;
     
+    @Override
     public ClassRealm resolve(Artifact artifact, ClassRealm parentRealm) {
         ArtifactResolutionRequest artifactRequest = new ArtifactResolutionRequest()
                 .setRemoteRepositories(project.getRemoteArtifactRepositories())
@@ -58,5 +56,13 @@ public class DefaultArtifactResolver implements ArtifactResolver {
             throw new IllegalStateException(e);
         }
         return realm;
+    }
+    
+    public void setProject(MavenProject project) {
+        this.project = project;
+    }
+    
+    public void setSession(MavenSession session) {
+        this.session = session;
     }
 }

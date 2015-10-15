@@ -4,16 +4,10 @@
       <role>net.unit8.waitt.mojo.component.ArtifactResolver</role>
       <role-hint>default</role-hint>
       <implementation>net.unit8.waitt.mojo.component.DefaultArtifactResolver</implementation>
-      <instantiation-strategy>per-lookup</instantiation-strategy>
+      <instantiation-strategy>singleton</instantiation-strategy>
       <requirements>
           <requirement>
               <role>org.apache.maven.repository.RepositorySystem</role>
-          </requirement>
-          <requirement>
-              <role>org.apache.maven.project.MavenProject</role>
-          </requirement>
-          <requirement>
-              <role>org.apache.maven.execution.MavenSession</role>
           </requirement>
       </requirements>
     </component>
@@ -29,6 +23,25 @@
             </requirement>
             <requirement>
                 <role>org.apache.maven.repository.RepositorySystem</role>
+            </requirement>
+            <requirement>
+                <role>org.codehaus.plexus.components.interactivity.Prompter</role>
+                <role-hint>waitt</role-hint>
+            </requirement>
+        </requirements>
+    </component>
+    
+    <component>
+        <role>org.codehaus.plexus.components.interactivity.Prompter</role>
+        <role-hint>waitt</role-hint>
+        <implementation>net.unit8.waitt.mojo.component.WaittPrompter</implementation>
+        <instantiation-strategy>per-lookup</instantiation-strategy>
+        <requirements>
+            <requirement>
+                <role>org.codehaus.plexus.components.interactivity.InputHandler</role>
+            </requirement>
+            <requirement>
+                <role>org.codehaus.plexus.components.interactivity.OutputHandler</role>
             </requirement>
         </requirements>
     </component>

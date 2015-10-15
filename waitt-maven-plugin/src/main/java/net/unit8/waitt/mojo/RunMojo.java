@@ -46,7 +46,7 @@ import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
-import org.codehaus.plexus.components.interactivity.Prompter;
+import org.fusesource.jansi.AnsiConsole;
 
 /**
  * Web Application Integration Test Tool maven plugin.
@@ -56,9 +56,6 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 @SuppressWarnings("unchecked")
 @Mojo(name = "run")
 public class RunMojo extends AbstractMojo {
-    @Component
-    private Prompter prompter;
-
     @Parameter
     private int port;
 
@@ -74,20 +71,18 @@ public class RunMojo extends AbstractMojo {
     @Parameter(defaultValue = "")
     private String path;
 
-    @Parameter(defaultValue = "true")
-    private boolean interactive;
-
     @Parameter
     private List<Server> servers;
     
     @Parameter
     private List<Feature> features;
 
-    @Component
-    protected MavenProject project;
 
     @Component
     protected ProjectBuilder projectBuilder;
+
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
+    protected MavenProject project;
 
     @Parameter(defaultValue = "${session}", required = true, readonly = true)
     protected MavenSession session;
@@ -187,6 +182,9 @@ public class RunMojo extends AbstractMojo {
      */
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        AnsiConsole.systemInstall();
+        artifactResolver.setProject(project);
+        artifactResolver.setSession(session);
         initLogger();
         if (appBase == null)
             appBase = new File("src/main/webapp").getAbsolutePath();
@@ -197,7 +195,7 @@ public class RunMojo extends AbstractMojo {
         webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
 
         ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
-        ServerSpec serverSpec = serverProvider.getServer(servers.get(0), waittRealm);
+        ServerSpec serverSpec = serverProvider.selectServer(servers, waittRealm, session.getSettings().getInteractiveMode());
         EmbeddedServer embeddedServer = serverSpec.getEmbeddedServer();
 
         if (port == 0)
@@ -245,8 +243,8 @@ public class RunMojo extends AbstractMojo {
         for (Handler handler : logger.getHandlers()) {
             logger.removeHandler(handler);
         }
-        final Log mavenLogger = getLog();
 
+        final Log mavenLogger = new WaittLogger(getLog());
         logger.addHandler(new Handler() {
             @Override
             public void publish(LogRecord logRecord) {
@@ -365,30 +363,5 @@ public class RunMojo extends AbstractMojo {
         }
         throw new RuntimeException("Can't find available port from " + startPort + " to " + endPort);
     }
-    
-            /*
-        if (interactive && iter.hasNext()) {
-            List<EmbeddedServer> embeddedServerList = new ArrayList<EmbeddedServer>();
-            embeddedServerList.add(embeddedServer);
-            while(iter.hasNext()) {
-                embeddedServerList.add(iter.next());
-            }
-            try {
-                System.out.println("Detect multiple servers...");
-                for (int i=0; i<embeddedServerList.size(); i++) {
-                    System.out.println("  " + i + ". " + embeddedServerList.get(i).getName());
-                }
-                String res = prompter.prompt("What number of server do you use? : ");
-                try {
-                    int num = Integer.parseInt(res);
-                    embeddedServer = embeddedServerList.get(num);
-                } catch (NumberFormatException ignore) {
-
-                }
-            } catch(PrompterException e) {
-                throw new MojoExecutionException("", e);
-            }
-        }
-        */
 
 }

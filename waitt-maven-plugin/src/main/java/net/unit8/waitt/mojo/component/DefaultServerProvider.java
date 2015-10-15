@@ -1,6 +1,8 @@
 package net.unit8.waitt.mojo.component;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import net.unit8.waitt.api.EmbeddedServer;
@@ -10,6 +12,9 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
+import org.codehaus.plexus.component.annotations.Requirement;
+import org.codehaus.plexus.components.interactivity.Prompter;
+import org.codehaus.plexus.components.interactivity.PrompterException;
 
 /**
  *
@@ -18,6 +23,9 @@ import org.codehaus.plexus.classworlds.realm.ClassRealm;
 public class DefaultServerProvider implements ServerProvider {
     private static final Logger LOG = Logger.getGlobal();
     
+    @Requirement
+    private Prompter prompter;
+
     @Component
     protected ArtifactResolver artifactResolver;
 
@@ -35,6 +43,35 @@ public class DefaultServerProvider implements ServerProvider {
             throw new IllegalArgumentException("Embedded server is not found.");
         }
         return new ServerSpec(iter.next(), serverRealm);
+    }
+    
+    @Override
+    public ServerSpec selectServer(List<Server> servers, ClassRealm parentRealm, boolean interactive) {
+        if (servers == null || servers.isEmpty()) {
+            throw new IllegalStateException("No settings for server.");
+        }
+        
+        List<ServerSpec> serverSpecs = new ArrayList<ServerSpec>();
+        for (Server server : servers) {
+            ServerSpec serverSpec = getServer(server, parentRealm);
+            serverSpecs.add(serverSpec);
+        }
+        
+        if (interactive) {
+            try {
+                prompter.showMessage("Detect multiple servers...\n");
+                for (int i=0; i<serverSpecs.size(); i++) {
+                    prompter.showMessage("  " + i + ". " + serverSpecs.get(i).getEmbeddedServer().getName() + "\n");
+                }
+                String res = prompter.prompt("What number of server do you use? ");
+                int num = Integer.parseInt(res);
+                return serverSpecs.get(num);
+            } catch(PrompterException e) {
+                throw new IllegalStateException("Prompt error.", e);
+            }
+        } else {
+            return serverSpecs.get(0);
+        }
     }
    
 }
