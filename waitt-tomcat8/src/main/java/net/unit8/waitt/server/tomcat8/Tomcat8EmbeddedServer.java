@@ -11,6 +11,9 @@ import org.apache.catalina.startup.Tomcat;
 import javax.servlet.ServletException;
 import java.io.File;
 import net.unit8.waitt.api.ClassLoaderFactory;
+import org.apache.catalina.startup.Constants;
+import org.apache.catalina.startup.ContextConfig;
+import org.apache.tomcat.JarScanner;
 
 /**
  * Tomcat8 server.
@@ -58,22 +61,9 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
             }
         }
         tomcat.getHost().setAppBase(appBase);
-        Context context = null;
-        try {
-            context = tomcat.addWebapp(contextPath, appBase);
-        } catch (ServletException e) {
-            throw new IllegalStateException(e);
-        }
-        final WebappLoader webappLoader = new WebappLoader(classLoader);
-        if (ClassLoaderFactoryHolder.getClassLoaderFactory() != null) {
-            webappLoader.setLoaderClass("net.unit8.waitt.server.tomcat8.Tomcat8WebappClassLoaderWrapper");
-        }
-        
-        webappLoader.setDelegate(true); // TODO use a mojo setting.
-        context.setLoader(webappLoader);
+        Context context = addWebapp(contextPath, appBase, classLoader, true);
         context.setSessionCookieDomain(null);
         Wrapper defaultServlet = context.createWrapper();
-
         defaultServlet.setName("default1");
         defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
         defaultServlet.addInitParameter("debug", "0");
@@ -83,17 +73,9 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         context.addServletMapping("/", "default1");
         context.addWelcomeFile("index.html");
     }
-    
+
     public void addContext(String contextPath, String docBase, ClassLoader classLoader) {
-        Context context = null;
-        try {
-            context = tomcat.addWebapp(contextPath, docBase);
-        } catch (ServletException e) {
-            throw new IllegalStateException(e);
-        }
-        final WebappLoader webappLoader = new WebappLoader(classLoader);
-        context.setLoader(webappLoader);
-        
+        Context context = addWebapp(contextPath, docBase, classLoader, false);
         context.setSessionCookieDomain(null);
         Wrapper defaultServlet = context.createWrapper();
 
@@ -105,9 +87,9 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         context.addChild(defaultServlet);
         context.addServletMapping("/", "default1");
         context.addWelcomeFile("index.html");
-
     }
 
+    @Override
     public void start() {
         Server server = tomcat.getServer();
 
@@ -126,10 +108,12 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         }
     }
     
+    @Override
     public void await() {
         tomcat.getServer().await();
     }
 
+    @Override
     public void stop() {
         try {
             tomcat.stop();
@@ -137,4 +121,34 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
             throw new IllegalStateException(e);
         }
     }
-}
+    
+    private Context addWebapp(String contextPath, String appBase, ClassLoader classLoader, boolean mainContext) {
+        Context context = null;
+        String contextClass = ((StandardHost) tomcat.getHost()).getContextClass();
+        try {
+            context = (Context) Class.forName(contextClass).getConstructor().newInstance();
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        final WebappLoader webappLoader = new WebappLoader(classLoader);
+        if (mainContext && ClassLoaderFactoryHolder.getClassLoaderFactory() != null) {
+            webappLoader.setLoaderClass("net.unit8.waitt.server.tomcat8.Tomcat8WebappClassLoaderWrapper");
+            JarScanner jarScanner = new ClassRealmJarScanner();
+            context.setJarScanner(jarScanner);
+        }
+        
+        webappLoader.setDelegate(true);
+        
+        context.setLoader(webappLoader);
+
+        ContextConfig config = new ContextConfig();
+        context.setPath(contextPath);
+        context.setDocBase(appBase);
+        context.addLifecycleListener(new Tomcat.DefaultWebXmlListener());
+        context.setConfigFile(null);
+        context.addLifecycleListener(config);
+        config.setDefaultWebXml(Constants.NoDefaultWebXml);
+        tomcat.getHost().addChild(context);
+        return context;
+    }}

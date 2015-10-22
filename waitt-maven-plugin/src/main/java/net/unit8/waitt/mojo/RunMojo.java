@@ -209,6 +209,7 @@ public class RunMojo extends AbstractMojo {
         loadFeature(waittRealm, webappConfig);
 
         try {
+            embeddedServer.start();
             ClassRealm webappRealm = serverSpec.getClassRealm().createChildRealm("Application");
             List<URL> classpathUrls = resolveClasspaths();
             for (URL url : classpathUrls) {
@@ -224,16 +225,17 @@ public class RunMojo extends AbstractMojo {
                 extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
                 embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
             }
-            embeddedServer.start();
 
             for (ServerMonitor serverMonitor : serverMonitors) {
                 serverMonitor.start(embeddedServer);
             }
             path = path == null ? "" : path;
             Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
-            embeddedServer.await();
+            embeddedServer.await();            
         } catch (Exception e) {
             throw new MojoExecutionException("Tomcat start failure", e);
+        } finally {
+            embeddedServer.stop();
         }
     }
 
@@ -248,7 +250,7 @@ public class RunMojo extends AbstractMojo {
         logger.addHandler(new Handler() {
             @Override
             public void publish(LogRecord logRecord) {
-                if (logRecord.getLoggerName().startsWith("sun.awt."))
+                if (logRecord.getLoggerName() != null && logRecord.getLoggerName().startsWith("sun.awt."))
                     return;
                 Level lv = logRecord.getLevel();
                 if (Arrays.asList(ALL, CONFIG, FINE, FINER, FINEST).contains(lv)) {
@@ -282,7 +284,7 @@ public class RunMojo extends AbstractMojo {
         logger.addHandler(new Handler() {
             @Override
             public void publish(LogRecord record) {
-                if (record.getLoggerName().startsWith("sun.awt."))
+                if (record.getLoggerName() != null && record.getLoggerName().startsWith("sun.awt."))
                     return;
                 Level lv = record.getLevel();
                 for (LogListener logListener : logListeners) {                            

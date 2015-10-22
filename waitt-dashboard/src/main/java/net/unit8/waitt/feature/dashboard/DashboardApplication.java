@@ -4,7 +4,10 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import spark.*;
 import spark.template.thymeleaf.ThymeleafTemplateEngine;
@@ -59,6 +62,16 @@ public class DashboardApplication implements SparkApplication {
             }
         }, engine);
         
+        get("/thread", new TemplateViewRoute() {
+            @Override
+            public ModelAndView handle(Request rqst, Response rspns) throws Exception {
+                Map<String, Object> attributes = new HashMap<String, Object>();
+                attributes.put("threaddump", threadDump());
+                attributes.put("menu", "heap");
+                
+                return new ModelAndView(attributes, "index");
+            }
+        }, engine);
         
 
     }
@@ -86,5 +99,11 @@ public class DashboardApplication implements SparkApplication {
                 dumpFile.delete();
             }
         }
+    }
+    
+    private List<ThreadInfo> threadDump() {
+        ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
+        ThreadInfo[] threadInfos = mxBean.getThreadInfo(mxBean.getAllThreadIds(), 0);
+        return Arrays.asList(threadInfos);
     }
 }

@@ -6,6 +6,7 @@ target
 nbactions.xml
 work
 cobertura.ser
+jacoco.exec
 log
 screenshots
 release.properties

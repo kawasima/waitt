@@ -13,16 +13,10 @@
         <version>9</version>
     </parent>
 
-    <scm>
-        <connection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</connection>
-        <url>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</url>
-        <developerConnection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</developerConnection>
-    </scm>
-
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waittVersion>0.4.0-SNAPSHOT</waittVersion>
+        <waitt.version>1.0.0-SNAPSHOT</waitt.version>
     </properties>
 
     <dependencies>
@@ -35,7 +29,7 @@
         <dependency>
             <groupId>net.unit8.waitt</groupId>
             <artifactId>waitt-api</artifactId>
-            <version>${waittVersion}</version>
+            <version>${waitt.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sparkjava</groupId>
@@ -81,33 +75,4 @@
         </dependency>
 
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>net.unit8.maven.plugins</groupId>
-                <artifactId>waitt-maven-plugin</artifactId>
-                <version>0.4.0-SNAPSHOT</version>
-                <configuration>
-                    <servers>
-                        <server>
-                            <groupId>net.unit8.waitt.server</groupId>
-                            <artifactId>waitt-tomcat8</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
-                        </server>
-                    </servers>
-                    <features>
-                        <feature>
-                            <groupId>net.unit8.waitt.feature</groupId>
-                            <artifactId>waitt-tracer</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
-                            <configuration>
-                                <elasticsearch.url>http://172.17.0.6:9200</elasticsearch.url>
-                            </configuration>
-                        </feature>
-                    </features>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

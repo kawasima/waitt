@@ -57,7 +57,7 @@ public class DefaultServerProvider implements ServerProvider {
             serverSpecs.add(serverSpec);
         }
         
-        if (interactive) {
+        if (interactive && serverSpecs.size() > 1) {
             try {
                 prompter.showMessage("Detect multiple servers...\n");
                 for (int i=0; i<serverSpecs.size(); i++) {

@@ -30,9 +30,17 @@ public class CoberturaInstrumenterWrapper extends CoberturaInstrumenter implemen
     @Override
     public byte[] instrumentClassByte(InputStream is)
             throws IOException {
-        CoberturaInstrumenter.InstrumentationResult result = super.instrumentClass(is);
-        logger.fine("Instrumented:" + result.getClassName());
-        return result.getContent();
+        try {
+            CoberturaInstrumenter.InstrumentationResult result = super.instrumentClass(is);
+            if (result != null) {
+                logger.fine("Instrumented:" + result.getClassName());
+                return result.getContent();
+            } else {
+                return null;
+            }
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     @Override
