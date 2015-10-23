@@ -33,12 +33,6 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
         tomcat = new Tomcat();
         ((StandardHost)tomcat.getHost()).setUnpackWARs(false);
         System.setProperty("catalina.home", ".");
-        StandardServer server = (StandardServer) tomcat.getServer();
-        AprLifecycleListener listener = new AprLifecycleListener();
-        server.addLifecycleListener(listener);
-        server.setParentClassLoader(getClass().getClassLoader());
-        tomcat.getConnector().setURIEncoding("UTF-8");
-        tomcat.getConnector().setUseBodyEncodingForURI(true);
     }
 
     public String getName() {
@@ -46,6 +40,7 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
     }
 
     public void setPort(int port) {
+        System.out.println("!!!!port=" + port);
         tomcat.setPort(port);
     }
 
@@ -95,7 +90,12 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void start() {
-        Server server = tomcat.getServer();
+        StandardServer server = (StandardServer) tomcat.getServer();
+        AprLifecycleListener listener = new AprLifecycleListener();
+        server.addLifecycleListener(listener);
+        server.setParentClassLoader(getClass().getClassLoader());
+        tomcat.getConnector().setURIEncoding("UTF-8");
+        tomcat.getConnector().setUseBodyEncodingForURI(true);
 
         server.addLifecycleListener(new LifecycleListener() {
             public void lifecycleEvent(LifecycleEvent event) {

@@ -17,6 +17,7 @@ import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.jacoco.agent.rt.internal_b0d6a23.Agent;
+import org.jacoco.agent.rt.internal_b0d6a23.core.runtime.AgentOptions;
 import org.jacoco.core.analysis.IBundleCoverage;
 import org.jacoco.core.data.ExecutionDataStore;
 import org.jacoco.core.tools.ExecFileLoader;
@@ -53,6 +54,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
                 return ccl;
             }
         });
+        Agent.getInstance(new AgentOptions());
     }    
 
     @Override
