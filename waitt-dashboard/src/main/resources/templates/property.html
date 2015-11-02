@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>WAITT dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/primer/2.4.0/primer.css" type="text/css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/octicons/3.1.0/octicons.css" type="text/css"/>
+    <link rel="stylesheet" href="../../webapp/css/dashboard.css" th:href="${context} + '/css/dashboard.css'" type="text/css"/>
+</head>
+<body>
+<header class="masthead">
+    <div class="container">
+        <a class="masthead-logo">WAITT dashboard</a>
+    </div>
+</header>
+<div class="container">
+    <div class="columns">
+        <div class="one-fourth column">
+            <nav class="menu">
+                <a class="menu-item" href="application.html" th:href="${context} + '/'">Application</a>
+                <a class="menu-item" href="server.html" th:href="${context} + '/server'">Server</a>
+                <a class="menu-item" href="env.html" th:href="${context} + '/env'">Environments</a>
+                <a class="menu-item selected">Properties</a>
+                <a class="menu-item" href="heap.html" th:href="${context} + '/heap'">Heap dump</a>
+            </nav>
+        </div>
+        <div class="three-fourths column">
+            <h1>Properties</h1>
+            <table class="ui striped table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+
+                <tbody th:each="entry : ${properties.entrySet()}">
+                <tr>
+                    <td th:text="${entry.key}"></td>
+                    <td th:text="${entry.value}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

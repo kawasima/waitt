@@ -1,0 +1,60 @@
+a {
+    color: #4078c0;
+    text-decoration: none;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    empty-cells: show;
+    border: 1px solid #cbcbcb;
+    font-size: 1.2em;
+}
+
+th, td {
+    border-left: 1px solid #cbcbcb;
+    border-width: 0 0 0 1px;
+    font-size: inherit;
+    margin: 0;
+    overflow: visible;
+    padding: .5em 1em;
+}
+
+th {
+    background-color: #e0e0e0;
+}
+
+dl {
+    font-size: 1.5em;
+    width: 300px;
+}
+
+dt {
+    float: left;
+}
+
+dt:after {
+    content: ": ";
+}
+
+dd {
+
+    margin-left: 80px;
+}
+.masthead {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    background-color: #463381;
+}
+
+.masthead .masthead-logo {
+    display: inline-block;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.masthead .masthead-logo {
+    float: left;
+}

@@ -12,7 +12,7 @@
         <!-- If no class attribute is specified the framework will assume success and
         render the result index.jsp -->
         <!-- If no name value for the result node is specified the success value is the default -->
-        <action name="index">
+        <action name="">
             <result>/index.jsp</result>
         </action>
 

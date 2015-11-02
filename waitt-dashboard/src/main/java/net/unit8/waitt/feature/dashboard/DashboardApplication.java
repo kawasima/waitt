@@ -1,27 +1,28 @@
 package net.unit8.waitt.feature.dashboard;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
-import java.io.File;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import spark.*;
-import spark.template.thymeleaf.ThymeleafTemplateEngine;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import net.unit8.waitt.api.configuration.WebappConfiguration;
+import net.unit8.waitt.api.dto.ServerMetadata;
 import org.gridkit.jvmtool.heapdump.HeapHistogram;
 import org.gridkit.jvmtool.heapdump.StringCollector;
 import org.netbeans.lib.profiler.heap.FastHprofHeap;
 import org.netbeans.lib.profiler.heap.Heap;
+import spark.*;
+import spark.servlet.SparkApplication;
+import spark.template.thymeleaf.ThymeleafTemplateEngine;
+
+import javax.xml.bind.JAXB;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.*;
 
 import static spark.Spark.*;
-import spark.servlet.SparkApplication;
 
 /**
  * @author kawasima
@@ -31,34 +32,100 @@ public class DashboardApplication implements SparkApplication {
     @Override
     public void init() {
         TemplateEngine engine = new ThymeleafTemplateEngine();
+        staticFileLocation("/public");
         get("/", new TemplateViewRoute() {
             @Override
             public ModelAndView handle(Request request, Response response) throws Exception {
                 Map<String, Object> attributes = new HashMap<String, Object>();
-                attributes.put("menu", "overview");
-                return new ModelAndView(attributes, "index");
+                HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:1192/app").openConnection();
+                InputStream in = conn.getInputStream();
+                try {
+                    WebappConfiguration config = JAXB.unmarshal(in, WebappConfiguration.class);
+                    attributes.put("context", request.contextPath());
+                    attributes.put("webappConfiguration", config);
+                } finally {
+                    in.close();
+                    conn.disconnect();
+                }
+                return new ModelAndView(attributes, "application");
             }
         }, engine);
-        
+
+        get("/server", new TemplateViewRoute() {
+            @Override
+            public ModelAndView handle(Request request, Response response) throws Exception {
+                Map<String, Object> attributes = new HashMap<String, Object>();
+                InputStream in = new URL("http://localhost:1192/server").openStream();
+                try {
+                    ServerMetadata metadata = JAXB.unmarshal(in, ServerMetadata.class);
+                    attributes.put("context", request.contextPath());
+                    attributes.put("serverMetadata", metadata);
+                } finally {
+                    in.close();
+                }
+                return new ModelAndView(attributes, "server");
+            }
+        }, engine);
+
+        post("/server/reload", new Route() {
+            @Override
+            public Object handle(Request request, Response response) throws Exception {
+                HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:1192/reload").openConnection();
+                conn.setDoOutput(true);
+                conn.setRequestMethod("POST");
+
+                try {
+                    conn.getOutputStream().close();
+                    InputStream is = conn.getInputStream();
+                    try {
+                        while (is.read() >= 0) ;
+                        is.close();
+                    } finally {
+                        is.close();
+                    }
+
+                    response.redirect(request.contextPath()
+                            + "/server");
+                    return null;
+                } catch (Exception e) {
+                    response.status(500);
+                    return null;
+                } finally {
+                    conn.disconnect();
+                }
+            }
+        });
+
         get("/env", new TemplateViewRoute() {
             @Override
-            public ModelAndView handle(Request rqst, Response rspns) throws Exception {
+            public ModelAndView handle(Request request, Response response) throws Exception {
                 Map<String, Object> attributes = new HashMap<String, Object>();
                 attributes.put("environments", System.getenv());
-                attributes.put("menu", "env");
-                
-                return new ModelAndView(attributes, "index");
+                attributes.put("context", request.contextPath());
+
+                return new ModelAndView(attributes, "env");
+            }
+        }, engine);
+
+        get("/property", new TemplateViewRoute() {
+            @Override
+            public ModelAndView handle(Request request, Response response) throws Exception {
+                Map<String, Object> attributes = new HashMap<String, Object>();
+                attributes.put("properties", System.getProperties());
+                attributes.put("context", request.contextPath());
+
+                return new ModelAndView(attributes, "property");
             }
         }, engine);
 
         get("/heap", new TemplateViewRoute() {
             @Override
-            public ModelAndView handle(Request rqst, Response rspns) throws Exception {
+            public ModelAndView handle(Request request, Response response) throws Exception {
                 Map<String, Object> attributes = new HashMap<String, Object>();
                 attributes.put("heapdump", heapDump());
-                attributes.put("menu", "heap");
-                
-                return new ModelAndView(attributes, "index");
+                attributes.put("context", request.contextPath());
+
+                return new ModelAndView(attributes, "heap");
             }
         }, engine);
         
@@ -69,7 +136,7 @@ public class DashboardApplication implements SparkApplication {
                 attributes.put("threaddump", threadDump());
                 attributes.put("menu", "heap");
                 
-                return new ModelAndView(attributes, "index");
+                return new ModelAndView(attributes, "thread");
             }
         }, engine);
         

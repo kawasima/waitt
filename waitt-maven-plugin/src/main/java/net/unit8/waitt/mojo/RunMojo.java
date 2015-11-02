@@ -146,6 +146,7 @@ public class RunMojo extends AbstractMojo {
             }
             Artifact artifact = repositorySystem.createArtifact(feature.getGroupId(), feature.getArtifactId(), feature.getVersion(), type);
             ClassRealm realm = artifactResolver.resolve(artifact, waittRealm);
+            config.getFeatures().add(feature);
 
             if ("war".equals(artifact.getType())) {
                 String name = artifact.getArtifactId();
@@ -154,7 +155,6 @@ public class RunMojo extends AbstractMojo {
                 }
                 extraWebapps.add(new ExtraWebapp(name, artifact.getFile().getAbsolutePath(), realm));
             } else {
-                config.getFeatures().add(feature);
                 ServiceLoader<ServerMonitor> serverMonitorLoader = ServiceLoader.load(ServerMonitor.class, realm);
                 for (ServerMonitor serverMonitor : serverMonitorLoader) {
                     if (serverMonitor instanceof ConfigurableFeature) {
@@ -162,7 +162,7 @@ public class RunMojo extends AbstractMojo {
                     }
                     serverMonitors.add(serverMonitor);
                 }
-                
+
                 ServiceLoader<LogListener> logListenerLoader = ServiceLoader.load(LogListener.class, realm);
                 for (LogListener logListener : logListenerLoader) {
                     if (logListener instanceof ConfigurableFeature) {

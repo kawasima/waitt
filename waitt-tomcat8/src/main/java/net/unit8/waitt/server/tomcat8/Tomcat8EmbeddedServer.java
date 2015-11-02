@@ -1,8 +1,10 @@
 package net.unit8.waitt.server.tomcat8;
 
 import net.unit8.waitt.api.EmbeddedServer;
+import net.unit8.waitt.api.ServerStatus;
 import org.apache.catalina.*;
 import org.apache.catalina.core.AprLifecycleListener;
+import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.loader.WebappLoader;
@@ -22,19 +24,16 @@ import org.apache.tomcat.JarScanner;
  */
 public class Tomcat8EmbeddedServer implements EmbeddedServer {
     Tomcat tomcat;
-    ClassLoader classLoader;
-    String webappLoaderName = null;
+    Context context;
 
     public Tomcat8EmbeddedServer() {
         tomcat = new Tomcat();
-        ((StandardHost)tomcat.getHost()).setUnpackWARs(false);
+        if (tomcat.getHost() instanceof StandardHost) {
+            StandardHost host = (StandardHost) tomcat.getHost();
+            host.setUnpackWARs(true);
+            host.setAppBase("target/tomcat8");
+        }
         System.setProperty("catalina.home", ".");
-        StandardServer server = (StandardServer) tomcat.getServer();
-        AprLifecycleListener listener = new AprLifecycleListener();
-        server.addLifecycleListener(listener);
-        server.setParentClassLoader(getClass().getClassLoader());
-        tomcat.getConnector().setURIEncoding("UTF-8");
-        tomcat.getConnector().setUseBodyEncodingForURI(true);
     }
 
     public String getName() {
@@ -46,22 +45,20 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
     }
 
     public void setBaseDir(String baseDir) {
-        tomcat.setBaseDir(baseDir);
     }
 
     public void setClassLoaderFactory(ClassLoaderFactory factory) {
         ClassLoaderFactoryHolder.setClassLoaderFactory(factory);
     }
     
-    public void setMainContext(String contextPath, String appBase, ClassLoader classLoader) {
-        File appBaseDir = new File(appBase);
+    public void setMainContext(String contextPath, String docBase, ClassLoader classLoader) {
+        File appBaseDir = new File(docBase);
         if (!appBaseDir.exists()) {
             if (!appBaseDir.mkdirs()) {
-                throw new IllegalStateException("Can't create appBase:" + appBase);
+                throw new IllegalStateException("Can't create appBase:" + docBase);
             }
         }
-        tomcat.getHost().setAppBase(appBase);
-        Context context = addWebapp(contextPath, appBase, classLoader, true);
+        context = addWebapp(contextPath, docBase, classLoader, true);
         context.setSessionCookieDomain(null);
         Wrapper defaultServlet = context.createWrapper();
         defaultServlet.setName("default1");
@@ -91,23 +88,36 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void start() {
-        Server server = tomcat.getServer();
-
-        server.addLifecycleListener(new LifecycleListener() {
-            public void lifecycleEvent(LifecycleEvent event) {
-                if (event.getType().equals(Lifecycle.BEFORE_STOP_EVENT)) {
-//                    executorService.shutdownNow();
-  //                  getLog().info("Stop monitoring threads.");
-                }
-            }
-        });
+        StandardServer server = (StandardServer) tomcat.getServer();
+        AprLifecycleListener listener = new AprLifecycleListener();
+        server.addLifecycleListener(listener);
+        server.setParentClassLoader(getClass().getClassLoader());
+        tomcat.getConnector().setURIEncoding("UTF-8");
+        tomcat.getConnector().setUseBodyEncodingForURI(true);
         try {
             server.start();
         } catch (LifecycleException e) {
             throw new IllegalStateException(e);
         }
     }
-    
+
+    @Override
+    public void reload() {
+        context.reload();
+    }
+
+    @Override
+    public ServerStatus getStatus() {
+        switch(tomcat.getServer().getState()) {
+            case STARTED:
+                return ServerStatus.RUNNING;
+            case STOPPED:
+                return ServerStatus.STOPPED;
+            default:
+                return ServerStatus.UNKNOWN;
+        }
+    }
+
     @Override
     public void await() {
         tomcat.getServer().await();
@@ -141,7 +151,6 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         webappLoader.setDelegate(true);
         
         context.setLoader(webappLoader);
-
         ContextConfig config = new ContextConfig();
         context.setPath(contextPath);
         context.setDocBase(appBase);
@@ -151,4 +160,5 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         config.setDefaultWebXml(Constants.NoDefaultWebXml);
         tomcat.getHost().addChild(context);
         return context;
-    }}
+    }
+}
