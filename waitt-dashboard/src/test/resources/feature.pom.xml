@@ -35,29 +35,32 @@
                             <artifactId>waitt-jetty9</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
                         </server>
-                   </servers>
+                    </servers>
                     <features>
-                         <feature>
+                        <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-jacoco</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
-                         </feature>
-                         <feature>
+                        </feature>
+                        <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-tracer</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
-                         </feature>
-                         <feature>
+                        </feature>
+                        <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-admin</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
-                         </feature>
-                         <feature>
+                            <configuration>
+                                <admin.port>11902</admin.port>
+                            </configuration>
+                        </feature>
+                        <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-dashboard</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
                             <type>war</type>
-                         </feature>
+                        </feature>
                     </features>
                 </configuration>
             </plugin>

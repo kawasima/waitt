@@ -31,22 +31,28 @@ public class DashboardApplication implements SparkApplication {
     
     @Override
     public void init() {
+        final AdminConfig adminConfig = new AdminConfig();
+        adminConfig.read();
+
         TemplateEngine engine = new ThymeleafTemplateEngine();
         staticFileLocation("/public");
         get("/", new TemplateViewRoute() {
             @Override
             public ModelAndView handle(Request request, Response response) throws Exception {
                 Map<String, Object> attributes = new HashMap<String, Object>();
-                HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:1192/app").openConnection();
-                InputStream in = conn.getInputStream();
-                try {
-                    WebappConfiguration config = JAXB.unmarshal(in, WebappConfiguration.class);
-                    attributes.put("context", request.contextPath());
-                    attributes.put("webappConfiguration", config);
-                } finally {
-                    in.close();
-                    conn.disconnect();
+                if (adminConfig.isAdminAvailable()) {
+                    HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + adminConfig.getAdminPort() + "/app").openConnection();
+                    InputStream in = conn.getInputStream();
+                    try {
+                        WebappConfiguration config = JAXB.unmarshal(in, WebappConfiguration.class);
+                        attributes.put("webappConfiguration", config);
+                    } finally {
+                        in.close();
+                        conn.disconnect();
+                    }
                 }
+                attributes.put("adminAvailable", adminConfig.isAdminAvailable());
+                attributes.put("context", request.contextPath());
                 return new ModelAndView(attributes, "application");
             }
         }, engine);
@@ -55,14 +61,17 @@ public class DashboardApplication implements SparkApplication {
             @Override
             public ModelAndView handle(Request request, Response response) throws Exception {
                 Map<String, Object> attributes = new HashMap<String, Object>();
-                InputStream in = new URL("http://localhost:1192/server").openStream();
-                try {
-                    ServerMetadata metadata = JAXB.unmarshal(in, ServerMetadata.class);
-                    attributes.put("context", request.contextPath());
-                    attributes.put("serverMetadata", metadata);
-                } finally {
-                    in.close();
+                if (adminConfig.isAdminAvailable()) {
+                    InputStream in = new URL("http://localhost:" + adminConfig.getAdminPort() + "/server").openStream();
+                    try {
+                        ServerMetadata metadata = JAXB.unmarshal(in, ServerMetadata.class);
+                        attributes.put("serverMetadata", metadata);
+                    } finally {
+                        in.close();
+                    }
                 }
+                attributes.put("adminAvailable", adminConfig.isAdminAvailable());
+                attributes.put("context", request.contextPath());
                 return new ModelAndView(attributes, "server");
             }
         }, engine);
@@ -70,7 +79,12 @@ public class DashboardApplication implements SparkApplication {
         post("/server/reload", new Route() {
             @Override
             public Object handle(Request request, Response response) throws Exception {
-                HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:1192/reload").openConnection();
+                if (!adminConfig.isAdminAvailable()) {
+                    response.status(403);
+                    response.body("Admin feature is unavailable.");
+                    return null;
+                }
+                HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + adminConfig.getAdminPort() + "/reload").openConnection();
                 conn.setDoOutput(true);
                 conn.setRequestMethod("POST");
 

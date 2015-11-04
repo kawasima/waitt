@@ -10,6 +10,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
 import net.unit8.waitt.api.ClassLoaderFactory;
 import net.unit8.waitt.api.ConfigurableFeature;
 import net.unit8.waitt.api.EmbeddedServer;
@@ -32,6 +34,7 @@ import org.jacoco.report.html.HTMLFormatter;
  * @author kawasima
  */
 public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
+    private static final Logger LOG = Logger.getLogger(JacocoMonitor.class.getName());
     private Set<String> targetPackages;
     private File sourceDirectory;
     ExecutorService executorService;
@@ -54,7 +57,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
                 return ccl;
             }
         });
-        Agent.getInstance(new AgentOptions());
+        LOG.info("Start a jacoco agent. " + Agent.getInstance(new AgentOptions()));
     }    
 
     @Override

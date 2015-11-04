@@ -92,14 +92,14 @@ public class ServerAction implements Route {
     }
 
     private void renderGraphCpu(RrdGraphDef gDef) {
-        gDef.setTitle("Memory usage");
-        gDef.setVerticalLabel("bytes");
-        gDef.line("Free memory (physical)", Color.BLUE);
-        gDef.line("Free memory (swap)", Color.GREEN);
-        gDef.datasource("Free memory (physical)", rrdPath, "memory-physical", ConsolFun.AVERAGE);
-        gDef.datasource("Free memory (swap)",     rrdPath, "memory-swap",     ConsolFun.AVERAGE);
-        gDef.gprint("Free memory (physical)", ConsolFun.AVERAGE, "Free memory (physical) = %.3f%s");
-        gDef.gprint("Free memory (swap)", ConsolFun.AVERAGE, "Free memory (swap) = %.3f%s\\c");
+        gDef.setTitle("CPU load");
+        gDef.setVerticalLabel("%");
+        gDef.line("Process", Color.BLUE);
+        gDef.line("System", Color.GREEN);
+        gDef.datasource("Process", rrdPath, "load-process", ConsolFun.AVERAGE);
+        gDef.datasource("System",  rrdPath, "load-system",  ConsolFun.AVERAGE);
+        gDef.gprint("Process", ConsolFun.AVERAGE, "Load average (process) = %.3f%s");
+        gDef.gprint("System", ConsolFun.AVERAGE, "Load average (system) = %.3f%s\\c");
     }
 
     private enum GraphType { MEMORY, CPU }

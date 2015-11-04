@@ -30,13 +30,13 @@ import net.unit8.waitt.api.configuration.Feature;
 import net.unit8.waitt.api.configuration.Server;
 import net.unit8.waitt.mojo.configuration.ExtraWebapp;
 import net.unit8.waitt.mojo.configuration.ServerSpec;
+import net.unit8.waitt.mojo.log.WaittLogHandler;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.ArtifactUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -246,41 +246,7 @@ public class RunMojo extends AbstractMojo {
             logger.removeHandler(handler);
         }
 
-        final Log mavenLogger = new WaittLogger(getLog());
-        logger.addHandler(new Handler() {
-            @Override
-            public void publish(LogRecord logRecord) {
-                if (logRecord.getLoggerName() != null && logRecord.getLoggerName().startsWith("sun.awt."))
-                    return;
-                Level lv = logRecord.getLevel();
-                if (Arrays.asList(ALL, CONFIG, FINE, FINER, FINEST).contains(lv)) {
-                    mavenLogger.debug(logRecord.getMessage());
-                } else if (lv.equals(INFO)) {
-                    mavenLogger.info(logRecord.getMessage());
-                } else if (lv.equals(WARNING)) {
-                    Throwable t = logRecord.getThrown();
-                    if (t == null)
-                        mavenLogger.warn(logRecord.getMessage());
-                    else
-                        mavenLogger.warn(logRecord.getMessage(), t);
-                } else if (lv.equals(SEVERE)) {
-                    Throwable t = logRecord.getThrown();
-                    if (t == null)
-                        mavenLogger.error(logRecord.getMessage());
-                    else
-                        mavenLogger.error(logRecord.getMessage(), t);
-                }
-            }
-
-            @Override
-            public void flush() {
-            }
-
-            @Override
-            public void close() throws SecurityException {
-            }
-        });
-        
+        logger.addHandler(new WaittLogHandler(getLog()));
         logger.addHandler(new Handler() {
             @Override
             public void publish(LogRecord record) {

@@ -29,9 +29,14 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
         if (tomcat.getHost() instanceof StandardHost) {
             StandardHost host = (StandardHost) tomcat.getHost();
             host.setUnpackWARs(true);
-            host.setAppBase("target/tomcat7");
+            File appBase = new File("target/tomcat7/webapps");
+            if (!appBase.exists()) appBase.mkdirs();
+            host.setAppBase(appBase.getAbsolutePath());
+
+            File workDir = new File("target/tomcat7/work");
+            if (!workDir.exists()) workDir.mkdirs();
+            host.setWorkDir(workDir.getAbsolutePath());
         }
-        System.setProperty("catalina.home", ".");
     }
 
     public String getName() {
@@ -150,7 +155,6 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
         webappLoader.setDelegate(true);
         
         context.setLoader(webappLoader);
-
         ContextConfig config = new ContextConfig();
         context.setPath(contextPath);
         context.setDocBase(appBase);

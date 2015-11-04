@@ -4,7 +4,7 @@
     <title>WAITT dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/primer/2.4.0/primer.css" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/octicons/3.1.0/octicons.css" type="text/css"/>
-    <link rel="stylesheet" href="../../webapp/css/dashboard.css" th:href="${context} + '/css/dashboard.css'" type="text/css"/>
+    <link rel="stylesheet" href="../public/css/dashboard.css" th:href="${context} + '/css/dashboard.css'" type="text/css"/>
 </head>
 <body>
 <header class="masthead">
@@ -25,26 +25,34 @@
         </div>
         <div class="three-fourths column">
             <h1><i class="mega-octicon octicon-dashboard"></i>Application</h1>
-            <table class="ui celled table">
-                <tbody>
-                <tr>
-                    <th>Application name</th>
-                    <td th:text="${webappConfiguration.applicationName}">sample application</td>
-                </tr>
-                <tr>
-                    <th>Package</th>
-                    <td th:text="${webappConfiguration.packages}">net.unit8.waitt</td>
-                </tr>
-                <tr>
-                    <th>Base directory</th>
-                    <td th:text="${webappConfiguration.baseDirectory}">/home/kawasima/waitt</td>
-                </tr>
-                <tr>
-                    <th>Source directory</th>
-                    <td th:text="${webappConfiguration.sourceDirectory}">/home/kawasima/waitt/src/main/java</td>
-                </tr>
-                </tbody>
-            </table>
+            <div th:if="${adminAvailable}">
+                <table class="ui celled table">
+                    <tbody>
+                    <tr>
+                        <th>Application name</th>
+                        <td th:text="${webappConfiguration.applicationName}">sample application</td>
+                    </tr>
+                    <tr>
+                        <th>Package</th>
+                        <td th:text="${webappConfiguration.packages}">net.unit8.waitt</td>
+                    </tr>
+                    <tr>
+                        <th>Base directory</th>
+                        <td th:text="${webappConfiguration.baseDirectory}">/home/kawasima/waitt</td>
+                    </tr>
+                    <tr>
+                        <th>Source directory</th>
+                        <td th:text="${webappConfiguration.sourceDirectory}">/home/kawasima/waitt/src/main/java</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div th:unless="${adminAvailable}">
+                <div class="blankslate">
+                    <h3>Application view is unavailable</h3>
+                    <p>Add waitt-admin feature</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

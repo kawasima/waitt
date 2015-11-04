@@ -17,11 +17,12 @@ import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
 
 /**
+ * A provider of a server.
  *
  * @author kawasima
  */
 public class DefaultServerProvider implements ServerProvider {
-    private static final Logger LOG = Logger.getGlobal();
+    private static final Logger LOG = Logger.getLogger(DefaultServerProvider.class.getName());
     
     @Requirement
     private Prompter prompter;
@@ -31,8 +32,7 @@ public class DefaultServerProvider implements ServerProvider {
 
     @Component
     protected RepositorySystem repositorySystem;
-    
-    
+
     @Override
     public ServerSpec getServer(Server server, ClassRealm parentRealm) {
         Artifact artifact = repositorySystem.createArtifact(server.getGroupId(), server.getArtifactId(), server.getVersion(), "jar");
@@ -60,10 +60,13 @@ public class DefaultServerProvider implements ServerProvider {
         if (interactive && serverSpecs.size() > 1) {
             try {
                 prompter.showMessage("Detect multiple servers...\n");
+                List<String> possibleValues = new ArrayList<String>();
                 for (int i=0; i<serverSpecs.size(); i++) {
+                    possibleValues.add(Integer.toString(i));
                     prompter.showMessage("  " + i + ". " + serverSpecs.get(i).getEmbeddedServer().getName() + "\n");
                 }
-                String res = prompter.prompt("What number of server do you use? ");
+
+                String res = prompter.prompt("What number will you use? (default: 0)", possibleValues, "0");
                 int num = Integer.parseInt(res);
                 return serverSpecs.get(num);
             } catch(PrompterException e) {

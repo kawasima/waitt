@@ -4,7 +4,7 @@
     <title>WAITT dashboard</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/primer/2.4.0/primer.css" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/octicons/3.1.0/octicons.css" type="text/css"/>
-    <link rel="stylesheet" href="../../public/css/dashboard.css" th:href="${context} + '/css/dashboard.css'" type="text/css"/>
+    <link rel="stylesheet" href="../public/css/dashboard.css" th:href="${context} + '/css/dashboard.css'" type="text/css"/>
 </head>
 <body>
 <header class="masthead">
@@ -26,21 +26,35 @@
         <div class="three-fourths column">
             <h1><i class="mega-octicon octicon-server"></i>Server</h1>
 
-            <dl>
-                <dt>type</dt>
-                <dd>
-                    <span th:text="${serverMetadata.name}">tomcat7</span>
-                    <span th:switch="${serverMetadata.status}">
-                        <span th:case="${@net.unit8.waitt.api.ServerStatus@RUNNING}" class="state state-open">RUNNING</span>
-                        <span th:case="${@net.unit8.waitt.api.ServerStatus@STOPPED}" class="state state-closed">STOPPED</span>
-                        <span th:case="${@net.unit8.waitt.api.ServerStatus@UNKNOWN}" class="state state-merged">UNKNOWN</span>
-                    </span>
-                </dd>
-            </dl>
+            <div th:if="${adminAvailable}">
+                <dl>
+                    <dt>type</dt>
+                    <dd>
+                        <span th:text="${serverMetadata.name}">tomcat7</span>
+                        <span th:switch="${serverMetadata.status}">
+                            <span th:case="${@net.unit8.waitt.api.ServerStatus@RUNNING}" class="state state-open">RUNNING</span>
+                            <span th:case="${@net.unit8.waitt.api.ServerStatus@STOPPED}" class="state state-closed">STOPPED</span>
+                            <span th:case="${@net.unit8.waitt.api.ServerStatus@UNKNOWN}" class="state state-merged">UNKNOWN</span>
+                        </span>
+                    </dd>
+                </dl>
 
-            <form method="post" action="reload" th:action="${context} + '/server/reload'">
-                <button class="btn" type="submit">Reload</button>
-            </form>
+                <form method="post" action="reload" th:action="${context} + '/server/reload'">
+                    <button class="btn" type="submit">Reload</button>
+                </form>
+
+                <hr/>
+                <h2>Monitor</h2>
+                <img src="" width="500" th:src="${'http://localhost:1192/server/cpu.png'}"/>
+                <img src="" width="500" th:src="${'http://localhost:1192/server/memory.png'}"/>
+            </div>
+
+            <div th:unless="${adminAvailable}">
+                <div class="blankslate">
+                    <h3>Server view is unavailable</h3>
+                    <p>Add waitt-admin feature</p>
+                </div>
+            </div>
 
         </div>
     </div>

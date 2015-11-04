@@ -31,9 +31,14 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         if (tomcat.getHost() instanceof StandardHost) {
             StandardHost host = (StandardHost) tomcat.getHost();
             host.setUnpackWARs(true);
-            host.setAppBase("target/tomcat8");
+            File appBase = new File("target/tomcat8/webapps");
+            if (!appBase.exists()) appBase.mkdirs();
+            host.setAppBase(appBase.getAbsolutePath());
+
+            File workDir = new File("target/tomcat8/work");
+            if (!workDir.exists()) workDir.mkdirs();
+            host.setWorkDir(workDir.getAbsolutePath());
         }
-        System.setProperty("catalina.home", ".");
     }
 
     public String getName() {
