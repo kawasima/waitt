@@ -72,9 +72,9 @@ If you set multiple servers and maven is executed in the interactive mode, you c
 
 ### Coverage
 
-You can use JaCoCo or Coberature.
+You can use JaCoCo or Cobertura.
 
-#### Coberature
+#### Cobertura
 
 ```xml
   <feature>
