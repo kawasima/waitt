@@ -92,6 +92,7 @@ public class DashboardApplication implements SparkApplication {
                     conn.getOutputStream().close();
                     InputStream is = conn.getInputStream();
                     try {
+                        //noinspection StatementWithEmptyBody
                         while (is.read() >= 0) ;
                         is.close();
                     } finally {

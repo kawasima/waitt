@@ -12,7 +12,7 @@ import java.io.StringWriter;
  * @author kawasima
  */
 public class AppAction implements Route {
-    WebappConfiguration config;
+    final WebappConfiguration config;
 
     public AppAction(WebappConfiguration config) {
         this.config = config;

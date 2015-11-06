@@ -1,5 +1,7 @@
 package net.unit8.waitt.api;
 
+import java.util.List;
+
 /**
  * The api of an embedded server.
  *
@@ -28,10 +30,15 @@ public interface EmbeddedServer {
     void setBaseDir(String baseDir);
 
     /**
+     *
+     */
+    void setWebappDecorators(List<WebappDecorator> decorators);
+
+    /**
      * Set a main context.
      *
-     * @param contextPath
-     * @param baseDir
+     * @param contextPath a path of context
+     * @param baseDir a base directory
      * @param loader a classloader for main application
      */
     void setMainContext(String contextPath, String baseDir, ClassLoader loader);

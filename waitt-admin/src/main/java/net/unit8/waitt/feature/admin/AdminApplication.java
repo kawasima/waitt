@@ -12,7 +12,7 @@ import java.util.List;
  * @author kawasima
  */
 public class AdminApplication implements HttpHandler {
-    private List<Route> routes = new ArrayList<Route>();
+    private final List<Route> routes = new ArrayList<Route>();
 
     public void addRoutes(Route... routes) {
         this.routes.addAll(Arrays.asList(routes));

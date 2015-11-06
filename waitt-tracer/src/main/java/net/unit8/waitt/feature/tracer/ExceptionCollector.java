@@ -1,17 +1,21 @@
 package net.unit8.waitt.feature.tracer;
 
 import java.util.Map;
+import java.util.logging.Logger;
+
 import net.unit8.waitt.api.ConfigurableFeature;
 import net.unit8.waitt.api.LogListener;
 import net.unit8.waitt.api.configuration.Feature;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
+import net.unit8.waitt.feature.tracer.entry.ExceptionLogEntry;
 
 /**
  * @author kawasima
  */
 public class ExceptionCollector implements LogListener, ConfigurableFeature {
-    private ESClient esclient;
-    
+    private static final Logger LOG = Logger.getLogger(ExceptionCollector.class.getName());
+    private ESClient esClient;
+
     @Override
     public void config(WebappConfiguration config) {
         String baseUrl = null;
@@ -26,7 +30,8 @@ public class ExceptionCollector implements LogListener, ConfigurableFeature {
         if (baseUrl == null) {
             baseUrl = "http://localhost:9200";
         }
-        esclient = new ESClient(baseUrl);
+        esClient = new ESClient(baseUrl);
+        LOG.info("setup ESClient for " + baseUrl);
     }
     
     @Override
@@ -46,7 +51,7 @@ public class ExceptionCollector implements LogListener, ConfigurableFeature {
         System.out.println("log:error:" + message + ":"+ t);
 
         if (t != null) {
-            esclient.post("/waitt/exception/", new ExceptionLogEntry(message.toString(), t.getStackTrace()));
+            esClient.post("/waitt/exception/", new ExceptionLogEntry(message.toString(), t.getStackTrace()));
         }
     }
 }

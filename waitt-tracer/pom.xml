@@ -22,7 +22,7 @@
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waittVersion>0.4.0-SNAPSHOT</waittVersion>
+        <waittVersion>1.0.0-SNAPSHOT</waittVersion>
     </properties>
 
     <dependencies>
@@ -36,6 +36,12 @@
             <groupId>net.unit8.waitt</groupId>
             <artifactId>waitt-api</artifactId>
             <version>${waittVersion}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

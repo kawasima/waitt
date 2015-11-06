@@ -26,7 +26,8 @@ import java.util.logging.Logger;
 public class ESClient {
     private static final Logger LOG = Logger.getLogger(ESClient.class.getName());
     private final String baseUrl;
-    private JsonSerializer<Date> dateSerializer = new JsonSerializer<Date>() {
+
+    private final JsonSerializer<Date> dateSerializer = new JsonSerializer<Date>() {
         @Override
         public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
                 context) {
@@ -38,9 +39,10 @@ public class ESClient {
     public ESClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
-    
+
     public void post(String path, Serializable entry) {
         Gson gson = new GsonBuilder()
+                .disableHtmlEscaping()
                 .registerTypeAdapter(Date.class, dateSerializer)
                 .create();
 

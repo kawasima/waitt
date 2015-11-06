@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
  * @author kawasima
  */
 public class MonitoringPost implements Runnable {
-    private String rrdPath;
+    private final String rrdPath;
 
     public MonitoringPost(String rrdPath) {
         this.rrdPath = rrdPath;

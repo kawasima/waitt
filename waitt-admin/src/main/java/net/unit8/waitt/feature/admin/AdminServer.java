@@ -25,11 +25,11 @@ import java.util.logging.Logger;
 public class AdminServer implements ServerMonitor, ConfigurableFeature {
     private static final Logger LOG = Logger.getLogger(AdminServer.class.getName());
 
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    final ExecutorService executorService = Executors.newSingleThreadExecutor();
     HttpServer adminServer;
     String rrdPath;
 
-    AdminApplication app = new AdminApplication();
+    final AdminApplication app = new AdminApplication();
     int adminPort = 1192;
     private long startedAt;
 

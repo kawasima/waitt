@@ -19,7 +19,7 @@ import java.io.StringWriter;
  */
 public class ServerAction implements Route {
     private final EmbeddedServer server;
-    private String rrdPath;
+    private final String rrdPath;
 
     public ServerAction(EmbeddedServer server, String rrdPath) {
         this.server = server;

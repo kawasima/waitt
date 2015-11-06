@@ -3,26 +3,23 @@ package net.unit8.waitt.server.jetty9;
 import net.unit8.waitt.api.ClassLoaderFactory;
 import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerStatus;
-import net.unit8.waitt.api.configuration.Feature;
+import net.unit8.waitt.api.WebappDecorator;
+import net.unit8.waitt.api.configuration.FilterConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.eclipse.jetty.annotations.ServletContainerInitializersStarter;
 import org.eclipse.jetty.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.plus.annotation.ContainerInitializer;
 import org.eclipse.jetty.server.NetworkTrafficServerConnector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.util.resource.Resource;
-import org.eclipse.jetty.webapp.*;
+import org.eclipse.jetty.webapp.WebAppClassLoader;
+import org.eclipse.jetty.webapp.WebAppContext;
 
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Jetty9 embedded server.
@@ -30,9 +27,11 @@ import java.util.concurrent.TimeUnit;
  * @author kawasima
  */
 public class Jetty9EmbeddedServer implements EmbeddedServer {
-    Server server;
-    WaittHandlerList handlers;
+    final Server server;
+    final WaittHandlerList handlers;
     WebAppContext mainWebapp;
+    List<WebappDecorator> decorators;
+
 
     public Jetty9EmbeddedServer() {
         server = new Server();
@@ -119,6 +118,11 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
         }
     }
 
+    @Override
+    public void setWebappDecorators(List<WebappDecorator> decorators) {
+        this.decorators = decorators;
+    }
+
     private WebAppContext addWebapp(String contextPath, String baseDir, ClassLoader loader, boolean mainContext) {
         WebAppContext webapp = new WebAppContext();
         webapp.setContextPath(contextPath);
@@ -132,6 +136,18 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
         webapp.setAttribute("org.eclipse.jetty.containerInitializers", jspInitializers());
         webapp.addBean(new ServletContainerInitializersStarter(webapp), true);
         webapp.setAllowNullPathInfo(false);
+
+        if (mainContext) {
+            for (WebappDecorator decorator : decorators) {
+                for (FilterConfiguration filterConfig : decorator.getFilterConfigs()) {
+                    FilterHolder filterHolder = new FilterHolder();
+                    filterHolder.setClassName(filterConfig.getClassName());
+                    filterHolder.setName(filterConfig.getName());
+                    webapp.addFilter(filterHolder, filterConfig.getUrlPattern()[0], null);
+                    ((ClassRealm) loader).importFrom(decorator.getClass().getClassLoader(), filterConfig.getClassName());
+                }
+            }
+        }
 
         try {
             if (mainContext && ClassLoaderFactoryHolder.getClassLoaderFactory() != null) {

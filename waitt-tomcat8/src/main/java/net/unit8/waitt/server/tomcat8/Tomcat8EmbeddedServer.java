@@ -1,21 +1,27 @@
 package net.unit8.waitt.server.tomcat8;
 
+import net.unit8.waitt.api.ClassLoaderFactory;
 import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerStatus;
-import org.apache.catalina.*;
+import net.unit8.waitt.api.WebappDecorator;
+import net.unit8.waitt.api.configuration.FilterConfiguration;
+import org.apache.catalina.Context;
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.core.AprLifecycleListener;
-import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.core.StandardHost;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.loader.WebappLoader;
-import org.apache.catalina.startup.Tomcat;
-
-import javax.servlet.ServletException;
-import java.io.File;
-import net.unit8.waitt.api.ClassLoaderFactory;
 import org.apache.catalina.startup.Constants;
 import org.apache.catalina.startup.ContextConfig;
+import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.JarScanner;
+import org.apache.tomcat.util.descriptor.web.FilterDef;
+import org.apache.tomcat.util.descriptor.web.FilterMap;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
+
+import java.io.File;
+import java.util.List;
 
 /**
  * Tomcat8 server.
@@ -23,8 +29,9 @@ import org.apache.tomcat.JarScanner;
  * @author kawasima
  */
 public class Tomcat8EmbeddedServer implements EmbeddedServer {
-    Tomcat tomcat;
+    final Tomcat tomcat;
     Context context;
+    List<WebappDecorator> decorators;
 
     public Tomcat8EmbeddedServer() {
         tomcat = new Tomcat();
@@ -136,14 +143,37 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
             throw new IllegalStateException(e);
         }
     }
-    
+
+    @Override
+    public void setWebappDecorators(List<WebappDecorator> decorators) {
+        this.decorators = decorators;
+    }
+
     private Context addWebapp(String contextPath, String appBase, ClassLoader classLoader, boolean mainContext) {
-        Context context = null;
+        Context context;
         String contextClass = ((StandardHost) tomcat.getHost()).getContextClass();
         try {
             context = (Context) Class.forName(contextClass).getConstructor().newInstance();
         } catch (Exception ex) {
             throw new IllegalStateException(ex);
+        }
+
+        if (mainContext) {
+            for (WebappDecorator decorator : decorators) {
+                for (FilterConfiguration filterConfig : decorator.getFilterConfigs()) {
+                    FilterDef filterDef = new FilterDef();
+                    filterDef.setFilterClass(filterConfig.getClassName());
+                    filterDef.setFilterName(filterConfig.getName());
+                    context.addFilterDef(filterDef);
+                    FilterMap filterMap = new FilterMap();
+                    filterMap.setFilterName(filterConfig.getName());
+                    for (String urlPattern : filterConfig.getUrlPattern()) {
+                        filterMap.addURLPattern(urlPattern);
+                    }
+                    context.addFilterMap(filterMap);
+                    ((ClassRealm) classLoader).importFrom(decorator.getClass().getClassLoader(), filterConfig.getClassName());
+                }
+            }
         }
 
         final WebappLoader webappLoader = new WebappLoader(classLoader);

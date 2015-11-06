@@ -39,7 +39,7 @@ public class WaittHandlerList extends AbstractHandlerContainer {
             for (Handler handler:handlers)
                 if (handler.getServer()!=getServer())
                     handler.setServer(getServer());
-        Handler[] old=_handlers;;
+        Handler[] old=_handlers;
         _handlers = handlers;
         updateBeans(old, handlers);
     }

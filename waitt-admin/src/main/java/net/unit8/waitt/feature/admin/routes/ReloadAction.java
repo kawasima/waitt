@@ -10,7 +10,7 @@ import java.io.IOException;
  * @author kawasima
  */
 public class ReloadAction implements Route {
-    EmbeddedServer server;
+    final EmbeddedServer server;
 
     public ReloadAction(EmbeddedServer server) {
         this.server = server;

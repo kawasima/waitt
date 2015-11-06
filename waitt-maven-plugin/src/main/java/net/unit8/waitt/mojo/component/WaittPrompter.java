@@ -1,13 +1,13 @@
 package net.unit8.waitt.mojo.component;
 
-import java.io.IOException;
-import java.util.List;
 import org.apache.maven.plugins.annotations.Component;
 import org.codehaus.plexus.components.interactivity.InputHandler;
 import org.codehaus.plexus.components.interactivity.OutputHandler;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
-import org.fusesource.jansi.Ansi;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  *

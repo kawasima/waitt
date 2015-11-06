@@ -8,7 +8,7 @@ import net.unit8.waitt.api.ClassLoaderFactory;
  */
 public class ClassLoaderFactoryHolder {
     private ClassLoaderFactory factory;
-    private static ClassLoaderFactoryHolder INSTANCE = new ClassLoaderFactoryHolder();
+    private static final ClassLoaderFactoryHolder INSTANCE = new ClassLoaderFactoryHolder();
     
     private ClassLoaderFactoryHolder() {
         

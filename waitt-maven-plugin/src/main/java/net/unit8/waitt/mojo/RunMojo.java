@@ -1,5 +1,6 @@
 package net.unit8.waitt.mojo;
 
+import net.unit8.waitt.api.*;
 import net.unit8.waitt.mojo.component.ServerProvider;
 import net.unit8.waitt.mojo.component.ArtifactResolver;
 import java.awt.Desktop;
@@ -21,10 +22,7 @@ import java.util.logging.Level;
 import static java.util.logging.Level.*;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import net.unit8.waitt.api.ConfigurableFeature;
-import net.unit8.waitt.api.EmbeddedServer;
-import net.unit8.waitt.api.LogListener;
-import net.unit8.waitt.api.ServerMonitor;
+
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import net.unit8.waitt.api.configuration.Feature;
 import net.unit8.waitt.api.configuration.Server;
@@ -77,7 +75,6 @@ public class RunMojo extends AbstractMojo {
     @Parameter
     private List<Feature> features;
 
-
     @Component
     protected ProjectBuilder projectBuilder;
 
@@ -90,9 +87,6 @@ public class RunMojo extends AbstractMojo {
     @Component
     protected RepositorySystem repositorySystem;
 
-    @Parameter(defaultValue = "target/coverage")
-    protected File coverageReportDirectory;
-
     @Component
     protected ArtifactResolver artifactResolver;
     
@@ -103,8 +97,74 @@ public class RunMojo extends AbstractMojo {
     private final List<ServerMonitor> serverMonitors = new ArrayList<ServerMonitor>();
     private final List<LogListener> logListeners = new ArrayList<LogListener>();
     private final List<ExtraWebapp> extraWebapps = new ArrayList<ExtraWebapp>();
+    private final List<WebappDecorator> webappDecorators = new ArrayList<WebappDecorator>();
     
     protected String appBase;
+
+    /**
+     * Start embedded server.
+     *
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     */
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        AnsiConsole.systemInstall();
+        artifactResolver.setProject(project);
+        artifactResolver.setSession(session);
+        initLogger();
+        if (appBase == null)
+            appBase = new File("src/main/webapp").getAbsolutePath();
+        WebappConfiguration webappConfig = new WebappConfiguration();
+        webappConfig.setApplicationName(project.getName());
+        webappConfig.setBaseDirectory(new File(appBase));
+        webappConfig.setPackages(PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
+        webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
+
+        ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
+        ServerSpec serverSpec = serverProvider.selectServer(servers, waittRealm, session.getSettings().getInteractiveMode());
+        EmbeddedServer embeddedServer = serverSpec.getEmbeddedServer();
+
+        if (port == 0)
+            scanPort();
+        embeddedServer.setPort(port);
+
+        if (contextPath == null || contextPath.equals("/"))
+            contextPath = "";
+        embeddedServer.setBaseDir(".");
+
+        loadFeature(waittRealm, webappConfig);
+
+        try {
+            embeddedServer.start();
+            ClassRealm webappRealm = serverSpec.getClassRealm().createChildRealm("Application");
+            List<URL> classpathUrls = resolveClasspaths();
+            for (URL url : classpathUrls) {
+                webappRealm.addURL(url);
+            }
+
+            for (ServerMonitor serverMonitor : serverMonitors) {
+                serverMonitor.init(embeddedServer);
+            }
+            embeddedServer.setWebappDecorators(webappDecorators);
+            embeddedServer.setMainContext(contextPath, appBase, webappRealm);
+            for (ExtraWebapp extraWebapp : extraWebapps) {
+                extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
+                embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
+            }
+
+            for (ServerMonitor serverMonitor : serverMonitors) {
+                serverMonitor.start(embeddedServer);
+            }
+            path = path == null ? "" : path;
+            Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
+            embeddedServer.await();
+        } catch (Exception e) {
+            throw new MojoExecutionException("Tomcat start failure", e);
+        } finally {
+            embeddedServer.stop();
+        }
+    }
 
     private void readArtifacts(String subDirectory, List<Artifact> artifacts, List<File> classpathFiles)
             throws MojoExecutionException {
@@ -170,72 +230,14 @@ public class RunMojo extends AbstractMojo {
                     }
                     logListeners.add(logListener);
                 }
+                ServiceLoader<WebappDecorator> webappDecoratorLoader = ServiceLoader.load(WebappDecorator.class, realm);
+                for (WebappDecorator webappDecorator : webappDecoratorLoader) {
+                    if (webappDecorator instanceof ConfigurableFeature) {
+                        ((ConfigurableFeature) webappDecorator).config(config);
+                    }
+                    webappDecorators.add(webappDecorator);
+                }
             }
-        }
-    }
-    
-    /**
-     * Start embedded server.
-     *
-     * @throws MojoExecutionException
-     * @throws MojoFailureException
-     */
-    @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        AnsiConsole.systemInstall();
-        artifactResolver.setProject(project);
-        artifactResolver.setSession(session);
-        initLogger();
-        if (appBase == null)
-            appBase = new File("src/main/webapp").getAbsolutePath();
-        WebappConfiguration webappConfig = new WebappConfiguration();
-        webappConfig.setApplicationName(project.getName());
-        webappConfig.setBaseDirectory(new File(appBase));
-        webappConfig.setPackages(PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
-        webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
-
-        ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
-        ServerSpec serverSpec = serverProvider.selectServer(servers, waittRealm, session.getSettings().getInteractiveMode());
-        EmbeddedServer embeddedServer = serverSpec.getEmbeddedServer();
-
-        if (port == 0)
-            scanPort();
-        embeddedServer.setPort(port);
-
-        if (contextPath == null || contextPath.equals("/"))
-            contextPath = "";
-        embeddedServer.setBaseDir(".");
-
-        loadFeature(waittRealm, webappConfig);
-
-        try {
-            embeddedServer.start();
-            ClassRealm webappRealm = serverSpec.getClassRealm().createChildRealm("Application");
-            List<URL> classpathUrls = resolveClasspaths();
-            for (URL url : classpathUrls) {
-                webappRealm.addURL(url);
-            }
-
-            for (ServerMonitor serverMonitor : serverMonitors) {
-                serverMonitor.init(embeddedServer);
-            }
-
-            embeddedServer.setMainContext(contextPath, appBase, webappRealm);
-            for (ExtraWebapp extraWebapp : extraWebapps) {
-                extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
-                embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
-            }
-
-            for (ServerMonitor serverMonitor : serverMonitors) {
-                serverMonitor.start(embeddedServer);
-            }
-            path = path == null ? "" : path;
-            Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
-            embeddedServer.await();            
-        } catch (Exception e) {
-            throw new MojoExecutionException("Tomcat start failure", e);
-        } finally {
-            embeddedServer.stop();
         }
     }
 

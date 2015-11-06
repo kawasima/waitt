@@ -1,17 +1,5 @@
 package net.unit8.waitt.feature.jacoco;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
 import net.unit8.waitt.api.ClassLoaderFactory;
 import net.unit8.waitt.api.ConfigurableFeature;
 import net.unit8.waitt.api.EmbeddedServer;
@@ -28,6 +16,17 @@ import org.jacoco.report.IReportGroupVisitor;
 import org.jacoco.report.IReportVisitor;
 import org.jacoco.report.MultiReportVisitor;
 import org.jacoco.report.html.HTMLFormatter;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  *

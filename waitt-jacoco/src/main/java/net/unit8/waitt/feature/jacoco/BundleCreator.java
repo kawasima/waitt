@@ -25,8 +25,6 @@ public class BundleCreator {
             analyzer.analyzeAll(file);
         }
         
-        final IBundleCoverage bundle = builder
-                .getBundle("project");
-        return bundle;
+        return builder.getBundle("project");
     }
 }
