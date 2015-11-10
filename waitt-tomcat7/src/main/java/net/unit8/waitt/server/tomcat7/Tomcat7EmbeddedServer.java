@@ -21,6 +21,7 @@ import org.apache.tomcat.JarScanner;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 import java.io.File;
+import java.net.URL;
 import java.util.List;
 
 /**
@@ -172,7 +173,10 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
                         filterMap.addURLPattern(urlPattern);
                     }
                     context.addFilterMap(filterMap);
-                    ((ClassRealm) classLoader).importFrom(decorator.getClass().getClassLoader(), filterConfig.getClassName());
+
+                    for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
+                        ((ClassRealm) classLoader).addURL(url);
+                    }
                 }
             }
         }

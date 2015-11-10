@@ -1,11 +1,8 @@
 package net.unit8.waitt.feature.tracer;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import com.google.gson.*;
+import net.unit8.waitt.feature.tracer.util.ISO8601Formatter;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -14,6 +11,7 @@ import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,7 +29,7 @@ public class ESClient {
         @Override
         public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
                 context) {
-            return src == null ? null : new JsonPrimitive(src.getTime());
+            return src == null ? null : new JsonPrimitive(ISO8601Formatter.format(src));
         }
     };
 
@@ -43,7 +41,9 @@ public class ESClient {
     public void post(String path, Serializable entry) {
         Gson gson = new GsonBuilder()
                 .disableHtmlEscaping()
-                .registerTypeAdapter(Date.class, dateSerializer)
+                .serializeNulls()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
                 .create();
 
         HttpURLConnection conn = null;

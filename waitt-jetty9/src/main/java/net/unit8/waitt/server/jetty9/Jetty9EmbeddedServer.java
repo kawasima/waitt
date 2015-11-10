@@ -144,7 +144,10 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
                     filterHolder.setClassName(filterConfig.getClassName());
                     filterHolder.setName(filterConfig.getName());
                     webapp.addFilter(filterHolder, filterConfig.getUrlPattern()[0], null);
-                    ((ClassRealm) loader).importFrom(decorator.getClass().getClassLoader(), filterConfig.getClassName());
+
+                    for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
+                        ((ClassRealm) loader).addURL(url);
+                    }
                 }
             }
         }

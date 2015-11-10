@@ -157,7 +157,9 @@ public class RunMojo extends AbstractMojo {
                 serverMonitor.start(embeddedServer);
             }
             path = path == null ? "" : path;
-            Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(URI.create("http://localhost:" + port + contextPath + path));
+            }
             embeddedServer.await();
         } catch (Exception e) {
             throw new MojoExecutionException("Tomcat start failure", e);
