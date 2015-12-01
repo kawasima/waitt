@@ -44,6 +44,7 @@ import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
+import org.codehaus.plexus.util.DirectoryScanner;
 import org.fusesource.jansi.AnsiConsole;
 
 /**
@@ -54,6 +55,8 @@ import org.fusesource.jansi.AnsiConsole;
 @SuppressWarnings("unchecked")
 @Mojo(name = "run")
 public class RunMojo extends AbstractMojo {
+    private static final String[] WELLKNOWN_DOCROOT = {"src/main/webapp", "WebContent"};
+
     @Parameter
     private int port;
 
@@ -75,6 +78,9 @@ public class RunMojo extends AbstractMojo {
     @Parameter
     private List<Feature> features;
 
+    @Parameter
+    protected File docBase;
+
     @Component
     protected ProjectBuilder projectBuilder;
 
@@ -92,14 +98,13 @@ public class RunMojo extends AbstractMojo {
     
     @Component
     protected ServerProvider serverProvider;
-    
-    
+
+
     private final List<ServerMonitor> serverMonitors = new ArrayList<ServerMonitor>();
     private final List<LogListener> logListeners = new ArrayList<LogListener>();
     private final List<ExtraWebapp> extraWebapps = new ArrayList<ExtraWebapp>();
     private final List<WebappDecorator> webappDecorators = new ArrayList<WebappDecorator>();
     
-    protected String appBase;
 
     /**
      * Start embedded server.
@@ -113,11 +118,11 @@ public class RunMojo extends AbstractMojo {
         artifactResolver.setProject(project);
         artifactResolver.setSession(session);
         initLogger();
-        if (appBase == null)
-            appBase = new File("src/main/webapp").getAbsolutePath();
+        if (docBase == null)
+            docBase = scanDocBase(new File("."));
         WebappConfiguration webappConfig = new WebappConfiguration();
         webappConfig.setApplicationName(project.getName());
-        webappConfig.setBaseDirectory(new File(appBase));
+        webappConfig.setBaseDirectory(docBase);
         webappConfig.setPackages(PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
         webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
 
@@ -147,7 +152,7 @@ public class RunMojo extends AbstractMojo {
                 serverMonitor.init(embeddedServer);
             }
             embeddedServer.setWebappDecorators(webappDecorators);
-            embeddedServer.setMainContext(contextPath, appBase, webappRealm);
+            embeddedServer.setMainContext(contextPath, docBase.getAbsolutePath(), webappRealm);
             for (ExtraWebapp extraWebapp : extraWebapps) {
                 extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
                 embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
@@ -168,6 +173,14 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Read artifacts.
+     *
+     * @param subDirectory a sub directory
+     * @param artifacts artifacts
+     * @param classpathFiles classpaths
+     * @throws MojoExecutionException
+     */
     private void readArtifacts(String subDirectory, List<Artifact> artifacts, List<File> classpathFiles)
             throws MojoExecutionException {
         File modulePom = (subDirectory == null || subDirectory.isEmpty()) ? new File("pom.xml") : new File(subDirectory, "pom.xml");
@@ -181,9 +194,9 @@ public class RunMojo extends AbstractMojo {
             MavenProject subProject = result.getProject();
 
             if ("war".equals(subProject.getPackaging())) {
-                appBase = (subDirectory == null || subDirectory.isEmpty()) ?
-                        new File("src/main/webapp").getAbsolutePath() :
-                        new File(subDirectory, "src/main/webapp").getAbsolutePath();
+                docBase = (subDirectory == null || subDirectory.isEmpty()) ?
+                        scanDocBase(new File(".")) :
+                        scanDocBase(new File(subDirectory));
             }
             for (Artifact dependency : subProject.getArtifacts()) {
                 String scope = dependency.getScope();
@@ -199,6 +212,12 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Load features.
+     *
+     * @param waittRealm The realm of this plugin
+     * @param config     The configuration of web application
+     */
     private void loadFeature(ClassRealm waittRealm, WebappConfiguration config) {
         if (features == null) return;
         for (Feature feature : features) {
@@ -243,6 +262,9 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Initialize logger.
+     */
     private void initLogger() {
         Logger logger = Logger.getLogger("");
         logger.setLevel(ALL);
@@ -281,6 +303,12 @@ public class RunMojo extends AbstractMojo {
         });
     }
 
+    /**
+     * Resolve dependencies as classpath.
+     *
+     * @return find classpath urls
+     * @throws MojoExecutionException
+     */
     private List<URL> resolveClasspaths() throws MojoExecutionException {
         List<Artifact> artifacts = new ArrayList<Artifact>();
         List<File> classpathFiles = new ArrayList<File>();
@@ -323,6 +351,42 @@ public class RunMojo extends AbstractMojo {
         }
     }
 
+    /**
+     * Scan a base directory.
+     *
+     * @param baseDir
+     * @return document
+     * @throws MojoExecutionException
+     */
+    protected File scanDocBase(File baseDir) throws MojoExecutionException {
+        for (String dirStr : WELLKNOWN_DOCROOT) {
+            File docBase = new File(baseDir, dirStr);
+            if (docBase.isDirectory()) {
+                return docBase;
+            }
+        }
+
+        DirectoryScanner scanner = new DirectoryScanner();
+        scanner.setBasedir(baseDir);
+        scanner.setIncludes(new String[]{"web.xml"});
+        scanner.addDefaultExcludes();
+        scanner.scan();
+        for (String path : scanner.getIncludedFiles()) {
+            File webxml = new File(baseDir, path);
+            if ("WEB-INF".equals(webxml.getParentFile().getName())) {
+                return webxml.getParentFile().getParentFile();
+            }
+        }
+
+        File dummy = new File(baseDir, "target/dummy_webapp");
+        if (!dummy.exists() && !dummy.mkdirs())
+            throw new MojoExecutionException("Can't create webapp directory");
+        return dummy;
+    }
+
+    /**
+     * Scan an available port.
+     */
     protected void scanPort() {
         for (int p = startPort; p <= endPort; p++) {
             try {

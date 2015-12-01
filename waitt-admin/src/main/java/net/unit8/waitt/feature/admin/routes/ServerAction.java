@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 /**
+ * Provide information about the server.
+ *
  * @author kawasima
  */
 public class ServerAction implements Route {

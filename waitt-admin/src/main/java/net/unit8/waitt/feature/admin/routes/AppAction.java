@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 
 /**
+ * Provide information about the application.
+ *
  * @author kawasima
  */
 public class AppAction implements Route {

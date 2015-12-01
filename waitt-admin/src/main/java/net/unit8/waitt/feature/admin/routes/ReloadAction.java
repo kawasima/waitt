@@ -7,6 +7,8 @@ import net.unit8.waitt.feature.admin.Route;
 import java.io.IOException;
 
 /**
+ * Provide a feature to reload the server.
+ *
  * @author kawasima
  */
 public class ReloadAction implements Route {

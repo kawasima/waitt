@@ -3,6 +3,8 @@ WAITT
 
 WAITT is the Web Application Integration Test Tool.
 
+Using WAITT, your can deploy your application to any server without building a war or jar file.
+
 ## Usage
 
 Add plugin to your pom.xml
