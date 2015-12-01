@@ -13,13 +13,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
         <artifactId>waitt-tomcat8</artifactId>
-        <version>0.1.0-SNAPSHOT</version>
+        <version>0.1.0</version>
       </server>
     </servers>
   </configuration>
@@ -42,7 +42,7 @@ Then web browser will be started automatically.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat8</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </server>
 ```
 
@@ -52,7 +52,7 @@ Then web browser will be started automatically.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat7</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </server>
 ```
 
@@ -62,7 +62,7 @@ Then web browser will be started automatically.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty9</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </server>
 ```
 
@@ -82,7 +82,7 @@ You can use JaCoCo or Cobertura.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </feature>
 ```
 
@@ -92,7 +92,7 @@ You can use JaCoCo or Cobertura.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </feature>
 ```
 
@@ -102,7 +102,7 @@ You can use JaCoCo or Cobertura.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </feature>
 ```
 
@@ -113,7 +113,7 @@ Add `waitt-admin` feature to your configuration.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
   </feature>
 ```
 
@@ -126,6 +126,7 @@ You can show and search logs at development in Kibana.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
+    <version>0.1.0</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>
