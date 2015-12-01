@@ -22,6 +22,5 @@ public class ResponseEntryTest {
     @Test
     public void test() {
         ResponseEntry response = new ResponseEntry("/", 200, "Hello");
-        System.out.println(gson.toJson(response));
     }
 }

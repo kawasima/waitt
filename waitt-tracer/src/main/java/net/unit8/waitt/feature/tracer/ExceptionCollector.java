@@ -48,8 +48,6 @@ public class ExceptionCollector implements LogListener, ConfigurableFeature {
 
     @Override
     public void error(CharSequence message, Throwable t) {
-        System.out.println("log:error:" + message + ":"+ t);
-
         if (t != null) {
             esClient.post("/waitt/exception/", new ExceptionLogEntry(message.toString(), t.getStackTrace()));
         }

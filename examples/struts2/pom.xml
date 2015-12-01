@@ -8,8 +8,8 @@
     <name>struts2-example</name>
 
     <properties>
-        <waitt.version>1.0.0-SNAPSHOT</waitt.version>
-        <struts2.version>2.3.16.3</struts2.version>
+        <waitt.version>1.0.0</waitt.version>
+        <struts2.version>2.3.24.1</struts2.version>
     </properties>
 
     <build>
@@ -23,39 +23,39 @@
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat7</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                         </server>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat8</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                         </server>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-jetty9</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                         </server>
                    </servers>
                     <features>
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-jacoco</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                          </feature>
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-tracer</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                          </feature>
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-admin</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                          </feature>
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-dashboard</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
+                            <version>0.1.0</version>
                             <type>war</type>
                          </feature>
                     </features>

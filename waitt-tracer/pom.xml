@@ -4,7 +4,7 @@
 
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>jar</packaging>
 
     <parent>
@@ -22,7 +22,7 @@
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waittVersion>1.0.0-SNAPSHOT</waittVersion>
+        <waittVersion>1.0.0</waittVersion>
     </properties>
 
     <dependencies>
