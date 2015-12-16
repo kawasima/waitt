@@ -75,6 +75,8 @@ If you set multiple servers and maven is executed in the interactive mode, you c
 ### Coverage
 
 You can use JaCoCo or Cobertura.
+When you access to `/_coverage/`, you can see the coverages of your code. 
+
 
 #### Cobertura
 
@@ -103,8 +105,10 @@ You can use JaCoCo or Cobertura.
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
     <version>0.1.0</version>
+    <type>war</type>
   </feature>
 ```
+When you access to `/_dashboard/`, you can see the information of your application. 
 
 In dashboard, you can monitor the memory usage / cpu load of a server and redeploy your application.
 Add `waitt-admin` feature to your configuration.
