@@ -18,11 +18,14 @@ import org.apache.catalina.startup.Constants;
 import org.apache.catalina.startup.ContextConfig;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.JarScanner;
-import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 import java.io.File;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Tomcat7 server.
@@ -63,7 +66,7 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
     public void setClassLoaderFactory(ClassLoaderFactory factory) {
         ClassLoaderFactoryHolder.setClassLoaderFactory(factory);
     }
-    
+
     public void setMainContext(String contextPath, String docBase, ClassLoader classLoader) {
         File appBaseDir = new File(docBase);
         if (!appBaseDir.exists()) {
@@ -151,7 +154,7 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
         this.decorators = decorators;
     }
 
-    private Context addWebapp(String contextPath, String appBase, ClassLoader classLoader, boolean mainContext) {
+    private Context addWebapp(String contextPath, String appBase, ClassLoader loader, boolean mainContext) {
         Context context;
         String contextClass = ((StandardHost) tomcat.getHost()).getContextClass();
         try {
@@ -161,6 +164,8 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
         }
 
         if (mainContext) {
+            Set<URL> decoratorUrls = new HashSet<URL>();
+
             for (WebappDecorator decorator : decorators) {
                 for (FilterConfiguration filterConfig : decorator.getFilterConfigs()) {
                     FilterDef filterDef = new FilterDef();
@@ -174,22 +179,24 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
                     }
                     context.addFilterMap(filterMap);
 
-                    for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
-                        ((ClassRealm) classLoader).addURL(url);
+                    for (URL url : ((URLClassLoader) decorator.getClass().getClassLoader()).getURLs()) {
+                        decoratorUrls.add(url);
                     }
                 }
             }
+            if (!decoratorUrls.isEmpty()) {
+                loader = new URLClassLoader(decoratorUrls.toArray(new URL[decoratorUrls.size()]), loader);
+            }
         }
 
-        final WebappLoader webappLoader = new WebappLoader(classLoader);
+        final WebappLoader webappLoader = new WebappLoader(loader);
         if (mainContext && ClassLoaderFactoryHolder.getClassLoaderFactory() != null) {
             webappLoader.setLoaderClass("net.unit8.waitt.server.tomcat7.Tomcat7WebappClassLoaderWrapper");
             JarScanner jarScanner = new ClassRealmJarScanner();
             context.setJarScanner(jarScanner);
         }
-        
+
         webappLoader.setDelegate(true);
-        
         context.setLoader(webappLoader);
         ContextConfig config = new ContextConfig();
         context.setPath(contextPath);

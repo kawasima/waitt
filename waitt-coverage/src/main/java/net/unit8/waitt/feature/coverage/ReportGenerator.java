@@ -14,16 +14,13 @@ import net.sourceforge.cobertura.util.FileFinder;
  *
  * @author kawasima
  */
-public class ReportGenerator implements Runnable {
+public class ReportGenerator {
     private static final Logger LOG = Logger.getLogger(ReportGenerator.class.getName());
-    
+
     private final ComplexityCalculator complexity;
     private final FileFinder finder;
     private final ClassLoader classLoader;
     private final File reportDirectory;
-    private final long reportInterval;
-
-
 
     public ReportGenerator(ClassLoader classLoader, CoverageMonitorConfiguration config) {
         this.classLoader = classLoader;
@@ -31,31 +28,20 @@ public class ReportGenerator implements Runnable {
         finder.addSourceDirectory(config.getSourceDirectory().getAbsolutePath());
         complexity = new ComplexityCalculator(finder);
         reportDirectory = config.getCoverageReportDirectory();
-        reportInterval = config.getReportIntervalSeconds();
     }
-    
-    @Override
-    public void run() {
-        while(true) {
-            if (!(classLoader instanceof CoberturaClassLoader)) {
-                LOG.warning("CoverageMonitor wasn't loaded from CoberturaClassLoader.");
-                break;
-            }
 
-            ProjectData data = ((CoberturaClassLoader) classLoader).getInstrumenter().getProjectData();
-            TouchCollector.applyTouchesOnProjectData(data);
-            CoverageDataFileHandler.saveCoverageData(data, CoverageDataFileHandler.getDefaultDataFile());
-            try {
-                new HTMLReport(data, reportDirectory, finder, complexity, "UTF-8");
-            } catch (Exception ignore) {
-                    /* ignore */
-            }
+    public void report() {
+        if (!(classLoader instanceof CoberturaClassLoader)) {
+            LOG.warning("CoverageMonitor wasn't loaded from CoberturaClassLoader.");
+        }
 
-            try {
-                TimeUnit.SECONDS.sleep(reportInterval);
-            } catch (InterruptedException ignore) { /* ignore */ }
+        ProjectData data = ((CoberturaClassLoader) classLoader).getInstrumenter().getProjectData();
+        TouchCollector.applyTouchesOnProjectData(data);
+        CoverageDataFileHandler.saveCoverageData(data, CoverageDataFileHandler.getDefaultDataFile());
+        try {
+            new HTMLReport(data, reportDirectory, finder, complexity, "UTF-8");
+        } catch (Exception ignore) {
+                /* ignore */
         }
     }
-
-    
 }

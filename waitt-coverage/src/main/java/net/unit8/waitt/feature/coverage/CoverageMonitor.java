@@ -1,8 +1,11 @@
 package net.unit8.waitt.feature.coverage;
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
 import java.util.logging.Logger;
@@ -19,7 +22,7 @@ import org.codehaus.plexus.classworlds.realm.ClassRealm;
 public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
     private static final Logger LOG = Logger.getLogger(CoverageMonitor.class.getName());
     private final CoverageMonitorConfiguration config;
-    ExecutorService executorService;
+    ScheduledExecutorService executorService;
 
     public CoverageMonitor() {
         Logger logger = Logger.getLogger(CoverageDataFileHandler.class.getName());
@@ -32,21 +35,21 @@ public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
         config.setSourceDirectory(webappConfig.getSourceDirectory());
         config.setTargetPackages(webappConfig.getPackages());
     }
-    
+
     @Override
     public void init(EmbeddedServer server) {
-        final ClassRealm coverageRealm = (ClassRealm) this.getClass().getClassLoader();
+        final URL[] urls =  ((URLClassLoader) getClass().getClassLoader()).getURLs();
         server.setClassLoaderFactory(new ClassLoaderFactory() {
             @Override
             public ClassLoader create(ClassLoader parent) {
-                coverageRealm.setParentClassLoader(parent);
-                CoberturaClassLoader ccl = CoberturaClassLoader.create(coverageRealm);
+                ClassLoader coverageLoader = new URLClassLoader(urls, parent);
+                CoberturaClassLoader ccl = CoberturaClassLoader.create(coverageLoader);
                 ccl.setTargetPackages(config.getTargetPackages());
                 return ccl;
             }
         });
     }
-    
+
     @Override
     public void start(EmbeddedServer server) {
         File reportDirectory = new File("target/coverage");
@@ -54,29 +57,19 @@ public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
             reportDirectory.mkdirs();
         }
         config.setCoverageReportDirectory(reportDirectory);
-        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), getClass().getClassLoader());
-        executorService = Executors.newCachedThreadPool();
-        executorService.execute(new Runnable() {
+        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), null);
+        executorService = Executors.newScheduledThreadPool(1);
+        CoberturaClassLoader loader = CoberturaClassLoader.getInstance();
+        final ReportGenerator reportGenerator = new ReportGenerator(loader, config);
+        executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                while(true) {
-                    try {
-                        CoberturaClassLoader loader = CoberturaClassLoader.getInstance();
-                        LOG.info("Start reporting Coverage report");
-                        executorService.execute(new ReportGenerator(loader, config));
-                        break;
-                    } catch (IllegalStateException e) {
-                        try {
-                            TimeUnit.SECONDS.sleep(5);
-                        } catch (InterruptedException ex) {
-                            break;
-                        }
-                    }
-                }
+                LOG.info("Start reporting Coverage report");
+                reportGenerator.report();
             }
-        });
+        }, config.getReportIntervalSeconds(), config.getReportIntervalSeconds(), TimeUnit.SECONDS);
     }
-    
+
     @Override
     public void stop() {
         executorService.shutdown();

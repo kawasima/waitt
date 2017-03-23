@@ -4,26 +4,25 @@
 
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>0.1.0</version>
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
+        <groupId>net.unit8.waitt</groupId>
+        <artifactId>waitt-parent</artifactId>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waitt.version>1.0.0</waitt.version>
+        <waitt.version>1.2.0-SNAPSHOT</waitt.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.rrd4j</groupId>
             <artifactId>rrd4j</artifactId>
-            <version>2.2.1</version>
+            <version>3.1</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -46,13 +45,13 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.6</version>
+            <version>1.16.14</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>1.7.5</version>
+            <version>1.7.22</version>
         </dependency>
     </dependencies>
 </project>

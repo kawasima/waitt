@@ -3,14 +3,16 @@ package net.unit8.waitt.mojo.component;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.classworlds.realm.ClassRealm;
+
+import java.net.URL;
+import java.util.Set;
 
 /**
  *
  * @author kawasima
  */
 public interface ArtifactResolver {
-    ClassRealm resolve(Artifact artifact, ClassRealm parentRealm);
+    Set<URL> resolve(Artifact artifact, ClassLoader parent);
     void setProject(MavenProject project);
     void setSession(MavenSession session);
 }

@@ -26,7 +26,6 @@ import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.fusesource.jansi.AnsiConsole;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.*;
@@ -131,11 +130,9 @@ public abstract class AbstractRunMojo extends AbstractMojo {
 
         try {
             embeddedServer.start();
-            ClassRealm webappRealm = serverSpec.getClassRealm().createChildRealm("Application");
             List<URL> classpathUrls = resolveClasspaths();
-            for (URL url : classpathUrls) {
-                webappRealm.addURL(url);
-            }
+            ClassLoader webappRealm = new URLClassLoader(classpathUrls.toArray(new URL[classpathUrls.size()]),
+                    serverSpec.getClassLoader());
 
             for (ServerMonitor serverMonitor : serverMonitors) {
                 serverMonitor.init(embeddedServer);
@@ -143,8 +140,9 @@ public abstract class AbstractRunMojo extends AbstractMojo {
             embeddedServer.setWebappDecorators(webappDecorators);
             embeddedServer.setMainContext(contextPath, docBase.getAbsolutePath(), webappRealm);
             for (ExtraWebapp extraWebapp : extraWebapps) {
-                extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
-                embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
+                Set<URL> urls = extraWebapp.getUrls();
+                ClassLoader extraWebappLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), serverSpec.getClassLoader());
+                embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebappLoader);
             }
 
             for (ServerMonitor serverMonitor : serverMonitors) {
@@ -216,7 +214,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 type = "jar";
             }
             Artifact artifact = repositorySystem.createArtifact(feature.getGroupId(), feature.getArtifactId(), feature.getVersion(), type);
-            ClassRealm realm = artifactResolver.resolve(artifact, waittRealm);
+            Set<URL> urls = artifactResolver.resolve(artifact, waittRealm);
             config.getFeatures().add(feature);
 
             if ("war".equals(artifact.getType())) {
@@ -224,9 +222,10 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 if (name.startsWith("waitt-")) {
                     name = name.substring("waitt-".length());
                 }
-                extraWebapps.add(new ExtraWebapp(name, artifact.getFile().getAbsolutePath(), realm));
+                extraWebapps.add(new ExtraWebapp(name, artifact.getFile().getAbsolutePath(), urls));
             } else {
-                ServiceLoader<ServerMonitor> serverMonitorLoader = ServiceLoader.load(ServerMonitor.class, realm);
+                ClassLoader featureLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), waittRealm);
+                ServiceLoader<ServerMonitor> serverMonitorLoader = ServiceLoader.load(ServerMonitor.class, featureLoader);
                 for (ServerMonitor serverMonitor : serverMonitorLoader) {
                     if (serverMonitor instanceof ConfigurableFeature) {
                         ((ConfigurableFeature) serverMonitor).config(config);
@@ -234,14 +233,14 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                     serverMonitors.add(serverMonitor);
                 }
 
-                ServiceLoader<LogListener> logListenerLoader = ServiceLoader.load(LogListener.class, realm);
+                ServiceLoader<LogListener> logListenerLoader = ServiceLoader.load(LogListener.class, featureLoader);
                 for (LogListener logListener : logListenerLoader) {
                     if (logListener instanceof ConfigurableFeature) {
                         ((ConfigurableFeature) logListener).config(config);
                     }
                     logListeners.add(logListener);
                 }
-                ServiceLoader<WebappDecorator> webappDecoratorLoader = ServiceLoader.load(WebappDecorator.class, realm);
+                ServiceLoader<WebappDecorator> webappDecoratorLoader = ServiceLoader.load(WebappDecorator.class, featureLoader);
                 for (WebappDecorator webappDecorator : webappDecoratorLoader) {
                     if (webappDecorator instanceof ConfigurableFeature) {
                         ((ConfigurableFeature) webappDecorator).config(config);

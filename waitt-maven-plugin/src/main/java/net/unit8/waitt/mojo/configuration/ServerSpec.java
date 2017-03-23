@@ -1,32 +1,24 @@
 package net.unit8.waitt.mojo.configuration;
 
 import net.unit8.waitt.api.EmbeddedServer;
-import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 /**
  * @author kawasima
  */
 public class ServerSpec {
-    private EmbeddedServer embeddedServer;
-    private ClassRealm classRealm;
+    private final EmbeddedServer embeddedServer;
+    private final ClassLoader classLoader;
 
-    public ServerSpec(EmbeddedServer embeddedServer, ClassRealm classRealm) {
+    public ServerSpec(EmbeddedServer embeddedServer, ClassLoader classLoader) {
         this.embeddedServer = embeddedServer;
-        this.classRealm = classRealm;
+        this.classLoader = classLoader;
     }
+
     public EmbeddedServer getEmbeddedServer() {
         return embeddedServer;
     }
-
-    public void setEmbeddedServer(EmbeddedServer embeddedServer) {
-        this.embeddedServer = embeddedServer;
+    public ClassLoader getClassLoader() {
+        return classLoader;
     }
 
-    public ClassRealm getClassRealm() {
-        return classRealm;
-    }
-
-    public void setClassRealm(ClassRealm classRealm) {
-        this.classRealm = classRealm;
-    }
 }

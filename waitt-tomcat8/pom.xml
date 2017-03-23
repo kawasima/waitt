@@ -2,19 +2,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.unit8.waitt.server</groupId>
-    <artifactId>waitt-tomcat8</artifactId>
-    <version>0.1.0</version>
-    <packaging>jar</packaging>
-
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
+        <groupId>net.unit8.waitt</groupId>
+        <artifactId>waitt-parent</artifactId>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
 
+    <groupId>net.unit8.waitt.server</groupId>
+    <artifactId>waitt-tomcat8</artifactId>
+    <packaging>jar</packaging>
+
+
     <properties>
-        <tomcat.version>8.0.28</tomcat.version>
+        <tomcat.version>8.0.42</tomcat.version>
         <waitt.version>1.0.0</waitt.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
@@ -46,12 +46,6 @@
             <groupId>net.unit8.waitt</groupId>
             <artifactId>waitt-api</artifactId>
             <version>${waitt.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.codehaus.plexus</groupId>
-            <artifactId>plexus-classworlds</artifactId>
-            <version>2.5.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

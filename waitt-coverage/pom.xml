@@ -4,19 +4,18 @@
 
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
-    <version>0.1.0</version>
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
+        <groupId>net.unit8.waitt</groupId>
+        <artifactId>waitt-parent</artifactId>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waitt.version>1.0.0</waitt.version>
+        <waitt.version>1.2.0-SNAPSHOT</waitt.version>
     </properties>
 
     <dependencies>
@@ -55,7 +54,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -83,7 +82,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>1.7.5</version>
+            <version>1.7.22</version>
         </dependency>
     </dependencies>
 </project>

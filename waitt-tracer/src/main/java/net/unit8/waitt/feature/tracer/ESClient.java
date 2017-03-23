@@ -3,22 +3,17 @@ package net.unit8.waitt.feature.tracer;
 import com.google.gson.*;
 import net.unit8.waitt.feature.tracer.util.ISO8601Formatter;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Elasticsearch REST client
- * 
+ *
  * @author kawasima
  */
 public class ESClient {
@@ -33,7 +28,7 @@ public class ESClient {
         }
     };
 
-    
+
     public ESClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
@@ -56,7 +51,7 @@ public class ESClient {
             OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
             out.write(gson.toJson(entry));
             out.close();
-            
+
             // Consume a response
             BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
             while(true) {

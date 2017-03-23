@@ -5,6 +5,11 @@
  */
 package net.unit8.waitt.mojo.component;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.maven.artifact.Artifact;
@@ -22,15 +27,15 @@ import org.codehaus.plexus.classworlds.realm.ClassRealm;
  */
 public class DefaultArtifactResolver implements ArtifactResolver {
     private static final Logger LOG = Logger.getLogger(DefaultArtifactResolver.class.getName());
-    
+
     @Component
     protected RepositorySystem repositorySystem;
-    
+
     protected MavenProject project;
     protected MavenSession session;
-    
+
     @Override
-    public ClassRealm resolve(Artifact artifact, ClassRealm parentRealm) {
+    public Set<URL> resolve(Artifact artifact, ClassLoader loader) {
         ArtifactResolutionRequest artifactRequest = new ArtifactResolutionRequest()
                 .setRemoteRepositories(project.getRemoteArtifactRepositories())
                 .setLocalRepository(session.getLocalRepository())
@@ -43,25 +48,23 @@ public class DefaultArtifactResolver implements ArtifactResolver {
                 LOG.log(Level.SEVERE, "resolve error.", e);
             }
         }
-        ClassRealm realm;
+        Set<URL> urls = new HashSet<URL>();
         try {
-            realm = parentRealm.createChildRealm(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion());
-                    
             for (Artifact resolvedArtifact : artifactResult.getArtifacts()) {
                 if (!Artifact.SCOPE_PROVIDED.equals(resolvedArtifact.getScope()) && !Artifact.SCOPE_TEST.equals(resolvedArtifact.getScope())) {
-                    realm.addURL(resolvedArtifact.getFile().toURI().toURL());
+                    urls.add(resolvedArtifact.getFile().toURI().toURL());
                 }
             }
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-        return realm;
+        return urls;
     }
-    
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
-    
+
     public void setSession(MavenSession session) {
         this.session = session;
     }

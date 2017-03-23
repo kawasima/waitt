@@ -106,7 +106,7 @@ public class CoberturaClassLoader extends ClassLoader {
     public Instrumenter getInstrumenter() {
         return instrumenter;
     }
-    
+
     public void setTargetPackages(Set<String> targetPackages) {
         this.targetPackages = targetPackages;
     }

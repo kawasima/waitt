@@ -4,25 +4,18 @@
 
     <groupId>net.unit8.waitt</groupId>
     <artifactId>waitt-api</artifactId>
-    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
+        <groupId>net.unit8.waitt</groupId>
+        <artifactId>waitt-parent</artifactId>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
     </properties>
-
-    <scm>
-        <connection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</connection>
-        <url>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</url>
-        <developerConnection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</developerConnection>
-    </scm>
 
     <dependencies>
         <dependency>
@@ -34,7 +27,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.6</version>
+            <version>1.16.14</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

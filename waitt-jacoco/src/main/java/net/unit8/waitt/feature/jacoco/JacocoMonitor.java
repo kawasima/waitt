@@ -6,10 +6,12 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
-import org.jacoco.agent.rt.internal_b0d6a23.Agent;
-import org.jacoco.agent.rt.internal_b0d6a23.core.runtime.AgentOptions;
+import org.jacoco.agent.rt.RT;
+import org.jacoco.agent.rt.internal_8ff85ea.Agent;
+import org.jacoco.agent.rt.internal_8ff85ea.core.runtime.AgentOptions;
 import org.jacoco.core.analysis.IBundleCoverage;
 import org.jacoco.core.data.ExecutionDataStore;
+import org.jacoco.core.runtime.ModifiedSystemClassRuntime;
 import org.jacoco.core.tools.ExecFileLoader;
 import org.jacoco.report.FileMultiReportOutput;
 import org.jacoco.report.IReportGroupVisitor;
@@ -19,6 +21,8 @@ import org.jacoco.report.html.HTMLFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -46,18 +50,22 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
 
     @Override
     public void init(EmbeddedServer server) {
-        final ClassRealm coverageRealm = (ClassRealm) this.getClass().getClassLoader();
+        final URL[] urls =  ((URLClassLoader) getClass().getClassLoader()).getURLs();
         server.setClassLoaderFactory(new ClassLoaderFactory() {
             @Override
             public ClassLoader create(ClassLoader parent) {
-                coverageRealm.setParentClassLoader(parent);
-                JacocoClassLoader ccl = JacocoClassLoader.create(coverageRealm);
+                ClassLoader coverageLoader = new URLClassLoader(urls, parent);
+                JacocoClassLoader ccl = JacocoClassLoader.create(coverageLoader);
                 ccl.setTargetPackages(targetPackages);
                 return ccl;
             }
         });
-        LOG.info("Start a jacoco agent. " + Agent.getInstance(new AgentOptions()));
-    }    
+
+        final AgentOptions agentOptions = new AgentOptions();
+        agentOptions.setDumpOnExit(true);
+        final Agent agent = Agent.getInstance(agentOptions);
+        LOG.info("Start a jacoco agent. " + agent);
+    }
 
     @Override
     public void start(EmbeddedServer server) {
@@ -66,7 +74,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             reportDirectory.mkdirs();
         }
 
-        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), getClass().getClassLoader());
+        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), null);
         executorService = Executors.newCachedThreadPool();
         final ExecFileLoader loader = new ExecFileLoader();
         try {
@@ -78,7 +86,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
                 while(true) {
                     try {
                         Agent.getInstance().dump(false);
-                        
+
                         loader.load(new File("jacoco.exec"));
                         final IReportVisitor visitor = createVisitor(Locale.getDefault());
                         visitor.visitInfo(
@@ -89,8 +97,8 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
                     } catch (IOException ex) {
                         // ignore
                     }
-                    
-                    
+
+
                     try {
                         TimeUnit.SECONDS.sleep(30);
                     } catch (InterruptedException ignore) { /* ignore */ }
@@ -104,9 +112,9 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
         List<File> sourceDirectories = new ArrayList<File>(1);
         sourceDirectories.add(sourceDirectory);
         final SourceFileCollection locator = new SourceFileCollection(sourceDirectories, "UTF-8");
-        
+
         visitor.visitBundle(bundle, locator);
-                
+
     }
     IReportVisitor createVisitor(final Locale locale) throws IOException {
         final List<IReportVisitor> visitors = new ArrayList<IReportVisitor>();

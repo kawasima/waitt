@@ -4,19 +4,18 @@
 
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
-    <version>0.1.0</version>
     <packaging>war</packaging>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>9</version>
+        <groupId>net.unit8.waitt</groupId>
+        <artifactId>waitt-parent</artifactId>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waitt.version>1.0.0</waitt.version>
+        <waitt.version>1.2.0-SNAPSHOT</waitt.version>
     </properties>
 
     <dependencies>
@@ -61,7 +60,7 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
-            <version>9.3.2.v20150730</version>
+            <version>9.4.2.v20170220</version>
         </dependency>
         <dependency>
             <groupId>com.sparkjava</groupId>
