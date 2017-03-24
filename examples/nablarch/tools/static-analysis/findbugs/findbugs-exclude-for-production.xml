@@ -1,0 +1,74 @@
+<FindBugsFilter>
+
+    <!-- ミュータブルなフィールドをもつサーブレットです。 -->
+    <Match>
+        <Bug pattern="MSF_MUTABLE_SERVLET_FIELD" />
+    </Match>
+
+    <!-- Servletクラスを継承しているクラスでのインスタンスフィールドの使用。 -->
+    <Match>
+        <Bug pattern="MTIA_SUSPECT_SERVLET_INSTANCE_FIELD" />
+    </Match>
+
+    <!-- Struts Actionの継承クラスでのインスタンスフィールドの使用。 -->
+    <Match>
+        <Bug pattern="MTIA_SUSPECT_STRUTS_INSTANCE_FIELD" />
+    </Match>
+
+    <!-- PreparedStatement のパラメータに添字 0 を指定しています。 -->
+    <Match>
+        <Bug pattern="SQL_BAD_PREPARED_STATEMENT_ACCESS" />
+    </Match>
+
+    <!-- ResultSet の添字 0 にアクセスしようとしています。 -->
+    <Match>
+        <Bug pattern="SQL_BAD_RESULTSET_ACCESS" />
+    </Match>
+
+    <!-- SQL の Statement オブジェクトの execute メソッドに定数でない文字列が渡されています。 -->
+    <Match>
+        <Bug pattern="SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE" />
+    </Match>
+
+    <!-- PreparedStatement が定数でない String から生成されています。 -->
+    <Match>
+        <Bug pattern="SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING" />
+    </Match>
+
+    <!-- サーブレットにクロスサイトスクリプティングの脆弱性があります。(sendErrorメソッド使用) -->
+    <Match>
+        <Bug pattern="XSS_REQUEST_PARAMETER_TO_SEND_ERROR" />
+    </Match>
+
+    <!-- サーブレットにクロスサイトスクリプティングの脆弱性があります。(sendErrorメソッドを不使用) -->
+    <Match>
+        <Bug pattern="XSS_REQUEST_PARAMETER_TO_SERVLET_WRITER" />
+    </Match>
+
+    <Match>
+        <Bug pattern="DMI_CONSTANT_DB_PASSWORD" />
+    </Match>
+
+    <Match>
+        <Bug pattern="DMI_EMPTY_DB_PASSWORD" />
+    </Match>
+
+    <!-- アクセッサを持たないフィールドを許可する。(Formではそのような作りになるケースがある) -->
+    <Match>
+        <Bug pattern="UUF_UNUSED_FIELD" />
+    </Match>
+    <Match>
+        <Bug pattern="URF_UNREAD_FIELD" />
+    </Match>
+    <!-- 配列の暴露は、業務アプリでは問題にならないケースが殆んどの為チェック対象外 -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+<!-- 必要に応じて除外設定を記述してください -->
+    <!-- 自動生成されるパッケージとテストクラスは検査対象外とする-->
+    <Match classregex="com.nablarch.example.app.entity.*"/>
+    <Match classregex=".*Test" />
+</FindBugsFilter>

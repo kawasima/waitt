@@ -35,14 +35,13 @@ public class DefaultServerProvider implements ServerProvider {
     @Override
     public ServerSpec getServer(Server server, ClassRealm parentRealm) {
         Artifact artifact = repositorySystem.createArtifact(server.getGroupId(), server.getArtifactId(), server.getVersion(), "jar");
-        Set<URL> urls = artifactResolver.resolve(artifact, parentRealm);
-        ClassLoader serverLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]), parentRealm);
-        ServiceLoader<EmbeddedServer> serviceLoaders = ServiceLoader.load(EmbeddedServer.class, serverLoader);
+        ClassRealm serverRealm = artifactResolver.resolve(artifact, parentRealm);
+        ServiceLoader<EmbeddedServer> serviceLoaders = ServiceLoader.load(EmbeddedServer.class, serverRealm);
         Iterator<EmbeddedServer> iter = serviceLoaders.iterator();
         if (!iter.hasNext()) {
             throw new IllegalArgumentException("Embedded server is not found.");
         }
-        return new ServerSpec(iter.next(), serverLoader);
+        return new ServerSpec(iter.next(), serverRealm);
     }
 
     @Override

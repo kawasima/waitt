@@ -1,0 +1,15 @@
+<routes>
+    <root to="Authentication#index"/>
+    <get  path="/action/login" to="Authentication#index"/>
+    <post  path="/action/login" to="Authentication#login"/>
+    <get  path="/action/logout" to="Authentication#logout"/>
+    <get  path="/action/project" to="Project#newEntity"/>
+    <get path="/action/projectUpload" to="ProjectUpload#index"/>
+    <match path="/action/:controller/:action"/>
+    <match path="/action/:controller/:action/:projectId">
+        <requirements>
+            <requirement name="projectId" value="\d+$" />
+        </requirements>
+    </match>
+
+</routes>

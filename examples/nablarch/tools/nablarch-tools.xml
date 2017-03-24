@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Nablarch Toolbox">
+  <path id="classpath.common">
+    <pathelement location="resources" />
+    <path refid="maven.compile.classpath" />
+    <path refid="maven.plugin.classpath" />
+  </path>
+
+  <target name="analyzeJsp" depends="analyzeJspOutputXml" description="JSPの解析を行い、HTMLレポートを出力する。">
+    <java classname="nablarch.test.tool.sanitizingcheck.HtmlConvert" dir="${nablarch.tools.dir}" fork="true">
+      <arg value="${jspanalysis.xmloutput}" />
+      <arg value="${jspanalysis.xsl}" />
+      <arg value="${jspanalysis.htmloutput}" />
+      <classpath>
+        <path refid="classpath.common" />
+      </classpath>
+    </java>
+  </target>
+
+  <target name="analyzeJspOutputXml" description="JSPの解析を行い、XMLレポートを出力する。">
+    <java classname="nablarch.test.tool.sanitizingcheck.SanitizingCheckTask" dir="${nablarch.tools.dir}" fork="true">
+      <arg value="${jspanalysis.checkjspdir}" />
+      <arg value="${jspanalysis.xmloutput}" />
+      <arg value="${jspanalysis.checkconfig}" />
+      <arg value="${jspanalysis.charset}" />
+      <arg value="${jspanalysis.lineseparator}" />
+      <arg value="${jspanalysis.additionalexts}" />
+      <!-- JSP静的解析ツールにおいて、「チェック対象外とするディレクトリ（ファイル）名を正規表現で設定する」ための項目。
+           parentプロジェクトのpom.xmlにて、本値を有効にした場合は、コメントアウトを解除する。
+      <arg value="${jspanalysis.excludePatterns}" />
+      -->
+      <classpath>
+        <path refid="classpath.common" />
+      </classpath>
+    </java>
+  </target>
+
+  <target name="PublishedDoclet" description="プロジェクトの中から@Publishedが付いた要素の一覧を作成する">
+    <javadoc sourcepath="${executed.project.basedir}/src/main/java"
+             destdir="${executed.project.basedir}/target/apidocs"
+             Encoding="UTF-8"
+             classpathref="classpath.common"
+             failonerror="false" >
+      <!-- docletタグで、使用許可API一覧作成ツールのDocletクラスと、必要なクラスパスを設定する。 -->
+      <doclet name="nablarch.tool.published.doclet.PublishedDoclet" pathref="classpath.common">
+        <!-- 出力対象とするタグを指定する。指定しない場合には不要。 -->
+        <param name="-tag" value="${publish_config_tag}"/>
+        <!-- 使用許可API一覧の出力先ファイルを指定する。 -->
+        <param name="-output" value="${nablarch.tools.dir}/static-analysis/findbugs/published-config/production/${publish_config_name}.config"/>
+      </doclet>
+    </javadoc>
+  </target>
+</project>

@@ -3,6 +3,8 @@ package net.unit8.waitt.feature.coverage;
 import net.sourceforge.cobertura.util.IOUtil;
 
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;

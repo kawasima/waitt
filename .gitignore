@@ -9,3 +9,8 @@ cobertura.ser
 jacoco.exec
 screenshots
 release.properties
+tmp
+tomcat.*
+http_dump
+gsp-target
+h2

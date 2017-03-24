@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<component-configuration
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://tis.co.jp/nablarch/component-configuration"
+    xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration  /component-configuration.xsd">
+
+  <!-- ハンドラキュー構成 -->
+  <component name="webFrontController"
+             class="nablarch.fw.web.servlet.WebFrontController">
+
+    <property name="handlerQueue">
+      <list>
+        <component class="nablarch.fw.web.handler.HttpCharacterEncodingHandler"/>
+
+        <component class="nablarch.fw.handler.GlobalErrorHandler"/>
+
+        <component class="nablarch.fw.web.handler.HttpResponseHandler"/>
+
+        <component class="nablarch.fw.web.handler.SecureHandler" />
+
+        <component-ref name="multipartHandler"/>
+
+        <component-ref name="sessionStoreHandler" />
+
+        <component class="nablarch.fw.web.handler.NormalizationHandler" />
+
+        <!-- ホットデプロイハンドラ -->
+        <component class="nablarch.fw.hotdeploy.HotDeployHandler">
+          <property name="targetPackages">
+            <list>
+              <value>com.nablarch.example.app.web.action</value>
+              <value>com.nablarch.example.app.web.dto</value>
+              <value>com.nablarch.example.app.web.form</value>
+            </list>
+          </property>
+        </component>
+
+        <component class="nablarch.fw.web.handler.ForwardingHandler"/>
+
+        <component class="nablarch.fw.web.handler.HttpErrorHandler" >
+          <property name="defaultPages">
+            <map>
+              <entry key="4.." value="/WEB-INF/view/common/errorPages/userError.jsp" />
+              <entry key="403" value="/WEB-INF/view/common/errorPages/permissionError.jsp" />
+              <entry key="404" value="/WEB-INF/view/common/errorPages/pageNotFoundError.jsp" />
+              <entry key="413" value="/WEB-INF/view/common/errorPages/requestEntityTooLarge.jsp" />
+              <entry key="5.." value="/WEB-INF/view/common/errorPages/error.jsp" />
+              <entry key="503" value="/WEB-INF/view/common/errorPages/serviceUnavailableError.jsp" />
+            </map>
+          </property>
+        </component>
+
+        <component-ref name="nablarchTagHandler"/>
+
+        <component-ref name="dbConnectionManagementHandler"/>
+
+        <component-ref name="transactionManagementHandler"/>
+
+        <component class="com.nablarch.example.app.web.action.LoginUserPrincipalCheckHandler"/>
+        
+        <component class="com.nablarch.example.app.web.handler.ExampleErrorForwardHandler"/>
+
+        <component-ref name="packageMapping"/>
+      </list>
+    </property>
+  </component>
+</component-configuration>

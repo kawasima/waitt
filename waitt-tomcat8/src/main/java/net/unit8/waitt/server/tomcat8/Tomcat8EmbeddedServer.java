@@ -18,13 +18,11 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.JarScanner;
 import org.apache.tomcat.util.descriptor.web.FilterDef;
 import org.apache.tomcat.util.descriptor.web.FilterMap;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 import java.io.File;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Tomcat8 server.
@@ -162,8 +160,6 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
         }
 
         if (mainContext) {
-            Set<URL> decoratorUrls = new HashSet<URL>();
-
             for (WebappDecorator decorator : decorators) {
                 for (FilterConfiguration filterConfig : decorator.getFilterConfigs()) {
                     FilterDef filterDef = new FilterDef();
@@ -177,15 +173,11 @@ public class Tomcat8EmbeddedServer implements EmbeddedServer {
                     }
                     context.addFilterMap(filterMap);
 
-                    for (URL url : ((URLClassLoader) decorator.getClass().getClassLoader()).getURLs()) {
-                        decoratorUrls.add(url);
+                    for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
+                        ((ClassRealm) loader).addURL(url);
                     }
                 }
             }
-            if (!decoratorUrls.isEmpty()) {
-                loader = new URLClassLoader(decoratorUrls.toArray(new URL[decoratorUrls.size()]), loader);
-            }
-
         }
 
         if (loader != null) {

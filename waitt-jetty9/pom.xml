@@ -52,5 +52,11 @@
             <version>${waitt.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-classworlds</artifactId>
+            <version>2.5.2</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -1,0 +1,225 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+    "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+    "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+
+<!--
+本ファイルは、CheckStyleの設定ファイルのサンプルである。
+maven-checkstyle-plugin 2.13に同梱されているsun_checks.xmlをカスタマイズした。
+カスタマイズした箇所には、コメントでその旨を記載している。
+-->
+
+<module name="Checker">
+    <!--
+        If you set the basedir property below, then all reported file
+        names will be relative to the specified directory. See
+        http://checkstyle.sourceforge.net/5.x/config.html#Checker
+
+        <property name="basedir" value="${basedir}"/>
+    -->
+
+    <!-- Checks that each Java package has a Javadoc file used for commenting. -->
+    <!-- See http://checkstyle.sf.net/config_javadoc.html#JavadocPackage       -->
+
+    <!--[Example変更ポイント]公開API以外はpackage.infoは不要なので警告を抑制する。
+    <module name="JavadocPackage">
+      <property name="allowLegacy" value="true"/>
+    </module>
+    -->
+
+    <!-- Checks whether files end with a new line.                        -->
+    <!-- See http://checkstyle.sf.net/config_misc.html#NewlineAtEndOfFile -->
+    <!--
+        カスタマイズした箇所。
+        改行コードの前提をlfに設定(gitでファイルを管理する場合、通常lfに統一するため)。
+    -->
+    <module name="NewlineAtEndOfFile">
+        <property name="lineSeparator" value="lf"/>
+    </module>
+
+    <!-- Checks that property files contain the same keys.         -->
+    <!-- See http://checkstyle.sf.net/config_misc.html#Translation -->
+    <module name="Translation"/>
+
+    <module name="FileLength"/>
+
+    <!-- Following interprets the header file as regular expressions. -->
+    <!-- <module name="RegexpHeader"/>                                -->
+
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+    </module>
+
+    <module name="RegexpSingleline">
+        <!-- \s matches whitespace character, $ matches end of line. -->
+        <property name="format" value="\s+$"/>
+        <property name="message" value="Line has trailing spaces."/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <property name="cacheFile" value="${checkstyle.cache.file}"/>
+
+        <!-- required for SuppressWarningsFilter (and other Suppress* rules not used here) -->
+        <!-- see http://checkstyle.sourceforge.net/config_annotation.html#SuppressWarningsHolder -->
+        <module name="SuppressWarningsHolder"/>
+
+        <!-- Checks for Javadoc comments.                     -->
+        <!-- See http://checkstyle.sf.net/config_javadoc.html -->
+        <module name="JavadocMethod"/>
+        <module name="JavadocType"/>
+        <module name="JavadocVariable"/>
+        <module name="JavadocStyle">
+            <!--
+                [Example変更ポイント]
+                自動生成したクラスは、一行のJavaDocには句点がつかない。
+                自動生成クラスは解析対象ではないが、他クラスと整合性を取るために句点の警告を抑制する。
+            -->
+            <property name="checkFirstSentence" value="false"/>
+        </module>
+
+        <!-- Checks for Naming Conventions.                  -->
+        <!-- See http://checkstyle.sf.net/config_naming.html -->
+        <module name="ConstantName"/>
+        <module name="LocalFinalVariableName"/>
+        <module name="LocalVariableName"/>
+        <module name="MemberName"/>
+        <module name="MethodName"/>
+        <module name="PackageName"/>
+        <module name="ParameterName"/>
+        <module name="StaticVariableName"/>
+        <module name="TypeName"/>
+
+
+        <!-- Checks for Headers                                -->
+        <!-- See http://checkstyle.sf.net/config_header.html   -->
+        <!-- <module name="Header">                            -->
+            <!-- The follow property value demonstrates the ability     -->
+            <!-- to have access to ANT properties. In this case it uses -->
+            <!-- the ${basedir} property to allow Checkstyle to be run  -->
+            <!-- from any directory within a project. See property      -->
+            <!-- expansion,                                             -->
+            <!-- http://checkstyle.sf.net/config.html#properties        -->
+            <!-- <property                                              -->
+            <!--     name="headerFile"                                  -->
+            <!--     value="${basedir}/java.header"/>                   -->
+        <!-- </module> -->
+
+
+        <!-- Checks for imports                              -->
+        <!-- See http://checkstyle.sf.net/config_import.html -->
+        <module name="AvoidStarImport"/>
+        <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
+        <module name="RedundantImport"/>
+        <module name="UnusedImports"/>
+
+
+        <!-- Checks for Size Violations.                    -->
+        <!-- See http://checkstyle.sf.net/config_sizes.html -->
+        <!--[Example変更ポイント] デフォルトの80文字は短すぎるため160文字に設定する。 -->
+        <module name="LineLength">
+            <property name="max" value="160"/>
+        </module>
+        <module name="MethodLength"/>
+        <module name="ParameterNumber"/>
+
+
+        <!-- Checks for whitespace                               -->
+        <!-- See http://checkstyle.sf.net/config_whitespace.html -->
+        <module name="EmptyForIteratorPad"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceAfter"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="OperatorWrap"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
+
+
+        <!-- Modifier Checks                                    -->
+        <!-- See http://checkstyle.sf.net/config_modifiers.html -->
+        <module name="ModifierOrder"/>
+        <module name="RedundantModifier"/>
+
+
+        <!-- Checks for blocks. You know, those {}'s         -->
+        <!-- See http://checkstyle.sf.net/config_blocks.html -->
+        <module name="AvoidNestedBlocks"/>
+        <module name="EmptyBlock"/>
+        <module name="LeftCurly"/>
+        <module name="NeedBraces"/>
+        <module name="RightCurly"/>
+
+
+        <!-- Checks for common coding problems               -->
+        <!-- See http://checkstyle.sf.net/config_coding.html -->
+        <!--
+            [Example変更ポイント]
+            3項演算子の使用を許可するためこの設定を無効にする。
+        -->
+        <!-- <module name="AvoidInlineConditionals"/> -->
+        <module name="EmptyStatement"/>
+        <module name="EqualsHashCode"/>
+
+        <!--[Example変更ポイント] セッタ、コンストラクタはフィールドと同名の引数名は一般的なので警告を抑制する。 -->
+        <module name="HiddenField">
+            <property name="ignoreSetter" value="true" />
+            <property name="ignoreConstructorParameter" value="true" />
+        </module>
+        <module name="IllegalInstantiation"/>
+        <module name="InnerAssignment"/>
+        <!-- [Example変更ポイント]
+             マジックナンバーはチェックしない設定を追加。 -->
+        <!-- <module name="MagicNumber"/> -->
+        <module name="MissingSwitchDefault"/>
+        <!--[Example変更ポイント] 非チェック例外のJavaDocへの記載は利便性を考慮して警告を抑制する。
+        <module name="RedundantThrows"/> -->
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+
+        <!-- Checks for class design                         -->
+        <!-- See http://checkstyle.sf.net/config_design.html -->
+        <!--
+            カスタマイズした箇所。
+            派生クラスを作らない想定のクラスに、finalが付いていなくてもOKにする(finalを書かせるのは冗長であるため)。
+        -->
+        <!--
+        <module name="DesignForExtension"/>
+        -->
+        <module name="FinalClass"/>
+        <module name="HideUtilityClassConstructor"/>
+        <module name="InterfaceIsType"/>
+        <module name="VisibilityModifier">
+            <!--
+                カスタマイズした箇所。
+                publicフィールドを許可(ドメイン定義で使用するため)。
+            -->
+            <property name="publicMemberPattern" value=".*"/>
+        </module>
+
+
+        <!-- Miscellaneous other checks.                   -->
+        <!-- See http://checkstyle.sf.net/config_misc.html -->
+        <module name="ArrayTypeStyle"/>
+       <!--
+            カスタマイズした箇所。
+            メソッドの引数の宣言にfinalが付いていなくても問題なしとする(finalを書かせるのは冗長であるため)。
+        -->
+        <!--
+        <module name="FinalParameters"/>
+        -->
+        <module name="TodoComment"/>
+        <module name="UpperEll"/>
+
+    </module>
+
+    <!-- Support @SuppressWarnings (added in Checkstyle 5.7) -->
+    <!-- see http://checkstyle.sourceforge.net/config.html#SuppressWarningsFilter -->
+    <module name="SuppressWarningsFilter"/>
+
+    <!-- Checks properties file for a duplicated properties. -->
+    <!-- See http://checkstyle.sourceforge.net/config_misc.html#UniqueProperties -->
+    <module name="UniqueProperties"/>
+
+</module>

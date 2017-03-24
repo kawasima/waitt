@@ -5,13 +5,6 @@
  */
 package net.unit8.waitt.mojo.component;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
@@ -20,6 +13,9 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -35,7 +31,7 @@ public class DefaultArtifactResolver implements ArtifactResolver {
     protected MavenSession session;
 
     @Override
-    public Set<URL> resolve(Artifact artifact, ClassLoader loader) {
+    public ClassRealm resolve(Artifact artifact, ClassRealm parent) {
         ArtifactResolutionRequest artifactRequest = new ArtifactResolutionRequest()
                 .setRemoteRepositories(project.getRemoteArtifactRepositories())
                 .setLocalRepository(session.getLocalRepository())
@@ -48,17 +44,17 @@ public class DefaultArtifactResolver implements ArtifactResolver {
                 LOG.log(Level.SEVERE, "resolve error.", e);
             }
         }
-        Set<URL> urls = new HashSet<URL>();
         try {
+            ClassRealm realm = parent.createChildRealm(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion());
             for (Artifact resolvedArtifact : artifactResult.getArtifacts()) {
                 if (!Artifact.SCOPE_PROVIDED.equals(resolvedArtifact.getScope()) && !Artifact.SCOPE_TEST.equals(resolvedArtifact.getScope())) {
-                    urls.add(resolvedArtifact.getFile().toURI().toURL());
+                    realm.addURL(resolvedArtifact.getFile().toURI().toURL());
                 }
             }
+            return realm;
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
-        return urls;
     }
 
     public void setProject(MavenProject project) {

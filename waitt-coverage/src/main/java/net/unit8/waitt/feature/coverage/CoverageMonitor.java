@@ -38,12 +38,12 @@ public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
 
     @Override
     public void init(EmbeddedServer server) {
-        final URL[] urls =  ((URLClassLoader) getClass().getClassLoader()).getURLs();
+        final ClassRealm coverageRealm = (ClassRealm) this.getClass().getClassLoader();
         server.setClassLoaderFactory(new ClassLoaderFactory() {
             @Override
             public ClassLoader create(ClassLoader parent) {
-                ClassLoader coverageLoader = new URLClassLoader(urls, parent);
-                CoberturaClassLoader ccl = CoberturaClassLoader.create(coverageLoader);
+                coverageRealm.setParentClassLoader(parent);
+                CoberturaClassLoader ccl = CoberturaClassLoader.create(coverageRealm);
                 ccl.setTargetPackages(config.getTargetPackages());
                 return ccl;
             }
@@ -57,14 +57,14 @@ public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
             reportDirectory.mkdirs();
         }
         config.setCoverageReportDirectory(reportDirectory);
-        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), null);
+        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), getClass().getClassLoader());
         executorService = Executors.newScheduledThreadPool(1);
-        CoberturaClassLoader loader = CoberturaClassLoader.getInstance();
-        final ReportGenerator reportGenerator = new ReportGenerator(loader, config);
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 LOG.info("Start reporting Coverage report");
+                CoberturaClassLoader loader = CoberturaClassLoader.getInstance();
+                final ReportGenerator reportGenerator = new ReportGenerator(loader, config);
                 reportGenerator.report();
             }
         }, config.getReportIntervalSeconds(), config.getReportIntervalSeconds(), TimeUnit.SECONDS);

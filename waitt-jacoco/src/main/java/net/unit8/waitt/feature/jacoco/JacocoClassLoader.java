@@ -35,7 +35,7 @@ public class JacocoClassLoader extends URLClassLoader {
 
     public static JacocoClassLoader getInstance() {
         if (instance == null) {
-            throw new IllegalStateException("CoberturaClassLoader hasn't been instantiated yet.");
+            throw new IllegalStateException("JacocoClassLoader hasn't been instantiated yet.");
         }
         return instance;
     }
@@ -48,7 +48,7 @@ public class JacocoClassLoader extends URLClassLoader {
     @Override
     public Class loadClass(final String className, boolean resolve)
             throws ClassNotFoundException {
-                
+
         Class clazz = findLoadedClass(className);
         if (clazz != null) {
             return clazz;
@@ -98,7 +98,7 @@ public class JacocoClassLoader extends URLClassLoader {
     public Instrumenter getInstrumenter() {
         return instrumenter;
     }
-    
+
     public void setTargetPackages(Set<String> targetPackages) {
         this.targetPackages = targetPackages;
     }

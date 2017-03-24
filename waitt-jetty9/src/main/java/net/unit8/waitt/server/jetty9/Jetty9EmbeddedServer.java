@@ -5,6 +5,7 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerStatus;
 import net.unit8.waitt.api.WebappDecorator;
 import net.unit8.waitt.api.configuration.FilterConfiguration;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.eclipse.jetty.annotations.AnnotationConfiguration;
 import org.eclipse.jetty.annotations.ServletContainerInitializersStarter;
 import org.eclipse.jetty.apache.jsp.JettyJasperInitializer;
@@ -147,23 +148,17 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
         webapp.setAllowNullPathInfo(false);
 
         if (mainContext) {
-            List<URL> decoratorUrls = new ArrayList<>();
             for (WebappDecorator decorator : decorators) {
                 for (FilterConfiguration filterConfig : decorator.getFilterConfigs()) {
                     FilterHolder filterHolder = new FilterHolder();
                     filterHolder.setClassName(filterConfig.getClassName());
                     filterHolder.setName(filterConfig.getName());
                     webapp.addFilter(filterHolder, filterConfig.getUrlPattern()[0], null);
-
-                    for (URL url : ((URLClassLoader) decorator.getClass().getClassLoader()).getURLs()) {
-                        decoratorUrls.add(url);
-                    }
+                }
+                for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
+                    ((ClassRealm) loader).addURL(url);
                 }
             }
-            if (!decoratorUrls.isEmpty()) {
-                loader = new URLClassLoader(decoratorUrls.toArray(new URL[decoratorUrls.size()]), loader);
-            }
-            Thread.currentThread().setContextClassLoader(loader);
         }
 
         try {
@@ -173,7 +168,7 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
                 webapp.setClassLoader(new WebAppClassLoader(loader, webapp));
             }
             handlers.prependHandler(webapp);
-            webapp.start();
+            Thread.currentThread().setContextClassLoader(loader);
             return webapp;
         } catch (Exception e) {
             throw new RuntimeException(e);

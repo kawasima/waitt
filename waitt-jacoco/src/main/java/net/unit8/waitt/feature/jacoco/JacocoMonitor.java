@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -40,7 +41,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
     private static final Logger LOG = Logger.getLogger(JacocoMonitor.class.getName());
     private Set<String> targetPackages;
     private File sourceDirectory;
-    ExecutorService executorService;
+    ScheduledExecutorService executorService;
 
     @Override
     public void config(WebappConfiguration config) {
@@ -50,12 +51,12 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
 
     @Override
     public void init(EmbeddedServer server) {
-        final URL[] urls =  ((URLClassLoader) getClass().getClassLoader()).getURLs();
+        final ClassRealm coverageRealm = (ClassRealm) getClass().getClassLoader();
         server.setClassLoaderFactory(new ClassLoaderFactory() {
             @Override
             public ClassLoader create(ClassLoader parent) {
-                ClassLoader coverageLoader = new URLClassLoader(urls, parent);
-                JacocoClassLoader ccl = JacocoClassLoader.create(coverageLoader);
+                coverageRealm.setParentClassLoader(parent);
+                JacocoClassLoader ccl = JacocoClassLoader.create(coverageRealm);
                 ccl.setTargetPackages(targetPackages);
                 return ccl;
             }
@@ -74,37 +75,33 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             reportDirectory.mkdirs();
         }
 
-        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), null);
-        executorService = Executors.newCachedThreadPool();
+        server.addContext("/_coverage", reportDirectory.getAbsolutePath(), getClass().getClassLoader());
+        executorService = Executors.newScheduledThreadPool(1);
         final ExecFileLoader loader = new ExecFileLoader();
         try {
             loader.load(new File("jacoco.exec"));
         } catch (IOException ignore) {}
-        executorService.execute(new Runnable() {
+
+
+        executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                while(true) {
-                    try {
-                        Agent.getInstance().dump(false);
+                try {
+                    Agent.getInstance().dump(false);
 
-                        loader.load(new File("jacoco.exec"));
-                        final IReportVisitor visitor = createVisitor(Locale.getDefault());
-                        visitor.visitInfo(
-                                loader.getSessionInfoStore().getInfos(),
-                                loader.getExecutionDataStore().getContents());
-                        createReport(visitor, loader.getExecutionDataStore());
-                        visitor.visitEnd();
-                    } catch (IOException ex) {
-                        // ignore
-                    }
+                    loader.load(new File("jacoco.exec"));
+                    final IReportVisitor visitor = createVisitor(Locale.getDefault());
+                    visitor.visitInfo(
+                            loader.getSessionInfoStore().getInfos(),
+                            loader.getExecutionDataStore().getContents());
+                    createReport(visitor, loader.getExecutionDataStore());
+                    visitor.visitEnd();
+                } catch (IOException ex) {
+                    // ignore
 
-
-                    try {
-                        TimeUnit.SECONDS.sleep(30);
-                    } catch (InterruptedException ignore) { /* ignore */ }
                 }
             }
-        });
+        }, 15l, 15l, TimeUnit.SECONDS);
     }
     void createReport(final IReportGroupVisitor visitor, ExecutionDataStore executionDataStore) throws IOException {
         final BundleCreator creator = new BundleCreator();

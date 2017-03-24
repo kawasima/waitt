@@ -10,6 +10,7 @@ import org.apache.tomcat.JarScannerCallback;
 import org.apache.tomcat.util.scan.Constants;
 import org.apache.tomcat.util.scan.StandardJarScanFilter;
 import org.apache.tomcat.util.scan.StandardJarScanner;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 import javax.servlet.ServletContext;
 import java.io.File;
@@ -227,7 +228,11 @@ public class ClassRealmJarScanner implements JarScanner {
                         }
                     }
                 }
-                classLoader = classLoader.getParent();
+                if (classLoader instanceof ClassRealm) {
+                    classLoader = ((ClassRealm) classLoader).getParentClassLoader();
+                } else {
+                    classLoader = classLoader.getParent();
+                }
             }
         }
     }

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="FindBugs">
+
+  <!-- FindBugs 3.0.1に含まれるライブラリ -->
+  <path id="classpath.findbugs">
+    <pathelement location="${com.google.code.findbugs:findbugs:jar}" />
+    <pathelement location="${com.google.code.findbugs:bcel-findbugs:jar}" />
+    <pathelement location="${com.google.code.findbugs:jFormatString:jar}" />
+    <pathelement location="${com.google.code.findbugs:jsr305:jar}" />
+
+    <pathelement location="${org.ow2.asm:asm:jar}" />
+    <pathelement location="${org.ow2.asm:asm-commons:jar}" />
+    <pathelement location="${org.ow2.asm:asm-tree:jar}" />
+
+    <pathelement location="${commons-lang:commons-lang:jar}" />
+    <pathelement location="${dom4j:dom4j:jar}" />
+    <pathelement location="${jaxen:jaxen:jar}" />
+  </path>
+
+  <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" />
+
+  <target name="findbugs" depends="clean, findbugs-for-production, findbugs-for-test" />
+
+  <target name="findbugs-for-production" depends="-check.output.dir" if="output.exists"
+          description="プロダクションコードにチェックを行う。">
+    <mkdir dir="${findbugs.report.dir}" />
+
+    <pathconvert refid="classpath.findbugs" property="classpath.findbugs.property" />
+    <findbugs classpath="${classpath.findbugs.property}"
+              pluginList="${com.nablarch.framework:nablarch-testing:jar}"
+              outputFile="${findbugs.report.dir}/${findbugs.report.file.production}" output="xml"
+              excludefilter="${findbugs.config.filter.production}"
+              noClassOk="true">
+      <class location="${project.build.outputDirectory}" />
+      <sourcePath path="${project.build.sourceDirectory}" />
+      <auxClasspath refid="maven.compile.classpath" />
+      <!-- クラスファイルの解析に必要 -->
+      <auxClasspath location="${com.google.code.findbugs:jsr305:jar}" />
+      <systemProperty name="nablarch-findbugs-config" value="${findbugs.config.published.production}" />
+    </findbugs>
+  </target>
+
+  <target name="findbugs-for-test" depends="-check.test.output.dir" if="test.output.exists"
+          description="テストコードにチェックを行う。">
+    <mkdir dir="${findbugs.report.dir}" />
+
+    <pathconvert refid="classpath.findbugs" property="classpath.findbugs.property" />
+    <findbugs classpath="${classpath.findbugs.property}"
+              pluginList="${com.nablarch.framework:nablarch-testing:jar}"
+              outputFile="${findbugs.report.dir}/${findbugs.report.file.test}" output="xml"
+              includefilter="${findbugs.config.filter.test}"
+              noClassOk="true">
+      <class location="${project.build.testOutputDirectory}" />
+      <auxClasspath refid="maven.test.classpath" />
+      <sourcePath path="${project.build.testSourceDirectory}" />
+      <systemProperty name="nablarch-findbugs-config" value="${findbugs.config.published.test}" />
+    </findbugs>
+  </target>
+
+  <target name="clean" description="生成されたFindBugsレポートを削除する">
+    <delete dir="${findbugs.report.dir}" />
+  </target>
+
+  <target name="-check.output.dir">
+    <condition property="output.exists">
+      <available file="${project.build.outputDirectory}" type="dir" />
+    </condition>
+  </target>
+
+  <target name="-check.test.output.dir">
+    <condition property="test.output.exists">
+      <available file="${project.build.testOutputDirectory}" type="dir" />
+    </condition>
+  </target>
+</project>
