@@ -13,7 +13,7 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <configuration>
     <servers>
       <server>
@@ -33,6 +33,12 @@ And execute following command to start tomcat8.
 ```
 
 Then web browser will be started automatically.
+
+If you do not want to start a browser, you can use a `run-headless` goal as follows.
+
+```shell
+% mvn waitt:run-headless
+```
 
 ## Supported server products
 
