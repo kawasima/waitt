@@ -55,27 +55,17 @@ public class WaittHandlerList extends AbstractHandlerContainer {
         {
             MultiException mex=null;
 
-            for (int i=0;i<_handlers.length;i++)
-            {
-                try
-                {
-                    _handlers[i].handle(target,baseRequest, request, response);
-                    if ( baseRequest.isHandled())
+            for (Handler _handler : _handlers) {
+                try {
+                    _handler.handle(target, baseRequest, request, response);
+                    if (baseRequest.isHandled())
                         return;
 
-                }
-                catch(IOException e)
-                {
+                } catch (IOException | RuntimeException e) {
                     throw e;
-                }
-                catch(RuntimeException e)
-                {
-                    throw e;
-                }
-                catch(Exception e)
-                {
-                    if (mex==null)
-                        mex=new MultiException();
+                } catch (Exception e) {
+                    if (mex == null)
+                        mex = new MultiException();
                     mex.add(e);
                 }
             }

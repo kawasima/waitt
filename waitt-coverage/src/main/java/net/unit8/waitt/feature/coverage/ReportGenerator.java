@@ -1,14 +1,14 @@
 package net.unit8.waitt.feature.coverage;
 
-import java.io.File;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
 import net.sourceforge.cobertura.coveragedata.ProjectData;
 import net.sourceforge.cobertura.coveragedata.TouchCollector;
 import net.sourceforge.cobertura.reporting.ComplexityCalculator;
 import net.sourceforge.cobertura.reporting.html.HTMLReport;
 import net.sourceforge.cobertura.util.FileFinder;
+
+import java.io.File;
+import java.util.logging.Logger;
 
 /**
  *

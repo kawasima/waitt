@@ -6,12 +6,10 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
-import org.jacoco.agent.rt.RT;
 import org.jacoco.agent.rt.internal_8ff85ea.Agent;
 import org.jacoco.agent.rt.internal_8ff85ea.core.runtime.AgentOptions;
 import org.jacoco.core.analysis.IBundleCoverage;
 import org.jacoco.core.data.ExecutionDataStore;
-import org.jacoco.core.runtime.ModifiedSystemClassRuntime;
 import org.jacoco.core.tools.ExecFileLoader;
 import org.jacoco.report.FileMultiReportOutput;
 import org.jacoco.report.IReportGroupVisitor;
@@ -21,13 +19,10 @@ import org.jacoco.report.html.HTMLFormatter;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -101,7 +96,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
 
                 }
             }
-        }, 15l, 15l, TimeUnit.SECONDS);
+        }, 15L, 15L, TimeUnit.SECONDS);
     }
     void createReport(final IReportGroupVisitor visitor, ExecutionDataStore executionDataStore) throws IOException {
         final BundleCreator creator = new BundleCreator();

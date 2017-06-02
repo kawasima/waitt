@@ -4,9 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
-import java.net.URL;
-import java.util.Set;
-
 /**
  *
  * @author kawasima

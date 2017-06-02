@@ -1,12 +1,9 @@
 package net.unit8.waitt.feature.tracer.entry;
 
 import com.google.gson.FieldNamingPolicy;
-import com.google.gson.FieldNamingStrategy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.junit.Test;
-
-import java.text.DateFormat;
 
 /**
  * @author kawasima

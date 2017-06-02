@@ -1,19 +1,22 @@
 package net.unit8.waitt.mojo.component;
 
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
-import java.util.logging.Logger;
 import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.configuration.Server;
 import net.unit8.waitt.mojo.configuration.ServerSpec;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.component.annotations.Requirement;
 import org.codehaus.plexus.components.interactivity.Prompter;
 import org.codehaus.plexus.components.interactivity.PrompterException;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.logging.Logger;
 
 /**
  * A provider of a server.
@@ -45,9 +48,11 @@ public class DefaultServerProvider implements ServerProvider {
     }
 
     @Override
-    public ServerSpec selectServer(List<Server> servers, ClassRealm parentRealm, boolean interactive) {
+    public ServerSpec selectServer(List<Server> servers, ClassRealm parentRealm, boolean interactive)
+            throws MojoFailureException {
         if (servers == null || servers.isEmpty()) {
-            throw new IllegalStateException("No settings for server.");
+            throw new MojoFailureException(servers, "No settings for server.",
+                    "server not found");
         }
 
         List<ServerSpec> serverSpecs = new ArrayList<ServerSpec>();
@@ -69,7 +74,7 @@ public class DefaultServerProvider implements ServerProvider {
                 int num = Integer.parseInt(res);
                 return serverSpecs.get(num);
             } catch(PrompterException e) {
-                throw new IllegalStateException("Prompt error.", e);
+                throw new MojoFailureException("Prompt error.", e);
             }
         } else {
             return serverSpecs.get(0);

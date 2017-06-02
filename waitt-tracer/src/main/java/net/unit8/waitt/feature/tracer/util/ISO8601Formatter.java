@@ -10,21 +10,20 @@ public class ISO8601Formatter {
     public static String format(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        StringBuilder sb = new StringBuilder();
-        return sb.append(lpad(cal.get(Calendar.YEAR), 4))
-                .append('-')
-                .append(lpad(cal.get(Calendar.MONTH) + 1, 2))
-                .append('-')
-                .append(lpad(cal.get(Calendar.DAY_OF_MONTH), 2))
-                .append('T')
-                .append(lpad(cal.get(Calendar.HOUR_OF_DAY), 2))
-                .append(':')
-                .append(lpad(cal.get(Calendar.MINUTE), 2))
-                .append(':')
-                .append(lpad(cal.get(Calendar.SECOND), 2))
-                .append('.')
-                .append(lpad(cal.get(Calendar.MILLISECOND), 3))
-                .toString();
+        String sb = lpad(cal.get(Calendar.YEAR), 4) +
+                '-' +
+                lpad(cal.get(Calendar.MONTH) + 1, 2) +
+                '-' +
+                lpad(cal.get(Calendar.DAY_OF_MONTH), 2) +
+                'T' +
+                lpad(cal.get(Calendar.HOUR_OF_DAY), 2) +
+                ':' +
+                lpad(cal.get(Calendar.MINUTE), 2) +
+                ':' +
+                lpad(cal.get(Calendar.SECOND), 2) +
+                '.' +
+                lpad(cal.get(Calendar.MILLISECOND), 3);
+        return sb;
     }
 
     private static String lpad(int dateElement, int length) {

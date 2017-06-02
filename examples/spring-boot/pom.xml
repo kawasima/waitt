@@ -31,6 +31,7 @@
                 <version>1.2.0-SNAPSHOT</version>
                 <configuration>
                     <servers>
+                        <!--
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat8</artifactId>
@@ -41,6 +42,7 @@
                             <artifactId>waitt-jetty9</artifactId>
                             <version>1.2.0-SNAPSHOT</version>
                         </server>
+                        -->
                     </servers>
                     <features>
                         <feature>

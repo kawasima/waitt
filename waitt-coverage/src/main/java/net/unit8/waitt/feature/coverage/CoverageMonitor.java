@@ -1,20 +1,18 @@
 package net.unit8.waitt.feature.coverage;
 
-import java.io.File;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import net.sourceforge.cobertura.coveragedata.CoverageDataFileHandler;
-import java.util.logging.Logger;
-import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.ClassLoaderFactory;
 import net.unit8.waitt.api.ConfigurableFeature;
 import net.unit8.waitt.api.EmbeddedServer;
+import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
+
+import java.io.File;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * @author kawasima

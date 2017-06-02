@@ -22,7 +22,7 @@ import org.apache.tomcat.JarScanner;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -179,9 +179,7 @@ public class Tomcat7EmbeddedServer implements EmbeddedServer {
                     }
                     context.addFilterMap(filterMap);
 
-                    for (URL url : ((URLClassLoader) decorator.getClass().getClassLoader()).getURLs()) {
-                        decoratorUrls.add(url);
-                    }
+                    Collections.addAll(decoratorUrls, ((URLClassLoader) decorator.getClass().getClassLoader()).getURLs());
                 }
             }
             if (!decoratorUrls.isEmpty()) {

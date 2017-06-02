@@ -78,7 +78,7 @@ public class ResponseEntry extends EntryBase {
         if (o == this) return true;
         if (!(o instanceof ResponseEntry)) return false;
         final ResponseEntry other = (ResponseEntry) o;
-        if (!other.canEqual((Object) this)) return false;
+        if (!other.canEqual(this)) return false;
         final Object this$requestUri = this.requestUri;
         final Object other$requestUri = other.requestUri;
         if (this$requestUri == null ? other$requestUri != null : !this$requestUri.equals(other$requestUri))
@@ -90,8 +90,7 @@ public class ResponseEntry extends EntryBase {
             return false;
         final Object this$hostName = this.getHostName();
         final Object other$hostName = other.getHostName();
-        if (this$hostName == null ? other$hostName != null : !this$hostName.equals(other$hostName)) return false;
-        return true;
+        return this$hostName == null ? other$hostName == null : this$hostName.equals(other$hostName);
     }
 
     public int hashCode() {

@@ -16,14 +16,17 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.plugins.shade.DefaultShader;
 import org.apache.maven.plugins.shade.ShadeRequest;
-import org.apache.maven.plugins.shade.resource.*;
+import org.apache.maven.plugins.shade.filter.Filter;
+import org.apache.maven.plugins.shade.relocation.Relocator;
+import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
+import org.apache.maven.plugins.shade.resource.ResourceTransformer;
+import org.apache.maven.plugins.shade.resource.ServicesResourceTransformer;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.logging.Logger;
 import org.codehaus.plexus.logging.console.ConsoleLogger;
-import org.codehaus.plexus.util.DirectoryScanner;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,9 +84,7 @@ public class JarMojo extends AbstractMojo {
             throw new IllegalArgumentException( "finalName is not allowed to be null" );
         }
 
-        StringBuilder fileName = new StringBuilder( resultFinalName );
-        fileName.append( ".jar" );
-        return new File( basedir, fileName.toString() );
+        return new File( basedir, resultFinalName + ".jar");
     }
 
     protected Set<File> getDependencies() {
@@ -146,8 +147,8 @@ public class JarMojo extends AbstractMojo {
         jars.add(new File(outputDirectory, project.getBuild().getFinalName() + ".jar"));
 
         request.setJars(jars);
-        request.setFilters(Collections.EMPTY_LIST);
-        request.setRelocators(Collections.EMPTY_LIST);
+        request.setFilters(Collections.<Filter>emptyList());
+        request.setRelocators(Collections.<Relocator>emptyList());
 
         List<ResourceTransformer> transformers = new ArrayList<ResourceTransformer>();
         transformers.add(createManifestTransformer("net.unit8.waitt.embed.Runner"));

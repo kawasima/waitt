@@ -309,9 +309,7 @@ public class ClassRealmJarScanner implements JarScanner {
                         }
                     } catch (URISyntaxException e) {
                         // Wrap the exception and re-throw
-                        IOException ioe = new IOException();
-                        ioe.initCause(e);
-                        throw ioe;
+                        throw new IOException(e);
                     }
                 }
             }

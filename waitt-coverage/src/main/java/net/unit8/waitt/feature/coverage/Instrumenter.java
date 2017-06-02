@@ -14,20 +14,20 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("SameParameterValue")
 public interface Instrumenter {
-    public void setIgnoreRegexes(Collection<Pattern> ignoreRegexes);
+    void setIgnoreRegexes(Collection<Pattern> ignoreRegexes);
 
-    public byte[] instrumentClassByte(InputStream is)
+    byte[] instrumentClassByte(InputStream is)
             throws IOException;
 
-    public void setIgnoreTrivial(boolean ignoreTrivial);
+    void setIgnoreTrivial(boolean ignoreTrivial);
 
-    public void setIgnoreMethodAnnotations(Set<String> ignoreMethodAnnotations);
+    void setIgnoreMethodAnnotations(Set<String> ignoreMethodAnnotations);
 
-    public void setFailOnError(boolean failOnError);
+    void setFailOnError(boolean failOnError);
 
     // --Commented out by Inspection (14/07/17 15:42):public void setProjectData(ProjectData projectData);
 
-    public void setThreadsafeRigorous(boolean threadsafeRigorous);
+    void setThreadsafeRigorous(boolean threadsafeRigorous);
 
-    public ProjectData getProjectData();
+    ProjectData getProjectData();
 }

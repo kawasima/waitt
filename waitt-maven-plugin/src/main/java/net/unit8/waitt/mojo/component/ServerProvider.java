@@ -3,6 +3,7 @@ package net.unit8.waitt.mojo.component;
 import java.util.List;
 import net.unit8.waitt.api.configuration.Server;
 import net.unit8.waitt.mojo.configuration.ServerSpec;
+import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 /**
@@ -11,5 +12,5 @@ import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 public interface ServerProvider {
     ServerSpec getServer(Server server, ClassRealm parentRealm);
-    ServerSpec selectServer(List<Server> server, ClassRealm parentRealm, boolean interactive);
+    ServerSpec selectServer(List<Server> server, ClassRealm parentRealm, boolean interactive) throws MojoFailureException;
 }

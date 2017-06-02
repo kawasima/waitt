@@ -66,7 +66,7 @@ public class JacocoClassLoader extends URLClassLoader {
     }
 
     private Class defineClass(String className, boolean resolve) throws ClassNotFoundException {
-        Class clazz = null;
+        Class clazz;
         String path = className.replace('.', '/') + ".class";
         InputStream is = getParent().getResourceAsStream(path);
 

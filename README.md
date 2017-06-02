@@ -3,7 +3,7 @@ WAITT
 
 WAITT is the Web Application Integration Test Tool.
 
-Using WAITT, your can deploy your application to any server without building a war or jar file.
+Using WAITT, you can deploy your application to any server without building war or jar file.
 
 ## Usage
 
@@ -13,13 +13,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
         <artifactId>waitt-tomcat8</artifactId>
-        <version>0.1.0</version>
+        <version>1.2.0</version>
       </server>
     </servers>
   </configuration>
@@ -40,6 +40,20 @@ If you do not want to start a browser, you can use a `run-headless` goal as foll
 % mvn waitt:run-headless
 ```
 
+### Build an executable jar
+
+Waitt plugin can build an executable jar.
+
+```shell
+% mvn waitt:jar
+```
+
+It doesn't include non-resource files automatically. So, if your app refers asset files outside jar file, you can use `-d` option in runtime. 
+
+```shell
+% java -jar xxx-standalone.jar -d src/main/webapp
+```
+
 ## Supported server products
 
 - Tomcat8
@@ -48,7 +62,7 @@ If you do not want to start a browser, you can use a `run-headless` goal as foll
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat8</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
   </server>
 ```
 
@@ -58,7 +72,7 @@ If you do not want to start a browser, you can use a `run-headless` goal as foll
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat7</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
   </server>
 ```
 
@@ -68,10 +82,9 @@ If you do not want to start a browser, you can use a `run-headless` goal as foll
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty9</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
   </server>
 ```
-
 
 If you set multiple servers and maven is executed in the interactive mode, you can select a server at runtime.
 
@@ -90,7 +103,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
   </feature>
 ```
 
@@ -100,7 +113,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
   </feature>
 ```
 
@@ -110,7 +123,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
     <type>war</type>
   </feature>
 ```
@@ -123,7 +136,7 @@ Add `waitt-admin` feature to your configuration.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
   </feature>
 ```
 
@@ -136,7 +149,7 @@ You can show and search logs at development in Kibana.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>0.1.0</version>
+    <version>1.2.0</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>

@@ -89,8 +89,8 @@ public class ServerAction implements Route {
         gDef.line("Free memory (swap)", Color.GREEN);
         gDef.datasource("Free memory (physical)", rrdPath, "memory-physical", ConsolFun.AVERAGE);
         gDef.datasource("Free memory (swap)",     rrdPath, "memory-swap",     ConsolFun.AVERAGE);
-        gDef.gprint("Free memory (physical)", ConsolFun.AVERAGE, "Free memory (physical) = %.3f%s");
-        gDef.gprint("Free memory (swap)", ConsolFun.AVERAGE, "Free memory (swap) = %.3f%s\\c");
+        gDef.print("Free memory (physical)", ConsolFun.AVERAGE, "Free memory (physical) = %.3f%s");
+        gDef.print("Free memory (swap)", ConsolFun.AVERAGE, "Free memory (swap) = %.3f%s\\c");
     }
 
     private void renderGraphCpu(RrdGraphDef gDef) {

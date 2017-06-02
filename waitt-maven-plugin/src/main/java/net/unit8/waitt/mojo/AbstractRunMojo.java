@@ -28,9 +28,11 @@ import org.fusesource.jansi.AnsiConsole;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.Socket;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
-import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -115,6 +117,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
 
         ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
+
         ServerSpec serverSpec = serverProvider.selectServer(servers, waittRealm, session.getSettings().getInteractiveMode());
         EmbeddedServer embeddedServer = serverSpec.getEmbeddedServer();
 

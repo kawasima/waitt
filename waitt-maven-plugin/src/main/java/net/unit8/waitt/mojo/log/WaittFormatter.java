@@ -5,13 +5,12 @@ import org.codehaus.plexus.util.StringUtils;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import static org.fusesource.jansi.Ansi.*;
 import static org.fusesource.jansi.Ansi.Color.*;
+import static org.fusesource.jansi.Ansi.ansi;
 
 
 /**
