@@ -7,6 +7,11 @@
     <version>1.2.0</version>
     <packaging>pom</packaging>
 
+    <name>waitt-parent</name>
+    <description>Web Application Integration Test Tool</description>
+    <url>https://github.com/kawasima/waitt</url>
+
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
