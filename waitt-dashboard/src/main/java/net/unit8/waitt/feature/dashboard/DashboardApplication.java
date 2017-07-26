@@ -7,6 +7,7 @@ import org.gridkit.jvmtool.heapdump.HeapHistogram;
 import org.gridkit.jvmtool.heapdump.StringCollector;
 import org.netbeans.lib.profiler.heap.FastHprofHeap;
 import org.netbeans.lib.profiler.heap.Heap;
+import org.netbeans.lib.profiler.heap.HeapFactory;
 import spark.*;
 import spark.servlet.SparkApplication;
 import spark.template.thymeleaf.ThymeleafTemplateEngine;
@@ -168,7 +169,7 @@ public class DashboardApplication implements SparkApplication {
             }
             HotSpotDiagnosticMXBean mxBean = ManagementFactory.newPlatformMXBeanProxy(ManagementFactory.getPlatformMBeanServer(), "com.sun.management:type=HotSpotDiagnostic", HotSpotDiagnosticMXBean.class);
             mxBean.dumpHeap(dumpFile.getPath(), true);
-            Heap heap = new FastHprofHeap(dumpFile, 0);
+            Heap heap = HeapFactory.createFastHeap(dumpFile, 0);
             StringCollector collector = new StringCollector();
             HeapHistogram histo = new HeapHistogram();
             collector.collect(heap, histo);
