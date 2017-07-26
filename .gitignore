@@ -14,3 +14,4 @@ tomcat.*
 http_dump
 gsp-target
 h2
+*.versionsBackup
