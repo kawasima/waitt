@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-parent</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.1</version>
     </parent>
     <artifactId>waitt-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
@@ -21,6 +21,7 @@
         <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
+        <waitt.version>1.2.1</waitt.version>
     </properties>
 
     <build>
@@ -98,7 +99,7 @@
         <dependency>
             <groupId>net.unit8.waitt</groupId>
             <artifactId>waitt-api</artifactId>
-            <version>1.0.0</version>
+            <version>${waitt.version}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
@@ -121,7 +122,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.8</version>
+            <version>1.16.18</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

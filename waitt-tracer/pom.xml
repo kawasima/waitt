@@ -9,13 +9,13 @@
     <parent>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-parent</artifactId>
-        <version>1.2.0-SNAPSHOT</version>
+        <version>1.2.1</version>
     </parent>
 
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waittVersion>1.2.0-SNAPSHOT</waittVersion>
+        <waitt.version>1.2.1</waitt.version>
     </properties>
 
     <dependencies>
@@ -28,7 +28,7 @@
         <dependency>
             <groupId>net.unit8.waitt</groupId>
             <artifactId>waitt-api</artifactId>
-            <version>${waittVersion}</version>
+            <version>${waitt.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.16</version>
+            <version>1.16.18</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

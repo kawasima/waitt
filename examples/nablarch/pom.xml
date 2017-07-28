@@ -14,6 +14,7 @@
   <packaging>war</packaging>
 
   <properties>
+    <waitt.version>1.2.1</waitt.version>
     <scheme>画面オンライン</scheme>
     <!-- 環境ごとのリソースディレクトリ(プロファイルにより切り替わる) -->
     <env.resources>${project.basedir}/src/env/${env.dir}/resources</env.resources>
@@ -361,13 +362,13 @@
       <plugin>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-maven-plugin</artifactId>
-        <version>1.2.0-SNAPSHOT</version>
+        <version>${waitt.version}</version>
         <configuration>
           <servers>
             <server>
               <groupId>net.unit8.waitt.server</groupId>
               <artifactId>waitt-tomcat85</artifactId>
-              <version>1.2.1-SNAPSHOT</version>
+              <version>${waitt.version}</version>
             </server>
           </servers>
         </configuration>

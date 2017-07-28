@@ -61,7 +61,7 @@ public class JarMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.finalName}", readonly = true)
     private String finalName;
 
-    @Parameter(property="embeddedRunnerVersion", defaultValue="1.2.1-SNAPSHOT")
+    @Parameter(property="embeddedRunnerVersion", defaultValue="1.2.1")
     private String embeddedRunnerVersion;
 
     @Parameter

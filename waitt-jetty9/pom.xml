@@ -9,12 +9,12 @@
     <parent>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-parent</artifactId>
-        <version>1.2.1-SNAPSHOT</version>
+        <version>1.2.1</version>
     </parent>
 
     <properties>
         <jetty.version>9.4.5.v20170502</jetty.version>
-        <waitt.version>1.0.0</waitt.version>
+        <waitt.version>1.2.1</waitt.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
