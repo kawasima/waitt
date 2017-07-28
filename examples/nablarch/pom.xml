@@ -366,8 +366,8 @@
           <servers>
             <server>
               <groupId>net.unit8.waitt.server</groupId>
-              <artifactId>waitt-tomcat8</artifactId>
-              <version>1.2.0-SNAPSHOT</version>
+              <artifactId>waitt-tomcat85</artifactId>
+              <version>1.2.1-SNAPSHOT</version>
             </server>
           </servers>
         </configuration>

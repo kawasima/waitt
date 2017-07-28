@@ -23,6 +23,7 @@
         <module>waitt-jetty9</module>
         <module>waitt-tomcat7</module>
         <module>waitt-tomcat8</module>
+        <module>waitt-tomcat85</module>
         <module>waitt-coverage</module>
         <module>waitt-jacoco</module>
         <module>waitt-dashboard</module>
