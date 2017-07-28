@@ -40,7 +40,7 @@ import java.util.*;
 public class JarMojo extends AbstractMojo {
     private static final String[] WELLKNOWN_DOCROOT = {"src/main/webapp", "WebContent"};
 
-    @Component( role = Archiver.class, hint = "jar" )
+    @Component(role = Archiver.class, hint = "jar")
     private JarArchiver jarArchiver;
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
@@ -55,11 +55,14 @@ public class JarMojo extends AbstractMojo {
     @Parameter
     private MavenArchiveConfiguration archive = new MavenArchiveConfiguration();
 
-    @Parameter( defaultValue = "${project.build.directory}", required = true )
+    @Parameter(defaultValue = "${project.build.directory}", required = true)
     private File outputDirectory;
 
-    @Parameter( defaultValue = "${project.build.finalName}", readonly = true )
+    @Parameter(defaultValue = "${project.build.finalName}", readonly = true)
     private String finalName;
+
+    @Parameter(property="embeddedRunnerVersion", defaultValue="1.2.1-SNAPSHOT")
+    private String embeddedRunnerVersion;
 
     @Parameter
     private List<Server> servers;
@@ -124,6 +127,7 @@ public class JarMojo extends AbstractMojo {
             }
         }
     }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (servers.isEmpty()) {
@@ -142,7 +146,7 @@ public class JarMojo extends AbstractMojo {
         Set<File> jars = getDependencies();
         Server server = servers.get(0);
         resolveArtifact(server.getGroupId(), server.getArtifactId(), server.getVersion(), jars);
-        resolveArtifact("net.unit8.waitt", "waitt-embed-runner", "1.2.0-SNAPSHOT", jars);
+        resolveArtifact("net.unit8.waitt", "waitt-embed-runner", embeddedRunnerVersion, jars);
 
         jars.add(new File(outputDirectory, project.getBuild().getFinalName() + ".jar"));
 
