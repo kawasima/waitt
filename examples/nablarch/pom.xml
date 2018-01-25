@@ -1,439 +1,450 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>com.nablarch.archetype</groupId>
-    <artifactId>nablarch-archetype-parent</artifactId>
-    <version>5u8</version>
-  </parent>
+    <parent>
+        <groupId>com.nablarch.archetype</groupId>
+        <artifactId>nablarch-archetype-parent</artifactId>
+        <version>5u12</version>
+    </parent>
 
-  <groupId>com.nablarch.example</groupId>
-  <artifactId>nablarch-example-web</artifactId>
-  <version>5u8</version>
-  <packaging>war</packaging>
+    <groupId>com.nablarch.example</groupId>
+    <artifactId>nablarch-example-web</artifactId>
+    <version>5u12</version>
+    <packaging>war</packaging>
 
-  <properties>
-    <waitt.version>1.2.1</waitt.version>
-    <scheme>画面オンライン</scheme>
-    <!-- 環境ごとのリソースディレクトリ(プロファイルにより切り替わる) -->
-    <env.resources>${project.basedir}/src/env/${env.dir}/resources</env.resources>
+    <properties>
+        <waitt.version>1.2.2-SNAPSHOT</waitt.version>
+        <scheme>画面オンライン</scheme>
+        <!-- 環境ごとのリソースディレクトリ(プロファイルにより切り替わる) -->
+        <env.resources>${project.basedir}/src/env/${env.dir}/resources</env.resources>
 
-    <!-- 利用するJavaのバージョン -->
-    <java.version>1.8</java.version>
+        <!-- 利用するJavaのバージョン -->
+        <java.version>1.8</java.version>
 
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-    <!-- gsp-dba-maven-pluginが使用するデータベース設定 -->
-    <nablarch.db.jdbcDriver>org.h2.Driver</nablarch.db.jdbcDriver>
-    <nablarch.db.url>jdbc:h2:./h2/db/nablarch_example</nablarch.db.url>
-    <nablarch.db.adminUser>SAMPLE</nablarch.db.adminUser>
-    <nablarch.db.adminPassword>SAMPLE</nablarch.db.adminPassword>
-    <nablarch.db.user>NABLARCH_EXAMPLE</nablarch.db.user>
-    <nablarch.db.password>NABLARCH_EXAMPLE</nablarch.db.password>
-    <nablarch.db.schema>PUBLIC</nablarch.db.schema>
-    <!-- gsp-dba-maven-pluginが読み込むファイルのパス -->
-    <dba.erdFile>src/main/resources/entity/h2.edm</dba.erdFile>
-    <dba.dataDirectory>src/test/resources/data/h2</dba.dataDirectory>
-    <!-- maven-gsp-dba-pluginでEntityクラスを生成するパッケージ名。 -->
-    <dba.entity.rootPackage>com.nablarch.example.app</dba.entity.rootPackage>
-    <dba.entity.entityPackage>entity</dba.entity.entityPackage>
+        <!-- gsp-dba-maven-pluginが使用するデータベース設定 -->
+        <nablarch.db.jdbcDriver>org.h2.Driver</nablarch.db.jdbcDriver>
+        <nablarch.db.url>jdbc:h2:./h2/db/nablarch_example</nablarch.db.url>
+        <nablarch.db.adminUser>SAMPLE</nablarch.db.adminUser>
+        <nablarch.db.adminPassword>SAMPLE</nablarch.db.adminPassword>
+        <nablarch.db.user>NABLARCH_EXAMPLE</nablarch.db.user>
+        <nablarch.db.password>NABLARCH_EXAMPLE</nablarch.db.password>
+        <nablarch.db.schema>PUBLIC</nablarch.db.schema>
+        <!-- gsp-dba-maven-pluginが読み込むファイルのパス -->
+        <dba.erdFile>src/main/resources/entity/h2.edm</dba.erdFile>
+        <dba.dataDirectory>src/test/resources/data/h2</dba.dataDirectory>
+        <!-- maven-gsp-dba-pluginでEntityクラスを生成するパッケージ名。 -->
+        <dba.entity.rootPackage>com.nablarch.example.app</dba.entity.rootPackage>
+        <dba.entity.entityPackage>entity</dba.entity.entityPackage>
 
-    <!-- toolsディレクトリの配置場所 -->
-    <nablarch.tools.dir>${project.basedir}/tools</nablarch.tools.dir>
-  </properties>
+        <!-- toolsディレクトリの配置場所 -->
+        <nablarch.tools.dir>${project.basedir}/tools</nablarch.tools.dir>
+    </properties>
 
-  <!--
-    このプロファイルは環境を指定するものであり、相互に排他的である。
-    複数のプロファイルを同時に指定してはならない。
-  -->
-  <profiles>
+    <!--
+      このプロファイルは環境を指定するものであり、相互に排他的である。
+      複数のプロファイルを同時に指定してはならない。
+    -->
+    <profiles>
 
-    <!-- 開発環境 -->
-    <profile>
-      <id>development</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <properties>
-        <!-- 環境設定ファイル自動生成ツールで指定している環境名 -->
-        <env.name>開発環境</env.name>
-        <!-- Mavenの環境別リソースのディレクトリ名 -->
-        <env.dir>dev</env.dir>
-        <env.classifier>dev</env.classifier>
-        <finalName>${project.artifactId}-${project.version}</finalName>
-        <!-- 使用するweb.xmlのパス -->
-        <webxml.path>src/env/dev/webapp/WEB-INF/web.xml</webxml.path>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>com.nablarch.framework</groupId>
-          <artifactId>nablarch-fw-web-hotdeploy</artifactId>
-        </dependency>
-        <dependency>
-          <groupId>com.h2database</groupId>
-          <artifactId>h2</artifactId>
-          <version>1.4.192</version>
-          <scope>runtime</scope>
-        </dependency>
-        <dependency>
-          <groupId>commons-dbcp</groupId>
-          <artifactId>commons-dbcp</artifactId>
-          <version>1.4</version>
-          <scope>runtime</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-
-    <!-- gsp-dba-plugin -->
-    <profile>
-      <id>gsp</id>
-      <activation>
-        <activeByDefault>false</activeByDefault>
-      </activation>
-      <build>
-        <directory>${dba.gsp-target-dir}</directory>
-        <plugins>
-          <plugin>
-            <groupId>jp.co.tis.gsp</groupId>
-            <artifactId>gsp-dba-maven-plugin</artifactId>
+        <!-- 開発環境 -->
+        <profile>
+            <id>development</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <!-- 環境設定ファイル自動生成ツールで指定している環境名 -->
+                <env.name>開発環境</env.name>
+                <!-- Mavenの環境別リソースのディレクトリ名 -->
+                <env.dir>dev</env.dir>
+                <env.classifier>dev</env.classifier>
+                <finalName>${project.artifactId}-${project.version}</finalName>
+                <!-- 使用するweb.xmlのパス -->
+                <webxml.path>src/env/dev/webapp/WEB-INF/web.xml</webxml.path>
+            </properties>
             <dependencies>
-              <!-- プロジェクトで使用するDB製品にあわせたJDBCドライバに上書きする -->
-              <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>1.4.192</version>
-                <scope>runtime</scope>
-              </dependency>
+                <dependency>
+                    <groupId>com.nablarch.framework</groupId>
+                    <artifactId>nablarch-fw-web-hotdeploy</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.h2database</groupId>
+                    <artifactId>h2</artifactId>
+                    <version>1.4.192</version>
+                    <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                    <groupId>commons-dbcp</groupId>
+                    <artifactId>commons-dbcp</artifactId>
+                    <version>1.4</version>
+                    <scope>runtime</scope>
+                </dependency>
             </dependencies>
-            <executions>
-              <execution>
-                <id>default-cli</id>
-                <phase>generate-resources</phase>
-                <goals>
-                  <goal>generate-ddl</goal>
-                  <goal>execute-ddl</goal>
-                  <goal>generate-entity</goal>
-                  <goal>load-data</goal>
-                  <goal>export-schema</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-install-plugin</artifactId>
-            <version>${version.plugins.install}</version>
-            <executions>
-              <!-- gsp-dba-maven-pluginで生成したdumpファイルをinstallするための設定 -->
-              <execution>
-                <id>default-cli</id>
-                <goals>
-                  <goal>install-file</goal>
-                </goals>
-                <configuration>
-                  <file>${dba.gsp-target-dir}/output/${dba.testDataArtifactId}-${dba.dump.version}.jar</file>
-                  <groupId>${project.groupId}</groupId>
-                  <version>${dba.dump.version}</version>
-                  <artifactId>${dba.testDataArtifactId}</artifactId>
-                  <packaging>jar</packaging>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-            <version>${version.plugins.deploy}</version>
-            <executions>
-              <!-- gsp-dba-maven-pluginで生成したdumpファイルをdeployするための設定 -->
-              <execution>
-                <id>default-cli</id>
-                <goals>
-                  <goal>deploy-file</goal>
-                </goals>
-                <configuration>
-                  <file>${dba.gsp-target-dir}/output/${dba.testDataArtifactId}-${dba.dump.version}.jar</file>
-                  <groupId>${project.groupId}</groupId>
-                  <version>${dba.dump.version}</version>
-                  <artifactId>${dba.testDataArtifactId}</artifactId>
-                  <repositoryId>${project.distributionManagement.repository.id}</repositoryId>
-                  <url>${project.distributionManagement.repository.url}</url>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
+        </profile>
 
-    <!-- 本番環境 -->
-    <profile>
-      <id>production</id>
-      <properties>
-        <envName>本番環境</envName>
-        <envDir>production</envDir>
-        <env.classifier>production</env.classifier>
-        <webxml.path>src/main/webapp/WEB-INF/web.xml</webxml.path>
-      </properties>
-    </profile>
-  </profiles>
+        <!-- gsp-dba-plugin -->
+        <profile>
+            <id>gsp</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <build>
+                <directory>${dba.gsp-target-dir}</directory>
+                <plugins>
+                    <plugin>
+                        <groupId>jp.co.tis.gsp</groupId>
+                        <artifactId>gsp-dba-maven-plugin</artifactId>
+                        <dependencies>
+                            <!-- プロジェクトで使用するDB製品にあわせたJDBCドライバに上書きする -->
+                            <dependency>
+                                <groupId>com.h2database</groupId>
+                                <artifactId>h2</artifactId>
+                                <version>1.4.192</version>
+                                <scope>runtime</scope>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <id>default-cli</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>generate-ddl</goal>
+                                    <goal>execute-ddl</goal>
+                                    <goal>generate-entity</goal>
+                                    <goal>load-data</goal>
+                                    <goal>export-schema</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-install-plugin</artifactId>
+                        <version>${version.plugins.install}</version>
+                        <executions>
+                            <!-- gsp-dba-maven-pluginで生成したdumpファイルをinstallするための設定 -->
+                            <execution>
+                                <id>default-cli</id>
+                                <goals>
+                                    <goal>install-file</goal>
+                                </goals>
+                                <configuration>
+                                    <file>
+                                        ${dba.gsp-target-dir}/output/${dba.testDataArtifactId}-${dba.dump.version}.jar
+                                    </file>
+                                    <groupId>${project.groupId}</groupId>
+                                    <version>${dba.dump.version}</version>
+                                    <artifactId>${dba.testDataArtifactId}</artifactId>
+                                    <packaging>jar</packaging>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <version>${version.plugins.deploy}</version>
+                        <executions>
+                            <!-- gsp-dba-maven-pluginで生成したdumpファイルをdeployするための設定 -->
+                            <execution>
+                                <id>default-cli</id>
+                                <goals>
+                                    <goal>deploy-file</goal>
+                                </goals>
+                                <configuration>
+                                    <file>
+                                        ${dba.gsp-target-dir}/output/${dba.testDataArtifactId}-${dba.dump.version}.jar
+                                    </file>
+                                    <groupId>${project.groupId}</groupId>
+                                    <version>${dba.dump.version}</version>
+                                    <artifactId>${dba.testDataArtifactId}</artifactId>
+                                    <repositoryId>${project.distributionManagement.repository.id}</repositoryId>
+                                    <url>${project.distributionManagement.repository.url}</url>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
 
-  <dependencyManagement>
+        <!-- 本番環境 -->
+        <profile>
+            <id>production</id>
+            <properties>
+                <envName>本番環境</envName>
+                <envDir>production</envDir>
+                <env.classifier>production</env.classifier>
+                <webxml.path>src/main/webapp/WEB-INF/web.xml</webxml.path>
+            </properties>
+        </profile>
+    </profiles>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.nablarch.profile</groupId>
+                <artifactId>nablarch-bom</artifactId>
+                <version>5u8</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-      <dependency>
-        <groupId>com.nablarch.profile</groupId>
-        <artifactId>nablarch-bom</artifactId>
-        <version>5u8</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
+
+        <dependency>
+            <groupId>com.nablarch.configuration</groupId>
+            <artifactId>nablarch-main-default-configuration</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nablarch.profile</groupId>
+            <artifactId>nablarch-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nablarch.framework</groupId>
+            <artifactId>nablarch-fw-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nablarch.framework</groupId>
+            <artifactId>nablarch-fw-web-dbstore</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nablarch.framework</groupId>
+            <artifactId>nablarch-common-idgenerator-jdbc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>javax.servlet.jsp-api</artifactId>
+            <version>2.3.1</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet.jsp.jstl</groupId>
+            <artifactId>javax.servlet.jsp.jstl-api</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>5.1.3.Final</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.geronimo.specs</groupId>
+            <artifactId>geronimo-jpa_2.0_spec</artifactId>
+        </dependency>
+
+        <!-- ホットデプロイ用 -->
+        <dependency>
+            <groupId>com.nablarch.framework</groupId>
+            <artifactId>nablarch-fw-web-hotdeploy</artifactId>
+        </dependency>
+
+        <!-- TEST -->
+        <dependency>
+            <groupId>com.nablarch.configuration</groupId>
+            <artifactId>nablarch-testing-default-configuration</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nablarch.framework</groupId>
+            <artifactId>nablarch-testing</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jdt.core.compiler</groupId>
+                    <artifactId>ecj</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jdt.core.compiler</groupId>
+            <artifactId>ecj</artifactId>
+            <version>4.5.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nablarch.framework</groupId>
+            <artifactId>nablarch-fw-messaging-http</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>findbugs</artifactId>
+            <version>3.0.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
-  </dependencyManagement>
 
-  <dependencies>
+    <build>
+        <finalName>${finalName}</finalName>
+        <resources>
+            <resource>
+                <directory>${env.resources}</directory>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.sql</include>
+                </includes>
+            </resource>
+        </resources>
 
-    <dependency>
-      <groupId>com.nablarch.configuration</groupId>
-      <artifactId>nablarch-main-default-configuration</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.nablarch.profile</groupId>
-      <artifactId>nablarch-web</artifactId>
-    </dependency>
-    
-    <dependency>
-      <groupId>com.nablarch.framework</groupId>
-      <artifactId>nablarch-fw-web</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.nablarch.framework</groupId>
-      <artifactId>nablarch-fw-web-dbstore</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.nablarch.framework</groupId>
-      <artifactId>nablarch-common-idgenerator-jdbc</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>javax.servlet.jsp</groupId>
-      <artifactId>javax.servlet.jsp-api</artifactId>
-      <version>2.3.1</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>javax.servlet.jsp.jstl</groupId>
-      <artifactId>javax.servlet.jsp.jstl-api</artifactId>
-      <version>1.2.1</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-validator</artifactId>
-      <version>5.1.3.Final</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-jpa_2.0_spec</artifactId>
-    </dependency>
-
-    <!-- ホットデプロイ用 -->
-    <dependency>
-      <groupId>com.nablarch.framework</groupId>
-      <artifactId>nablarch-fw-web-hotdeploy</artifactId>
-    </dependency>
-
-    <!-- TEST -->
-    <dependency>
-      <groupId>com.nablarch.configuration</groupId>
-      <artifactId>nablarch-testing-default-configuration</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.nablarch.framework</groupId>
-      <artifactId>nablarch-testing</artifactId>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.eclipse.jdt.core.compiler</groupId>
-          <artifactId>ecj</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.eclipse.jdt.core.compiler</groupId>
-      <artifactId>ecj</artifactId>
-      <version>4.5.1</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.nablarch.framework</groupId>
-      <artifactId>nablarch-fw-messaging-http</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>findbugs</artifactId>
-      <version>3.0.1</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-all</artifactId>
-      <version>1.3</version>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
-
-  <build>
-    <finalName>${finalName}</finalName>
-    <resources>
-      <resource>
-        <directory>${env.resources}</directory>
-      </resource>
-      <resource>
-        <directory>src/main/resources</directory>
-      </resource>
-      <resource>
-        <directory>src/main/java</directory>
-        <includes>
-          <include>**/*.sql</include>
-        </includes>
-      </resource>
-    </resources>
-
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <configuration>
-          <webXml>${webxml.path}</webXml>
-          <classifier>${env.classifier}</classifier>
-          <archive>
-            <manifestEntries>
-              <Target-Environment>${env.name}</Target-Environment>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-clean-plugin</artifactId>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>work/jsp</directory>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- MANIFEST.MFでClass-Pathを指定すると、依存jar内で定義されているtaglibのuriを正しく解決してくれない。 -->
-          <useManifestOnlyJar>false</useManifestOnlyJar>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>net.unit8.waitt</groupId>
-        <artifactId>waitt-maven-plugin</artifactId>
-        <version>${waitt.version}</version>
-        <configuration>
-          <servers>
-            <server>
-              <groupId>net.unit8.waitt.server</groupId>
-              <artifactId>waitt-tomcat85</artifactId>
-              <version>${waitt.version}</version>
-            </server>
-          </servers>
-        </configuration>
-      </plugin>
-      <!-- ================ここから任意で使用するツールの設定================ -->
-      <!-- 自動生成されたEntityをビルド対象に組み込む -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-      </plugin>
-      <!-- ant経由で各種ツールを起動する。実行対象のツールは、
-           Findbugs、使用許可API一覧作成ツールである -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-      </plugin>
-      <!-- Check Style実行 -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.17</version>
-        <configuration>
-          <excludes>
-            **/com/nablarch/example/app/entity/*.java
-          </excludes>
-        </configuration>
-      </plugin>
-      <!-- findBugs -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>findbugs</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <xmlOutput>true</xmlOutput>
-          <excludeFilterFile>${findbugs.config.filter.production}</excludeFilterFile>
-          <jvmArgs>-Dnablarch-findbugs-config=${findbugs.config.published.production}</jvmArgs>
-          <plugins>
+        <plugins>
             <plugin>
-              <groupId>com.nablarch.framework</groupId>
-              <artifactId>nablarch-testing</artifactId>
-              <!-- プラグインに内包するモジュールはバージョン指定必須 -->
-              <version>1.0.7</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webXml>${webxml.path}</webXml>
+                    <classifier>${env.classifier}</classifier>
+                    <archive>
+                        <manifestEntries>
+                            <Target-Environment>${env.name}</Target-Environment>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
             </plugin>
-          </plugins>
-        </configuration>
-      </plugin>
-      <!-- カバレッジ取得 -->
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <!-- 0.7.3以降のJaCoCoではリクエスト単体テストのカバレッジを計測できない。
-          Jenkinsとの連携にはJaCoCoプラグインの1系を使用する(2系はJaCoCo0.7.4以降が必須) -->
-        <configuration>
-          <excludes>
-          <exclude>**/com/nablarch/example/app/entity/*</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>work/jsp</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- MANIFEST.MFでClass-Pathを指定すると、依存jar内で定義されているtaglibのuriを正しく解決してくれない。 -->
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>net.unit8.waitt</groupId>
+                <artifactId>waitt-maven-plugin</artifactId>
+                <version>${waitt.version}</version>
+                <configuration>
+                    <servers>
+                        <server>
+                            <groupId>net.unit8.waitt.server</groupId>
+                            <artifactId>waitt-tomcat85</artifactId>
+                            <version>${waitt.version}</version>
+                        </server>
+                    </servers>
+                    <features>
+                            <feature>
+                                <groupId>net.unit8.waitt.feature</groupId>
+                                <artifactId>waitt-jacoco</artifactId>
+                                <version>${waitt.version}</version>
+                            </feature>
+                            <feature>
+                                <groupId>net.unit8.waitt.feature</groupId>
+                                <artifactId>waitt-admin</artifactId>
+                                <version>${waitt.version}</version>
+                            </feature>
+                            <feature>
+                                <groupId>net.unit8.waitt.feature</groupId>
+                                <artifactId>waitt-dashboard</artifactId>
+                                <version>${waitt.version}</version>
+                                <type>war</type>
+                            </feature>
+                    </features>
+                </configuration>
+            </plugin>
+            <!-- ================ここから任意で使用するツールの設定================ -->
+            <!-- 自動生成されたEntityをビルド対象に組み込む -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+            <!-- ant経由で各種ツールを起動する。実行対象のツールは、
+                 Findbugs、使用許可API一覧作成ツールである -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+            </plugin>
+            <!-- Check Style実行 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>2.17</version>
+                <configuration>
+                    <excludes>
+                        **/com/nablarch/example/app/entity/*.java
+                    </excludes>
+                </configuration>
+            </plugin>
+            <!-- findBugs -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>findbugs</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <xmlOutput>true</xmlOutput>
+                    <excludeFilterFile>${findbugs.config.filter.production}</excludeFilterFile>
+                    <jvmArgs>-Dnablarch-findbugs-config=${findbugs.config.published.production}</jvmArgs>
+                    <plugins>
+                        <plugin>
+                            <groupId>com.nablarch.framework</groupId>
+                            <artifactId>nablarch-testing</artifactId>
+                            <!-- プラグインに内包するモジュールはバージョン指定必須 -->
+                            <version>1.0.7</version>
+                        </plugin>
+                    </plugins>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

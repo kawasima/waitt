@@ -183,7 +183,7 @@ public class Tomcat85EmbeddedServer implements EmbeddedServer {
         if (loader != null) {
             final WebappLoader webappLoader = new WebappLoader(loader);
             if (mainContext && ClassLoaderFactoryHolder.getClassLoaderFactory() != null) {
-                webappLoader.setLoaderClass("net.unit8.waitt.server.tomcat8.Tomcat8WebappClassLoaderWrapper");
+                webappLoader.setLoaderClass("net.unit8.waitt.server.tomcat85.Tomcat85WebappClassLoaderWrapper");
                 JarScanner jarScanner = new ClassRealmJarScanner();
                 context.setJarScanner(jarScanner);
             }

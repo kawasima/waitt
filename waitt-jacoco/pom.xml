@@ -15,8 +15,8 @@
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waitt.version>1.2.1</waitt.version>
-        <jacoco.version>0.7.9</jacoco.version>
+        <waitt.version>1.2.2-SNAPSHOT</waitt.version>
+        <jacoco.version>0.8.0</jacoco.version>
     </properties>
 
     <dependencies>
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.18</version>
+            <version>1.16.20</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

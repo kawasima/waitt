@@ -16,7 +16,7 @@
     <url>https://github.com/kawasima/waitt</url>
 
     <properties>
-        <waitt.version>1.2.1</waitt.version>
+        <waitt.version>1.2.2-SNAPSHOT</waitt.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

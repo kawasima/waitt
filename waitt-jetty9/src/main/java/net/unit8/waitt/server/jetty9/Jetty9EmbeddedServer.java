@@ -31,11 +31,10 @@ import java.util.List;
  * @author kawasima
  */
 public class Jetty9EmbeddedServer implements EmbeddedServer {
-    final Server server;
-    final WaittHandlerList handlers;
-    WebAppContext mainWebapp;
-    List<WebappDecorator> decorators;
-
+    private final Server server;
+    private final WaittHandlerList handlers;
+    private WebAppContext mainWebapp;
+    private List<WebappDecorator> decorators;
 
     public Jetty9EmbeddedServer() {
         server = new Server();
@@ -62,11 +61,21 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
     @Override
     public void setMainContext(String contextPath, String baseDir, ClassLoader loader) {
         mainWebapp = addWebapp(contextPath, baseDir, loader, true);
+        try {
+            mainWebapp.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void addContext(String contextPath, String baseDir, ClassLoader loader) {
-        addWebapp(contextPath, baseDir, loader, false);
+        WebAppContext webapp = addWebapp(contextPath, baseDir, loader, false);
+        try {
+            webapp.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -116,6 +125,9 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
     @Override
     public void stop() {
         try {
+            if (mainWebapp != null && mainWebapp.isStarted()) {
+                mainWebapp.stop();
+            }
             server.stop();
         } catch (Exception e) {
             throw new RuntimeException(e);
