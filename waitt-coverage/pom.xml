@@ -15,7 +15,7 @@
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waitt.version>1.2.1</waitt.version>
+        <waitt.version>1.2.2-SNAPSHOT</waitt.version>
     </properties>
 
     <dependencies>

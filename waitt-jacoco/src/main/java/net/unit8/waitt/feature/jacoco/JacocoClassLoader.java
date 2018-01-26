@@ -1,5 +1,12 @@
 package net.unit8.waitt.feature.jacoco;
 
+import org.jacoco.agent.rt.internal_290345e.asm.MethodVisitor;
+import org.jacoco.agent.rt.internal_290345e.asm.Opcodes;
+import org.jacoco.agent.rt.internal_290345e.core.instr.Instrumenter;
+import org.jacoco.agent.rt.internal_290345e.core.internal.instr.InstrSupport;
+import org.jacoco.agent.rt.internal_290345e.core.runtime.IExecutionDataAccessorGenerator;
+import org.jacoco.core.JaCoCo;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,8 +14,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Set;
 import java.util.logging.Logger;
-import org.jacoco.core.instr.Instrumenter;
-import org.jacoco.core.runtime.OfflineInstrumentationAccessGenerator;
 
 /**
  *
@@ -41,7 +46,17 @@ public class JacocoClassLoader extends URLClassLoader {
     }
 
     private void initInstrumenter() {
-        instrumenter = new Instrumenter(new OfflineInstrumentationAccessGenerator());
+        instrumenter = new Instrumenter(new IExecutionDataAccessorGenerator() {
+            @Override
+            public int generateDataAccessor(long classid, String classname, int probecount, MethodVisitor mv) {
+                mv.visitLdcInsn(Long.valueOf(classid));
+                mv.visitLdcInsn(classname);
+                InstrSupport.push(mv, probecount);
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, JaCoCo.RUNTIMEPACKAGE.replace('.', '/') + "/Offline", "getProbes",
+                        "(JLjava/lang/String;I)[Z", false);
+                return 4;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")

@@ -58,6 +58,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
         });
 
         final AgentOptions agentOptions = new AgentOptions();
+        agentOptions.setAppend(true);
         agentOptions.setDumpOnExit(true);
         final Agent agent = Agent.getInstance(agentOptions);
         LOG.info("Start a jacoco agent. " + agent);
