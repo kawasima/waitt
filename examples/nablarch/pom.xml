@@ -15,7 +15,7 @@
     <packaging>war</packaging>
 
     <properties>
-        <waitt.version>1.2.2-SNAPSHOT</waitt.version>
+        <waitt.version>1.2.2</waitt.version>
         <scheme>画面オンライン</scheme>
         <!-- 環境ごとのリソースディレクトリ(プロファイルにより切り替わる) -->
         <env.resources>${project.basedir}/src/env/${env.dir}/resources</env.resources>
