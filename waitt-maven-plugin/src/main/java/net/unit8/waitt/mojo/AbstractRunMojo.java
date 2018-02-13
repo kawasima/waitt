@@ -108,6 +108,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         artifactResolver.setProject(project);
         artifactResolver.setSession(session);
         initLogger();
+
         if (docBase == null)
             docBase = scanDocBase(new File("."));
         WebappConfiguration webappConfig = new WebappConfiguration();
@@ -360,12 +361,13 @@ public abstract class AbstractRunMojo extends AbstractMojo {
 
         DirectoryScanner scanner = new DirectoryScanner();
         scanner.setBasedir(baseDir);
-        scanner.setIncludes(new String[]{"web.xml"});
+        scanner.setIncludes(new String[]{"**/web.xml"});
         scanner.addDefaultExcludes();
         scanner.scan();
         for (String path : scanner.getIncludedFiles()) {
             File webxml = new File(baseDir, path);
             if ("WEB-INF".equals(webxml.getParentFile().getName())) {
+                getLog().info("Found webapp root = " + webxml);
                 return webxml.getParentFile().getParentFile();
             }
         }
