@@ -13,13 +13,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.2.0</version>
+  <version>1.2.2</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
         <artifactId>waitt-tomcat8</artifactId>
-        <version>1.2.0</version>
+        <version>1.2.2</version>
       </server>
     </servers>
   </configuration>
@@ -62,7 +62,7 @@ It doesn't include non-resource files automatically. So, if your app refers asse
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat8</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
   </server>
 ```
 
@@ -72,7 +72,7 @@ It doesn't include non-resource files automatically. So, if your app refers asse
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat7</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
   </server>
 ```
 
@@ -82,7 +82,7 @@ It doesn't include non-resource files automatically. So, if your app refers asse
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty9</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
   </server>
 ```
 
@@ -103,7 +103,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
   </feature>
 ```
 
@@ -113,7 +113,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
   </feature>
 ```
 
@@ -123,7 +123,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
     <type>war</type>
   </feature>
 ```
@@ -136,7 +136,7 @@ Add `waitt-admin` feature to your configuration.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
   </feature>
 ```
 
@@ -149,7 +149,7 @@ You can show and search logs at development in Kibana.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.2</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>
