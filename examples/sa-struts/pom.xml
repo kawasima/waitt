@@ -38,7 +38,7 @@
                     <servers>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
-                            <artifactId>waitt-tomcat85</artifactId>
+                            <artifactId>waitt-tomcat9</artifactId>
                             <version>1.2.3-SNAPSHOT</version>
                         </server>
                     </servers>

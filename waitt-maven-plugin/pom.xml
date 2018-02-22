@@ -10,12 +10,6 @@
     <artifactId>waitt-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
-    <scm>
-        <connection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</connection>
-        <url>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</url>
-        <developerConnection>scm:git:https://github.com/kawasima/waitt-maven-plugin.git</developerConnection>
-    </scm>
-
     <properties>
         <mavenVersion>3.0.5</mavenVersion>
         <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
@@ -122,13 +116,12 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.16.20</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.fusesource.jansi</groupId>
             <artifactId>jansi</artifactId>
-            <version>1.11</version>
+            <version>1.17</version>
         </dependency>
     </dependencies>
 </project>

@@ -24,6 +24,7 @@
         <module>waitt-tomcat7</module>
         <module>waitt-tomcat8</module>
         <module>waitt-tomcat85</module>
+        <module>waitt-tomcat9</module>
         <module>waitt-coverage</module>
         <module>waitt-jacoco</module>
         <module>waitt-dashboard</module>
@@ -94,6 +95,20 @@
         </developer>
     </developers>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.16.20</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-classworlds</artifactId>
+                <version>2.5.2</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>

@@ -14,7 +14,7 @@
 
     <properties>
         <jetty.version>9.4.5.v20170502</jetty.version>
-        <waitt.version>1.2.2</waitt.version>
+        <waitt.version>1.2.3-SNAPSHOT</waitt.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
@@ -55,7 +55,6 @@
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-classworlds</artifactId>
-            <version>2.5.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

@@ -13,8 +13,8 @@
     <packaging>jar</packaging>
 
     <properties>
-        <tomcat.version>7.0.79</tomcat.version>
-        <waitt.version>1.2.2</waitt.version>
+        <tomcat.version>7.0.85</tomcat.version>
+        <waitt.version>1.2.3-SNAPSHOT</waitt.version>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
     </properties>
