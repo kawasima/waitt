@@ -45,7 +45,8 @@ public class DefaultArtifactResolver implements ArtifactResolver {
             }
         }
         try {
-            ClassRealm realm = parent.createChildRealm(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion());
+            ClassRealm realm = new ClassRealm(parent.getWorld(), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion(), ClassLoader.getSystemClassLoader());
+            realm.setParentRealm(parent);
             for (Artifact resolvedArtifact : artifactResult.getArtifacts()) {
                 if (!Artifact.SCOPE_PROVIDED.equals(resolvedArtifact.getScope()) && !Artifact.SCOPE_TEST.equals(resolvedArtifact.getScope())) {
                     realm.addURL(resolvedArtifact.getFile().toURI().toURL());

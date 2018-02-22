@@ -134,7 +134,8 @@ public abstract class AbstractRunMojo extends AbstractMojo {
 
         try {
             embeddedServer.start();
-            ClassRealm webappRealm = serverSpec.getClassRealm().createChildRealm("Application");
+            ClassRealm webappRealm = new ClassRealm(serverSpec.getClassRealm().getWorld(), "Application", ClassLoader.getSystemClassLoader());
+            webappRealm.setParentRealm(serverSpec.getClassRealm());
             Set<URL> classpathUrls = resolveClasspaths();
             for (URL url : classpathUrls) {
                 webappRealm.addURL(url);
@@ -321,6 +322,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 URL url = classpathFile.toURI().toURL();
                 classpathUrls.add(url);
             }
+
             for (URL url : ((URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs()) {
                 if (url.toString().contains("/org/ow2/asm/")
                         || url.toString().contains("/waitt-maven-plugin/")

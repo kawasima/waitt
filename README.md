@@ -155,3 +155,15 @@ You can show and search logs at development in Kibana.
     </configuration>
   </feature>
 ```
+
+## for Developer
+
+ClassLoader hierarchy
+
+```
+WaittRealm (Maven plugin)
+   |
+ServerRealm (Tomcat or Jetty)
+   |
+ApplicationRealm (Each Webapplication)
+```
