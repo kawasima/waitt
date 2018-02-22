@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>1.5.2.RELEASE</version>
+        <version>1.5.10.RELEASE</version>
     </parent>
     <groupId>net.unit8.waitt.example</groupId>
     <artifactId>spring-boot-example</artifactId>
@@ -16,7 +16,7 @@
     <url>https://github.com/kawasima/waitt</url>
 
     <properties>
-        <waitt.version>1.2.2</waitt.version>
+        <waitt.version>1.2.3</waitt.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

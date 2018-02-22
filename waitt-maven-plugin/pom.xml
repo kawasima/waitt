@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-parent</artifactId>
-        <version>1.2.3-SNAPSHOT</version>
+        <version>1.2.3</version>
     </parent>
     <artifactId>waitt-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
@@ -15,7 +15,7 @@
         <mavenPluginPluginVersion>3.2</mavenPluginPluginVersion>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waitt.version>1.2.3-SNAPSHOT</waitt.version>
+        <waitt.version>1.2.3</waitt.version>
     </properties>
 
     <build>

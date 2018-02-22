@@ -33,13 +33,13 @@
             <plugin>
                 <groupId>net.unit8.waitt</groupId>
                 <artifactId>waitt-maven-plugin</artifactId>
-                <version>1.2.3-SNAPSHOT</version>
+                <version>1.2.3</version>
                 <configuration>
                     <servers>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat9</artifactId>
-                            <version>1.2.3-SNAPSHOT</version>
+                            <version>1.2.3</version>
                         </server>
                     </servers>
                 </configuration>

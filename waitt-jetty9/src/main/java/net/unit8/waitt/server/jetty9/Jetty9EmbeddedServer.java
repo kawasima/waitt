@@ -145,7 +145,8 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
                 .setServerDefault(server);
         classlist.addBefore(
                 "org.eclipse.jetty.webapp.JettyWebXmlConfiguration",
-                "org.eclipse.jetty.annotations.AnnotationConfiguration");
+                "org.eclipse.jetty.annotations.AnnotationConfiguration"
+        );
         webapp.setContextPath(contextPath);
         File warFile = new File(baseDir);
         webapp.setWar(warFile.getAbsolutePath());
