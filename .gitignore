@@ -16,3 +16,5 @@ gsp-target
 h2
 *.versionsBackup
 examples/sa-struts/data
+.gradle
+elm-stuff

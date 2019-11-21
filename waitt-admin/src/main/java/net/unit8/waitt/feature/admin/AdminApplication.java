@@ -18,7 +18,7 @@ public class AdminApplication implements HttpHandler {
         this.routes.addAll(Arrays.asList(routes));
     }
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
+    public void handle(HttpExchange exchange) {
         try {
             for (Route route : routes) {
                 if (route.canHandle(exchange)) {
@@ -29,6 +29,8 @@ public class AdminApplication implements HttpHandler {
             byte[] body404 = "Not found".getBytes("UTF-8");
             exchange.sendResponseHeaders(404, body404.length);
             exchange.getResponseBody().write(body404);
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             exchange.close();
         }

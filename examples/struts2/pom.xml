@@ -8,8 +8,8 @@
     <name>struts2-example</name>
 
     <properties>
-        <waitt.version>1.2.3</waitt.version>
-        <struts2.version>2.5.14.1</struts2.version>
+        <waitt.version>1.3.0-SNAPSHOT</waitt.version>
+        <struts2.version>2.5.20</struts2.version>
     </properties>
 
     <build>
@@ -42,7 +42,6 @@
                             <artifactId>waitt-jacoco</artifactId>
                             <version>${waitt.version}</version>
                          </feature>
-                        <!--
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-tracer</artifactId>
@@ -59,7 +58,6 @@
                             <version>${waitt.version}</version>
                             <type>war</type>
                          </feature>
-                         -->
                     </features>
                 </configuration>
             </plugin>

@@ -9,20 +9,20 @@
     <parent>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-parent</artifactId>
-        <version>1.2.3</version>
+        <version>1.3.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
-        <waitt.version>1.2.3</waitt.version>
+        <waitt.version>1.3.0-SNAPSHOT</waitt.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.rrd4j</groupId>
             <artifactId>rrd4j</artifactId>
-            <version>3.1</version>
+            <version>3.5</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -49,7 +49,20 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>1.7.25</version>
+            <version>1.7.26</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.thoughtworks.xstream</groupId>
+            <artifactId>xstream</artifactId>
+            <version>1.4.11.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>2.27.0</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

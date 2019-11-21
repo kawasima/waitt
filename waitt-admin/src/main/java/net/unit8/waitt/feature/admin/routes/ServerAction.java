@@ -1,6 +1,7 @@
 package net.unit8.waitt.feature.admin.routes;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.thoughtworks.xstream.XStream;
 import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.dto.ServerMetadata;
 import net.unit8.waitt.feature.admin.Route;
@@ -9,7 +10,6 @@ import org.rrd4j.core.Util;
 import org.rrd4j.graph.RrdGraph;
 import org.rrd4j.graph.RrdGraphDef;
 
-import javax.xml.bind.JAXB;
 import java.awt.*;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -20,6 +20,7 @@ import java.io.StringWriter;
  * @author kawasima
  */
 public class ServerAction implements Route {
+    final XStream xstream = new XStream();
     private final EmbeddedServer server;
     private final String rrdPath;
 
@@ -51,7 +52,7 @@ public class ServerAction implements Route {
             ServerMetadata metadata = new ServerMetadata();
             metadata.setName(server.getName());
             metadata.setStatus(server.getStatus());
-            JAXB.marshal(metadata, sw);
+            xstream.toXML(metadata, sw);
             byte[] body = sw.toString().getBytes("UTF-8");
             exchange.sendResponseHeaders(200, body.length);
             exchange.getResponseBody().write(body);

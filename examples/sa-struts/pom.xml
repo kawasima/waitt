@@ -33,21 +33,44 @@
             <plugin>
                 <groupId>net.unit8.waitt</groupId>
                 <artifactId>waitt-maven-plugin</artifactId>
-                <version>1.2.3</version>
+                <version>1.3.0-SNAPSHOT</version>
                 <configuration>
                     <servers>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
+                            <artifactId>waitt-jetty9</artifactId>
+                            <version>1.3.0-SNAPSHOT</version>
+                        </server>
+                        <server>
+                            <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat9</artifactId>
-                            <version>1.2.3</version>
+                            <version>1.3.0-SNAPSHOT</version>
                         </server>
                     </servers>
+                    <features>
+                      <feature>
+                        <groupId>net.unit8.waitt.feature</groupId>
+                        <artifactId>waitt-jacoco</artifactId>
+                        <version>1.3.0-SNAPSHOT</version>
+                      </feature>
+                      <feature>
+                        <groupId>net.unit8.waitt.feature</groupId>
+                        <artifactId>waitt-dashboard</artifactId>
+                        <version>1.3.0-SNAPSHOT</version>
+                        <type>war</type>
+                      </feature>
+                      <feature>
+                        <groupId>net.unit8.waitt.feature</groupId>
+                        <artifactId>waitt-admin</artifactId>
+                        <version>1.3.0-SNAPSHOT</version>
+                      </feature>
+                    </features>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.flywaydb</groupId>
                 <artifactId>flyway-maven-plugin</artifactId>
-                <version>5.0.7</version>
+                <version>5.2.4</version>
                 <configuration>
                     <url>jdbc:h2:file:./data/test</url>
                     <user>sa</user>
@@ -98,7 +121,7 @@
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-            <version>1.2</version>
+            <version>1.4</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
