@@ -8,7 +8,7 @@
     <parent>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-parent</artifactId>
-        <version>1.3.0-SNAPSHOT</version>
+        <version>1.3.0-beta1</version>
     </parent>
 
     <properties>

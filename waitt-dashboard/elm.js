@@ -7498,21 +7498,30 @@ var author$project$Page$Heap$viewHistogram = function (histogram) {
 					])),
 				A2(
 				elm$html$Html$td,
-				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text(histogram.className)
+						elm$html$Html$Attributes$class('text-right')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(
+						elm$core$String$fromInt(histogram.instanceCount))
 					])),
 				A2(
 				elm$html$Html$td,
-				_List_Nil,
 				_List_fromArray(
 					[
-						elm$html$Html$text(histogram.className)
+						elm$html$Html$Attributes$class('text-right')
+					]),
+				_List_fromArray(
+					[
+						elm$html$Html$text(
+						elm$core$String$fromInt(histogram.totalSize))
 					]))
 			]));
 };
 var elm$html$Html$h1 = _VirtualDom_node('h1');
+var elm$html$Html$Attributes$scope = elm$html$Html$Attributes$stringProperty('scope');
 var author$project$Page$Heap$viewHeapDump = function (heapDump) {
 	return A2(
 		elm$html$Html$div,
@@ -7531,7 +7540,7 @@ var author$project$Page$Heap$viewHeapDump = function (heapDump) {
 						elm$html$Html$i,
 						_List_fromArray(
 							[
-								elm$html$Html$Attributes$class('meta-octicon octico-dashboard')
+								elm$html$Html$Attributes$class('cil-memory')
 							]),
 						_List_Nil),
 						elm$html$Html$text('Heap Dump')
@@ -7545,7 +7554,7 @@ var author$project$Page$Heap$viewHeapDump = function (heapDump) {
 						elm$html$Html$table,
 						_List_fromArray(
 							[
-								elm$html$Html$Attributes$class('ui celled table')
+								elm$html$Html$Attributes$class('table')
 							]),
 						_List_fromArray(
 							[
@@ -7561,21 +7570,30 @@ var author$project$Page$Heap$viewHeapDump = function (heapDump) {
 											[
 												A2(
 												elm$html$Html$th,
-												_List_Nil,
+												_List_fromArray(
+													[
+														elm$html$Html$Attributes$scope('col')
+													]),
 												_List_fromArray(
 													[
 														elm$html$Html$text('Class Name')
 													])),
 												A2(
 												elm$html$Html$th,
-												_List_Nil,
+												_List_fromArray(
+													[
+														elm$html$Html$Attributes$scope('col')
+													]),
 												_List_fromArray(
 													[
 														elm$html$Html$text('Instance count')
 													])),
 												A2(
 												elm$html$Html$th,
-												_List_Nil,
+												_List_fromArray(
+													[
+														elm$html$Html$Attributes$scope('col')
+													]),
 												_List_fromArray(
 													[
 														elm$html$Html$text('Total size')

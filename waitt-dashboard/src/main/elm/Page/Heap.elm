@@ -48,16 +48,16 @@ viewHeapDump : HeapDump -> Html Msg
 viewHeapDump heapDump =
     div [ class "three-forths column" ]
         [ h1 [ ]
-              [ i [ class "meta-octicon octico-dashboard" ] [ ]
+              [ i [ class "cil-memory" ] [ ]
               , text "Heap Dump"
               ]
         , div [ ]
-              [ table [ class "ui celled table" ]
+              [ table [ class "table" ]
                 [ thead []
                   [ tr []
-                    [ th [] [ text "Class Name" ]
-                    , th [] [ text "Instance count" ]
-                    , th [] [ text "Total size" ]
+                    [ th [ scope "col" ] [ text "Class Name" ]
+                    , th [ scope "col" ] [ text "Instance count" ]
+                    , th [ scope "col" ] [ text "Total size" ]
                     ]
                   ]
                 , tbody [ ]
@@ -70,8 +70,8 @@ viewHistogram : HeapHistogram -> Html Msg
 viewHistogram histogram =
     tr []
         [ td [ ] [ text histogram.className ]
-        , td [ ] [ text histogram.className ]
-        , td [ ] [ text histogram.className ]
+        , td [ class "text-right" ] [ text (String.fromInt histogram.instanceCount) ]
+        , td [ class "text-right" ] [ text (String.fromInt histogram.totalSize) ]
         ]
 
 -- UPDATE

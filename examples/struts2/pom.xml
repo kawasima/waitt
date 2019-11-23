@@ -42,11 +42,13 @@
                             <artifactId>waitt-jacoco</artifactId>
                             <version>${waitt.version}</version>
                          </feature>
+<!--
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-tracer</artifactId>
                             <version>${waitt.version}</version>
                          </feature>
+-->
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-admin</artifactId>

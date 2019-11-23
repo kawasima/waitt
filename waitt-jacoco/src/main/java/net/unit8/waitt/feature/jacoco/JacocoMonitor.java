@@ -97,7 +97,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
 
                 }
             }
-        }, 15L, 15L, TimeUnit.SECONDS);
+        }, 0L, 30L, TimeUnit.SECONDS);
     }
     void createReport(final IReportGroupVisitor visitor, ExecutionDataStore executionDataStore) throws IOException {
         final BundleCreator creator = new BundleCreator();
