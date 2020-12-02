@@ -13,7 +13,7 @@
     </parent>
 
     <properties>
-        <jetty.version>9.4.22.v20191022</jetty.version>
+        <jetty.version>9.4.35.v20201120</jetty.version>
         <waitt.version>1.3.0-SNAPSHOT</waitt.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
