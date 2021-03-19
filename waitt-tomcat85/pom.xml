@@ -14,7 +14,7 @@
 
 
     <properties>
-        <tomcat.version>8.5.47</tomcat.version>
+        <tomcat.version>10.0.4</tomcat.version>
         <waitt.version>1.3.0-SNAPSHOT</waitt.version>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
