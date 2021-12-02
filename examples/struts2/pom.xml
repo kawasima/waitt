@@ -9,7 +9,7 @@
 
     <properties>
         <waitt.version>1.3.0-SNAPSHOT</waitt.version>
-        <struts2.version>2.5.20</struts2.version>
+        <struts2.version>2.5.22</struts2.version>
     </properties>
 
     <build>
