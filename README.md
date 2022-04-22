@@ -13,13 +13,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.3.0-beta1</version>
+  <version>1.3.0</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
-        <artifactId>waitt-tomcat8</artifactId>
-        <version>1.3.0-beta1</version>
+        <artifactId>waitt-tomcat85</artifactId>
+        <version>1.3.0</version>
       </server>
     </servers>
   </configuration>
@@ -56,23 +56,23 @@ It doesn't include non-resource files automatically. So, if your app refers asse
 
 ## Supported server products
 
-- Tomcat8
+- Tomcat8.5
 
 ```xml
   <server>
     <groupId>net.unit8.waitt.server</groupId>
-    <artifactId>waitt-tomcat8</artifactId>
-    <version>1.3.0-beta1</version>
+    <artifactId>waitt-tomcat85</artifactId>
+    <version>1.3.0</version>
   </server>
 ```
 
-- Tomcat7
+- Tomcat9.x
 
 ```xml
   <server>
     <groupId>net.unit8.waitt.server</groupId>
-    <artifactId>waitt-tomcat7</artifactId>
-    <version>1.3.0-beta1</version>
+    <artifactId>waitt-tomcat9</artifactId>
+    <version>1.3.0</version>
   </server>
 ```
 
@@ -82,7 +82,7 @@ It doesn't include non-resource files automatically. So, if your app refers asse
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty9</artifactId>
-    <version>1.3.0-beta1</version>
+    <version>1.3.0</version>
   </server>
 ```
 
@@ -103,7 +103,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
-    <version>1.3.0-beta1</version>
+    <version>1.3.0</version>
   </feature>
 ```
 
@@ -113,7 +113,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>1.3.0-beta1</version>
+    <version>1.3.0</version>
   </feature>
 ```
 
@@ -123,7 +123,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
-    <version>1.3.0-beta1</version>
+    <version>1.3.0</version>
     <type>war</type>
   </feature>
 ```
@@ -136,7 +136,7 @@ Add `waitt-admin` feature to your configuration.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>1.3.0-beta1</version>
+    <version>1.3.0</version>
   </feature>
 ```
 
@@ -149,7 +149,7 @@ You can show and search logs at development in Kibana.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>1.3.0-beta1</version>
+    <version>1.3.0</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>
