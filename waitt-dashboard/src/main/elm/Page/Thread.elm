@@ -66,7 +66,7 @@ viewThreadInfo threadInfo =
 
 viewStackTraceElement : StackTraceElement -> String
 viewStackTraceElement stackTraceElement =
-    stackTraceElement.declaringClass ++ "." ++ stackTraceElement.methodName ++
+    stackTraceElement.className ++ "." ++ stackTraceElement.methodName ++
         " (" ++ stackTraceElement.fileName ++ ":" ++ String.fromInt stackTraceElement.lineNumber ++ ")"
 -- UPDATE
 

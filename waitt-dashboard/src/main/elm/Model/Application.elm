@@ -1,4 +1,4 @@
-module Model.Application exposing (Application, decoder)
+module Model.Application exposing (Application, Feature, decoder)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (required, optional)
@@ -6,38 +6,34 @@ import Json.Decode.Pipeline exposing (required, optional)
 -- MODEL
 
 type alias Application =
-    { adminAvailable : Bool
-    , configuration : Configuration
-    }
-
-type alias Configuration =
     { applicationName : String
-    , baseDirectory : Directory
-    , sourceDirectory : Directory
+    , baseDirectory : String
+    , sourceDirectory : String
     , packages : List String
+    , features : List Feature
     }
 
-type alias Directory =
-    { path : String
+type alias Feature =
+    { groupId : String
+    , artifactId : String
+    , version: String
+    , packaging : Maybe String
     }
-
 -- SERIALIZATION
 
-decoderDirectory : Decoder Directory
-decoderDirectory =
-    Decode.succeed Directory
-        |> required "path" Decode.string
-
-decoderConfiguration : Decoder Configuration
-decoderConfiguration =
-    Decode.succeed Configuration
-        |> required "applicationName" Decode.string
-        |> required "baseDirectory" decoderDirectory
-        |> required "sourceDirectory" decoderDirectory
-        |> required "packages" (Decode.list Decode.string)
+decoderFeature : Decoder Feature
+decoderFeature =
+    Decode.succeed Feature
+        |> required "groupId" Decode.string
+        |> required "artifactId" Decode.string
+        |> required "version" Decode.string
+        |> required "type" (Decode.nullable Decode.string)
 
 decoder : Decoder Application
 decoder =
     Decode.succeed Application
-        |> required "adminAvailable" Decode.bool
-        |> required "configuration"  decoderConfiguration
+        |> required "applicationName" Decode.string
+        |> required "baseDirectory" Decode.string
+        |> required "sourceDirectory" Decode.string
+        |> required "packages" (Decode.list Decode.string)
+        |> required "features" (Decode.list decoderFeature)

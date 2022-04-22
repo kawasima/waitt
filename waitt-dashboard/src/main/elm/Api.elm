@@ -13,8 +13,8 @@ import Url exposing (Url)
 
 url : List String -> List QueryParameter -> String
 url paths queryParams =
-    Url.Builder.crossOrigin "http://localhost:8080"
-        ("_dashboard" :: paths)
+    Url.Builder.crossOrigin "http://localhost:1192"
+        paths
         queryParams
 
 --

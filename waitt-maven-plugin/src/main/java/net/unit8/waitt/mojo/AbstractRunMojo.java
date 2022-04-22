@@ -364,6 +364,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         DirectoryScanner scanner = new DirectoryScanner();
         scanner.setBasedir(baseDir);
         scanner.setIncludes(new String[]{"**/web.xml"});
+        scanner.setExcludes(new String[]{"target/**"});
         scanner.addDefaultExcludes();
         scanner.scan();
         for (String path : scanner.getIncludedFiles()) {

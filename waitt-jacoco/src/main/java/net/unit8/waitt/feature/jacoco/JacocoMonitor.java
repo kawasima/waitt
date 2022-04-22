@@ -6,8 +6,8 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
-import org.jacoco.agent.rt.internal_290345e.Agent;
-import org.jacoco.agent.rt.internal_290345e.core.runtime.AgentOptions;
+import org.jacoco.agent.rt.internal_b6258fc.Agent;
+import org.jacoco.agent.rt.internal_b6258fc.core.runtime.AgentOptions;
 import org.jacoco.core.analysis.IBundleCoverage;
 import org.jacoco.core.data.ExecutionDataStore;
 import org.jacoco.core.tools.ExecFileLoader;
@@ -60,8 +60,12 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
         final AgentOptions agentOptions = new AgentOptions();
         agentOptions.setAppend(true);
         agentOptions.setDumpOnExit(true);
-        final Agent agent = Agent.getInstance(agentOptions);
-        LOG.info("Start a jacoco agent. " + agent);
+        try {
+            final Agent agent = Agent.getInstance(agentOptions);
+            LOG.info("Start a jacoco agent. " + agent);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

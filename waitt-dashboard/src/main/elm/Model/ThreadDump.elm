@@ -6,7 +6,7 @@ import Json.Decode.Pipeline exposing (required, optional)
 -- MODEL
 
 type alias StackTraceElement =
-    { declaringClass : String
+    { className : String
     , methodName : String
     , fileName : String
     , lineNumber : Int
@@ -16,15 +16,13 @@ type alias ThreadInfo =
     { threadId : Int
     , threadName : String
     , threadState : String
-    , priority : Int
     , blockedTime : Int
     , blockedCount : Int
     , waitedTime : Int
     , waitedCount : Int
     , stackTrace : List StackTraceElement
-    , suspended : Bool
-    , daemon : Bool
-    , inNative : Bool
+    , isSuspend : Bool
+    , inInNative : Bool
     }
 type alias ThreadDump =
     { threads : List ThreadInfo
@@ -35,7 +33,7 @@ type alias ThreadDump =
 decoderStackTraceElement : Decoder StackTraceElement
 decoderStackTraceElement =
     Decode.succeed StackTraceElement
-        |> required "declaringClass" Decode.string
+        |> required "className" Decode.string
         |> required "methodName" Decode.string
         |> required "fileName" Decode.string
         |> required "lineNumber" Decode.int
@@ -46,15 +44,13 @@ decoderThreadInfo =
         |> required "threadId" Decode.int
         |> required "threadName" Decode.string
         |> required "threadState" Decode.string
-        |> required "priority" Decode.int
         |> required "blockedTime" Decode.int
         |> required "blockedCount" Decode.int
         |> required "waitedTime" Decode.int
         |> required "waitedCount" Decode.int
         |> required "stackTrace" (Decode.list decoderStackTraceElement)
-        |> required "suspended" Decode.bool
-        |> required "daemon" Decode.bool
-        |> required "inNative" Decode.bool
+        |> required "isSuspend" Decode.bool
+        |> required "isInNative" Decode.bool
 
 decoder : Decoder ThreadDump
 decoder =

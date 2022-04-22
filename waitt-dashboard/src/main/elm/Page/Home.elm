@@ -12,7 +12,7 @@ import Route exposing (Route)
 import Task exposing (Task)
 import Log
 
-import Model.Application as Application exposing (Application)
+import Model.Application as Application exposing (Application, Feature)
 
 -- MODEL
 
@@ -44,6 +44,12 @@ view model =
             Failed  -> div [ ] [ text "loading failed" ]
     }
 
+viewFeature : Feature -> Html Msg
+viewFeature feature =
+    li [ ]
+        [ text (feature.groupId ++ ":" ++ feature.artifactId ++ ":" ++ feature.version) ]
+
+
 viewApplication : Application -> Html Msg
 viewApplication application =
     div [ class "three-forths column" ]
@@ -52,36 +58,44 @@ viewApplication application =
               , text "Application"
               ]
         , div [ ]
-              [ table [ class "ui celled table" ]
+              [ table [ class "table" ]
                 [ tbody [ ]
                   [ tr [ ]
-                    [ th [ ]
+                    [ th [ scope "row" ]
                       [ text "Application Name" ]
                     , td [ ]
-                      [ text application.configuration.applicationName ]
+                      [ text application.applicationName ]
                     ]
                   , tr [ ]
-                    [ th [ ]
+                    [ th [ scope "row" ]
                       [ text "Package" ]
                     , td [ ]
-                      [ text (String.join "," application.configuration.packages) ]
+                      [ text (String.join "," application.packages) ]
                     ]
                   , tr [ ]
-                    [ th [ ]
+                    [ th [ scope "row" ]
                       [ text "Base directory" ]
                     , td [ ]
-                      [ text application.configuration.baseDirectory.path ]
+                      [ text application.baseDirectory ]
                     ]
                   , tr [ ]
-                    [ th [ ]
+                    [ th [ scope "row" ]
                       [ text "Source directory" ]
                     , td [ ]
-                      [ text application.configuration.sourceDirectory.path ]
+                      [ text application.sourceDirectory ]
+                    ]
+                  , tr [ ]
+                    [ th [ scope "row" ]
+                      [ text "Features" ]
+                    , td [ ]
+                        [ ul [ ]
+                          (List.map viewFeature application.features)
+                        ]
                     ]
                   ]
                 ]
               ]
-        ]
+            ]
 
 -- UPDATE
 

@@ -5,18 +5,19 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerStatus;
 import net.unit8.waitt.api.WebappDecorator;
 import net.unit8.waitt.api.configuration.FilterConfiguration;
+import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.eclipse.jetty.annotations.AnnotationConfiguration;
 import org.eclipse.jetty.annotations.ServletContainerInitializersStarter;
 import org.eclipse.jetty.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.plus.annotation.ContainerInitializer;
+import org.eclipse.jetty.plus.webapp.EnvConfiguration;
+import org.eclipse.jetty.plus.webapp.PlusConfiguration;
 import org.eclipse.jetty.server.NetworkTrafficServerConnector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.util.resource.PathResource;
-import org.eclipse.jetty.webapp.Configuration;
-import org.eclipse.jetty.webapp.WebAppClassLoader;
-import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.webapp.*;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -153,6 +154,16 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
         webapp.setAttribute(AnnotationConfiguration.CONTAINER_INITIALIZERS, jspInitializers());
         webapp.addBean(new ServletContainerInitializersStarter(webapp), true);
         webapp.setAllowNullPathInfo(false);
+        webapp.setConfigurations(new Configuration[] {
+            new AnnotationConfiguration(),
+            new WebInfConfiguration(),
+            new WebXmlConfiguration(),
+            new MetaInfConfiguration(),
+            new FragmentConfiguration(),
+            new EnvConfiguration(),
+            new PlusConfiguration(),
+            new JettyWebXmlConfiguration()
+        });
 
         if (mainContext) {
             for (WebappDecorator decorator : decorators) {

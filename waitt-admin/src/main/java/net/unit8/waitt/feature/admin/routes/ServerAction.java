@@ -1,10 +1,10 @@
 package net.unit8.waitt.feature.admin.routes;
 
 import com.sun.net.httpserver.HttpExchange;
-import com.thoughtworks.xstream.XStream;
 import net.unit8.waitt.api.EmbeddedServer;
-import net.unit8.waitt.api.dto.ServerMetadata;
+import net.unit8.waitt.feature.admin.ResponseUtils;
 import net.unit8.waitt.feature.admin.Route;
+import net.unit8.waitt.feature.admin.json.JSONObject;
 import org.rrd4j.ConsolFun;
 import org.rrd4j.core.Util;
 import org.rrd4j.graph.RrdGraph;
@@ -12,7 +12,6 @@ import org.rrd4j.graph.RrdGraphDef;
 
 import java.awt.*;
 import java.io.IOException;
-import java.io.StringWriter;
 
 /**
  * Provide information about the server.
@@ -20,7 +19,6 @@ import java.io.StringWriter;
  * @author kawasima
  */
 public class ServerAction implements Route {
-    final XStream xstream = new XStream();
     private final EmbeddedServer server;
     private final String rrdPath;
 
@@ -48,14 +46,15 @@ public class ServerAction implements Route {
             exchange.sendResponseHeaders(200, graph.length);
             exchange.getResponseBody().write(graph);
         } else {
-            StringWriter sw = new StringWriter();
-            ServerMetadata metadata = new ServerMetadata();
-            metadata.setName(server.getName());
-            metadata.setStatus(server.getStatus());
-            xstream.toXML(metadata, sw);
-            byte[] body = sw.toString().getBytes("UTF-8");
-            exchange.sendResponseHeaders(200, body.length);
-            exchange.getResponseBody().write(body);
+            JSONObject json = new JSONObject();
+            JSONObject serverMetadata = new JSONObject();
+
+            serverMetadata.put("name", server.getName());
+            serverMetadata.put("status", server.getStatus().name());
+
+            json.put("serverMetadata", serverMetadata);
+
+            ResponseUtils.responseJSON(exchange, json);
         }
     }
 

@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ApplicationRoute implements Route {
-    private AdminConfig adminConfig;
+    private final AdminConfig adminConfig;
 
     public ApplicationRoute(AdminConfig adminConfig) {
         this.adminConfig = adminConfig;

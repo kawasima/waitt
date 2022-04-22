@@ -1,10 +1,10 @@
 package net.unit8.waitt.feature.jacoco;
 
-import org.jacoco.agent.rt.internal_290345e.asm.MethodVisitor;
-import org.jacoco.agent.rt.internal_290345e.asm.Opcodes;
-import org.jacoco.agent.rt.internal_290345e.core.instr.Instrumenter;
-import org.jacoco.agent.rt.internal_290345e.core.internal.instr.InstrSupport;
-import org.jacoco.agent.rt.internal_290345e.core.runtime.IExecutionDataAccessorGenerator;
+import org.jacoco.agent.rt.internal_b6258fc.asm.MethodVisitor;
+import org.jacoco.agent.rt.internal_b6258fc.asm.Opcodes;
+import org.jacoco.agent.rt.internal_b6258fc.core.instr.Instrumenter;
+import org.jacoco.agent.rt.internal_b6258fc.core.internal.instr.InstrSupport;
+import org.jacoco.agent.rt.internal_b6258fc.core.runtime.IExecutionDataAccessorGenerator;
 import org.jacoco.core.JaCoCo;
 
 import java.io.ByteArrayOutputStream;

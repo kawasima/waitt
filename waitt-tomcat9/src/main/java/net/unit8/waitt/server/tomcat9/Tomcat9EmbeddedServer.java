@@ -68,15 +68,6 @@ public class Tomcat9EmbeddedServer implements EmbeddedServer {
         }
         context = addWebapp(contextPath, docBase, classLoader, true);
         context.setSessionCookieDomain(null);
-        Wrapper defaultServlet = context.createWrapper();
-        defaultServlet.setName("default1");
-        defaultServlet.setServletClass("org.apache.catalina.servlets.DefaultServlet");
-        defaultServlet.addInitParameter("debug", "0");
-        defaultServlet.addInitParameter("listings", "false");
-        defaultServlet.setLoadOnStartup(1);
-        context.addChild(defaultServlet);
-        context.addServletMappingDecoded("/", "default1");
-        context.addWelcomeFile("index.html");
     }
 
     public void addContext(String contextPath, String docBase, ClassLoader classLoader) {

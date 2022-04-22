@@ -5,6 +5,7 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.feature.admin.Route;
 
 import java.io.IOException;
+import java.util.Collections;
 
 /**
  * Provide a feature to reload the server.
@@ -27,6 +28,8 @@ public class ReloadAction implements Route {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         server.reload();
+        exchange.getResponseHeaders().put("Access-Control-Allow-Origin", Collections.singletonList("*"));
+        exchange.getResponseHeaders().put("Access-Control-Allow-Headers", Collections.singletonList("*"));
         exchange.sendResponseHeaders(204, 0);
     }
 }

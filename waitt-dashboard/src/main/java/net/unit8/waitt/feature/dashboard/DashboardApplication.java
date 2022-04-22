@@ -53,6 +53,7 @@ public class DashboardApplication implements SparkApplication {
         get("/heap", new HeapDumpRoute());
         get("/thread", new ThreadDumpRoute());
         get("/prometheus", new PrometheusRoute());
+        staticFileLocation("/public");
     }
     
 
