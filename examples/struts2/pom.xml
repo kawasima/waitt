@@ -8,7 +8,7 @@
     <name>struts2-example</name>
 
     <properties>
-        <waitt.version>1.3.0-SNAPSHOT</waitt.version>
+        <waitt.version>1.3.0</waitt.version>
         <struts2.version>2.5.30</struts2.version>
     </properties>
 

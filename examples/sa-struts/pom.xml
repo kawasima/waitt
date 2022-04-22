@@ -33,36 +33,36 @@
             <plugin>
                 <groupId>net.unit8.waitt</groupId>
                 <artifactId>waitt-maven-plugin</artifactId>
-                <version>1.3.0-SNAPSHOT</version>
+                <version>1.3.0</version>
                 <configuration>
                     <servers>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-jetty9</artifactId>
-                            <version>1.3.0-SNAPSHOT</version>
+                            <version>1.3.0</version>
                         </server>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat9</artifactId>
-                            <version>1.3.0-SNAPSHOT</version>
+                            <version>1.3.0</version>
                         </server>
                     </servers>
                     <features>
                       <feature>
                         <groupId>net.unit8.waitt.feature</groupId>
                         <artifactId>waitt-jacoco</artifactId>
-                        <version>1.3.0-SNAPSHOT</version>
+                        <version>1.3.0</version>
                       </feature>
                       <feature>
                         <groupId>net.unit8.waitt.feature</groupId>
                         <artifactId>waitt-dashboard</artifactId>
-                        <version>1.3.0-SNAPSHOT</version>
+                        <version>1.3.0</version>
                         <type>war</type>
                       </feature>
                       <feature>
                         <groupId>net.unit8.waitt.feature</groupId>
                         <artifactId>waitt-admin</artifactId>
-                        <version>1.3.0-SNAPSHOT</version>
+                        <version>1.3.0</version>
                       </feature>
                     </features>
                 </configuration>
