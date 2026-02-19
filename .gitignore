@@ -3,6 +3,8 @@ target
 .idea
 .project
 .settings
+.vscode
+.DS_Store
 nbactions.xml
 work
 cobertura.ser

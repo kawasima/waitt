@@ -22,11 +22,17 @@ import org.apache.maven.project.ProjectBuilder;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.project.ProjectBuildingResult;
 import org.apache.maven.repository.RepositorySystem;
+import org.apache.maven.toolchain.MisconfiguredToolchainException;
+import org.apache.maven.toolchain.Toolchain;
+import org.apache.maven.toolchain.ToolchainManager;
+import org.apache.maven.toolchain.ToolchainPrivate;
+import org.apache.maven.toolchain.ToolchainManagerPrivate;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.fusesource.jansi.AnsiConsole;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.Socket;
@@ -37,6 +43,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.util.logging.Level.*;
 
@@ -71,6 +78,15 @@ public abstract class AbstractRunMojo extends AbstractMojo {
     @Parameter
     protected File docBase;
 
+    @Parameter(defaultValue = "false", property = "waitt.fork")
+    private boolean forkJvm;
+
+    @Parameter(property = "waitt.fork.jvmArgs")
+    private String forkJvmArgs;
+
+    @Parameter(property = "waitt.fork.jdkVersion")
+    private String forkJdkVersion;
+
     @Component
     protected ProjectBuilder projectBuilder;
 
@@ -88,6 +104,12 @@ public abstract class AbstractRunMojo extends AbstractMojo {
 
     @Component
     protected ServerProvider serverProvider;
+
+    @Component
+    protected ToolchainManager toolchainManager;
+
+    @Component
+    protected ToolchainManagerPrivate toolchainManagerPrivate;
 
 
     private final List<ServerMonitor> serverMonitors = new ArrayList<ServerMonitor>();
@@ -111,6 +133,21 @@ public abstract class AbstractRunMojo extends AbstractMojo {
 
         if (docBase == null)
             docBase = scanDocBase(new File("."));
+
+        if (port == 0)
+            scanPort();
+
+        if (contextPath == null || contextPath.equals("/"))
+            contextPath = "";
+
+        if (forkJvm) {
+            executeFork();
+        } else {
+            executeInProcess();
+        }
+    }
+
+    private void executeInProcess() throws MojoExecutionException, MojoFailureException {
         WebappConfiguration webappConfig = new WebappConfiguration();
         webappConfig.setApplicationName(project.getName());
         webappConfig.setBaseDirectory(docBase);
@@ -122,12 +159,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         ServerSpec serverSpec = serverProvider.selectServer(servers, waittRealm, session.getSettings().getInteractiveMode());
         EmbeddedServer embeddedServer = serverSpec.getEmbeddedServer();
 
-        if (port == 0)
-            scanPort();
         embeddedServer.setPort(port);
-
-        if (contextPath == null || contextPath.equals("/"))
-            contextPath = "";
         embeddedServer.setBaseDir(".");
 
         loadFeature(waittRealm, webappConfig);
@@ -163,6 +195,139 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         } finally {
             embeddedServer.stop();
         }
+    }
+
+    private void executeFork() throws MojoExecutionException, MojoFailureException {
+        String javaExecutable = findJavaExecutable();
+
+        ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
+        ServerSpec serverSpec = serverProvider.selectServer(servers, waittRealm, false);
+
+        Set<URL> serverClasspath = collectRealmUrls(serverSpec.getClassRealm());
+        Set<URL> webappClasspath = resolveClasspaths();
+        Set<URL> runnerClasspath = collectRunnerClasspath(waittRealm);
+
+        File configFile = writeForkedConfig(webappClasspath);
+
+        Set<URL> launchClasspath = new LinkedHashSet<URL>();
+        launchClasspath.addAll(runnerClasspath);
+        launchClasspath.addAll(serverClasspath);
+        String cpString = launchClasspath.stream()
+                .map(url -> new File(url.getFile()).getAbsolutePath())
+                .collect(Collectors.joining(File.pathSeparator));
+
+        List<String> command = new ArrayList<String>();
+        command.add(javaExecutable);
+        if (forkJvmArgs != null && !forkJvmArgs.isEmpty()) {
+            command.addAll(Arrays.asList(forkJvmArgs.split("\\s+")));
+        }
+        command.add("-cp");
+        command.add(cpString);
+        command.add("net.unit8.waitt.mojo.fork.ForkedRunner");
+        command.add(configFile.getAbsolutePath());
+
+        getLog().info("Forking JVM: " + javaExecutable);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.inheritIO();
+            pb.directory(project.getBasedir());
+            Process process = pb.start();
+
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (process.isAlive()) {
+                        process.destroy();
+                    }
+                }
+            }));
+
+            path = path == null ? "" : path;
+            afterStart();
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new MojoExecutionException("Forked server exited with code " + exitCode);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new MojoExecutionException("Forked server interrupted", e);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to fork server process", e);
+        }
+    }
+
+    private String findJavaExecutable() throws MojoExecutionException {
+        // First try build context (set by maven-toolchains-plugin during lifecycle)
+        Toolchain toolchain = toolchainManager.getToolchainFromBuildContext("jdk", session);
+        if (toolchain != null) {
+            String javaPath = toolchain.findTool("java");
+            if (javaPath != null) {
+                getLog().info("Using Toolchain JDK (from build context): " + javaPath);
+                return javaPath;
+            }
+        }
+
+        // If forkJdkVersion is specified, search toolchains.xml directly
+        if (forkJdkVersion != null && !forkJdkVersion.isEmpty()) {
+            try {
+                ToolchainPrivate[] toolchains = toolchainManagerPrivate.getToolchainsForType("jdk", session);
+                for (ToolchainPrivate tc : toolchains) {
+                    if (tc.matchesRequirements(Collections.singletonMap("version", forkJdkVersion))) {
+                        String javaPath = tc.findTool("java");
+                        if (javaPath != null) {
+                            getLog().info("Using Toolchain JDK (version " + forkJdkVersion + "): " + javaPath);
+                            return javaPath;
+                        }
+                    }
+                }
+            } catch (MisconfiguredToolchainException e) {
+                throw new MojoExecutionException("Failed to read toolchains", e);
+            }
+            getLog().warn("No Toolchain found for JDK version " + forkJdkVersion + ", falling back to current JVM");
+        }
+
+        String javaHome = System.getProperty("java.home");
+        return javaHome + File.separator + "bin" + File.separator + "java";
+    }
+
+    private Set<URL> collectRealmUrls(ClassRealm realm) {
+        Set<URL> urls = new LinkedHashSet<URL>();
+        Collections.addAll(urls, realm.getURLs());
+        if (realm.getParentRealm() != null) {
+            Collections.addAll(urls, realm.getParentRealm().getURLs());
+        }
+        return urls;
+    }
+
+    private Set<URL> collectRunnerClasspath(ClassRealm waittRealm) {
+        Set<URL> urls = new LinkedHashSet<URL>();
+        for (URL url : waittRealm.getURLs()) {
+            String path = url.toString();
+            if (path.contains("/waitt-maven-plugin/") || path.contains("/waitt-api/")) {
+                urls.add(url);
+            }
+        }
+        return urls;
+    }
+
+    private File writeForkedConfig(Set<URL> webappClasspath) throws MojoExecutionException {
+        Properties props = new Properties();
+        props.setProperty("port", String.valueOf(port));
+        props.setProperty("contextPath", contextPath != null ? contextPath : "");
+        props.setProperty("docBase", docBase.getAbsolutePath());
+        props.setProperty("webapp.classpath", webappClasspath.stream()
+                .map(url -> new File(url.getFile()).getAbsolutePath())
+                .collect(Collectors.joining(File.pathSeparator)));
+
+        File configFile = new File(project.getBuild().getDirectory(), "waitt-fork-config.properties");
+        configFile.getParentFile().mkdirs();
+        try (FileOutputStream fos = new FileOutputStream(configFile)) {
+            props.store(fos, "waitt forked JVM configuration");
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to write fork config", e);
+        }
+        return configFile;
     }
 
     abstract protected void afterStart() throws IOException;

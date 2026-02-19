@@ -25,9 +25,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
-import org.codehaus.plexus.logging.Logger;
-import org.codehaus.plexus.logging.console.ConsoleLogger;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -134,7 +131,6 @@ public class JarMojo extends AbstractMojo {
             throw new MojoFailureException("Server is not found.");
         }
         DefaultShader shader = new DefaultShader();
-        shader.enableLogging(new ConsoleLogger(Logger.LEVEL_DEBUG, "shader"));
 
         ShadeRequest request = new ShadeRequest();
 

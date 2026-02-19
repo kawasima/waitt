@@ -68,11 +68,11 @@ public class JacocoClassLoader extends URLClassLoader {
         if (clazz != null) {
             return clazz;
         }
-        Boolean isTargetPackage = false;
+        boolean isTargetPackage = false;
         for (String pkgName : targetPackages) {
             isTargetPackage |= className.startsWith(pkgName);
         }
-        if (isTargetPackage) {
+        if (isTargetPackage && !className.contains("$$")) {
             logger.fine("[ClassLoad] " + className + " from JaCoCoLoader");
             return defineClass(className, resolve);
         } else {
@@ -84,6 +84,10 @@ public class JacocoClassLoader extends URLClassLoader {
         Class clazz;
         String path = className.replace('.', '/') + ".class";
         InputStream is = getParent().getResourceAsStream(path);
+
+        if (is == null) {
+            throw new ClassNotFoundException(className + " (resource not found in " + getParent() + ")");
+        }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(32768);
         try {

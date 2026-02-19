@@ -14,9 +14,7 @@
 
 
     <properties>
-        <tomcat.version>9.0.62</tomcat.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <tomcat.version>9.0.115</tomcat.version>
     </properties>
 
     <dependencies>

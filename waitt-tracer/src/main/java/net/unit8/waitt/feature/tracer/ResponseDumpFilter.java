@@ -2,10 +2,10 @@ package net.unit8.waitt.feature.tracer;
 
 import net.unit8.waitt.feature.tracer.entry.ResponseEntry;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import java.io.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -43,8 +43,8 @@ public class ResponseDumpFilter implements Filter {
             }
 
             @Override
-            public void setStatus(int sc, String reason) {
-                super.setStatus(sc, reason);
+            public void sendError(int sc) throws IOException {
+                super.sendError(sc);
                 statusCode.set(sc);
             }
         };

@@ -5,6 +5,11 @@ WAITT is the Web Application Integration Test Tool.
 
 Using WAITT, you can deploy your application to any server without building war or jar file.
 
+## Requirements
+
+- Java 8 or later
+- Maven 3.2.5 or later
+
 ## Usage
 
 Add plugin to your pom.xml
@@ -13,20 +18,20 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.3.0</version>
+  <version>1.3.1-SNAPSHOT</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
-        <artifactId>waitt-tomcat85</artifactId>
-        <version>1.3.0</version>
+        <artifactId>waitt-tomcat9</artifactId>
+        <version>1.3.1-SNAPSHOT</version>
       </server>
     </servers>
   </configuration>
 </plugin>
 ```
 
-And execute following command to start tomcat8.
+And execute following command to start the server.
 
 ```shell
 % mvn waitt:run
@@ -48,7 +53,7 @@ Waitt plugin can build an executable jar.
 % mvn waitt:jar
 ```
 
-It doesn't include non-resource files automatically. So, if your app refers asset files outside jar file, you can use `-d` option in runtime. 
+It doesn't include non-resource files automatically. So, if your app refers asset files outside jar file, you can use `-d` option in runtime.
 
 ```shell
 % java -jar xxx-standalone.jar -d src/main/webapp
@@ -56,33 +61,43 @@ It doesn't include non-resource files automatically. So, if your app refers asse
 
 ## Supported server products
 
-- Tomcat8.5
-
-```xml
-  <server>
-    <groupId>net.unit8.waitt.server</groupId>
-    <artifactId>waitt-tomcat85</artifactId>
-    <version>1.3.0</version>
-  </server>
-```
-
-- Tomcat9.x
+- Tomcat 9
 
 ```xml
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat9</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1-SNAPSHOT</version>
   </server>
 ```
 
-- Jetty9
+- Tomcat 10 (Jakarta EE 10)
+
+```xml
+  <server>
+    <groupId>net.unit8.waitt.server</groupId>
+    <artifactId>waitt-tomcat10</artifactId>
+    <version>1.3.1-SNAPSHOT</version>
+  </server>
+```
+
+- Tomcat 11 (Jakarta EE 11)
+
+```xml
+  <server>
+    <groupId>net.unit8.waitt.server</groupId>
+    <artifactId>waitt-tomcat11</artifactId>
+    <version>1.3.1-SNAPSHOT</version>
+  </server>
+```
+
+- Jetty 9
 
 ```xml
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty9</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -94,7 +109,7 @@ If you set multiple servers and maven is executed in the interactive mode, you c
 ### Coverage
 
 You can use JaCoCo or Cobertura.
-When you access to `/_coverage/`, you can see the coverages of your code. 
+When you access to `/_coverage/`, you can see the coverages of your code.
 
 
 #### Cobertura
@@ -103,7 +118,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1-SNAPSHOT</version>
   </feature>
 ```
 
@@ -113,7 +128,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1-SNAPSHOT</version>
   </feature>
 ```
 
@@ -123,11 +138,11 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1-SNAPSHOT</version>
     <type>war</type>
   </feature>
 ```
-When you access to `/_dashboard/`, you can see the information of your application. 
+When you access to `/_dashboard/`, you can see the information of your application.
 
 In dashboard, you can monitor the memory usage / cpu load of a server and redeploy your application.
 Add `waitt-admin` feature to your configuration.
@@ -136,7 +151,7 @@ Add `waitt-admin` feature to your configuration.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1-SNAPSHOT</version>
   </feature>
 ```
 
@@ -149,7 +164,7 @@ You can show and search logs at development in Kibana.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1-SNAPSHOT</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>

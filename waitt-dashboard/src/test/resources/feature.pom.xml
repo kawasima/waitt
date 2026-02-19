@@ -22,12 +22,7 @@
                     <servers>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
-                            <artifactId>waitt-tomcat7</artifactId>
-                            <version>0.1.0-SNAPSHOT</version>
-                        </server>
-                        <server>
-                            <groupId>net.unit8.waitt.server</groupId>
-                            <artifactId>waitt-tomcat8</artifactId>
+                            <artifactId>waitt-tomcat9</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
                         </server>
                         <server>

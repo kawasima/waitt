@@ -1,6 +1,7 @@
 package net.unit8.waitt.feature.tracer;
 
-import javax.servlet.ServletOutputStream;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -20,5 +21,14 @@ public class TeeOutputStream extends ServletOutputStream {
     public void write(int b) throws IOException {
         o1.write(b);
         o2.write(b);
+    }
+
+    @Override
+    public boolean isReady() {
+        return true;
+    }
+
+    @Override
+    public void setWriteListener(WriteListener writeListener) {
     }
 }
