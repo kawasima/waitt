@@ -11,8 +11,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ServerRestartRoute implements Route {
+    private static final Logger LOG = Logger.getLogger(ServerRestartRoute.class.getName());
     private AdminConfig adminConfig;
 
     public ServerRestartRoute(AdminConfig adminConfig) {
@@ -44,6 +47,7 @@ public class ServerRestartRoute implements Route {
             body.put("detail", "Restarted successfully");
             return new Gson().toJson(body);
         } catch (Exception e) {
+            LOG.log(Level.SEVERE, "Server restart failed", e);
             response.status(500);
             Map<String, Object> problem = new HashMap<String, Object>();
             problem.put("title", "Internal Server Error");

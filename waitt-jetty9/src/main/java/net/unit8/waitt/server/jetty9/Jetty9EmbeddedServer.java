@@ -25,6 +25,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Jetty9 embedded server.
@@ -32,6 +34,8 @@ import java.util.List;
  * @author kawasima
  */
 public class Jetty9EmbeddedServer implements EmbeddedServer {
+    private static final Logger LOG = Logger.getLogger(Jetty9EmbeddedServer.class.getName());
+
     private final Server server;
     private final WaittHandlerList handlers;
     private WebAppContext mainWebapp;
@@ -145,10 +149,14 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
         webapp.setContextPath(contextPath);
         File warFile = new File(baseDir);
         webapp.setWar(warFile.getAbsolutePath());
-        for (URL url : ((URLClassLoader) loader).getURLs()) {
-            try {
-                webapp.getMetaData().addContainerResource(new PathResource(new File(url.toURI())));
-            } catch (URISyntaxException ignore) {}
+        if (loader instanceof URLClassLoader) {
+            for (URL url : ((URLClassLoader) loader).getURLs()) {
+                try {
+                    webapp.getMetaData().addContainerResource(new PathResource(new File(url.toURI())));
+                } catch (URISyntaxException e) {
+                    LOG.log(Level.WARNING, "Invalid classpath URL: " + url, e);
+                }
+            }
         }
         webapp.setExtractWAR(true);
         webapp.setAttribute(AnnotationConfiguration.CONTAINER_INITIALIZERS, jspInitializers());
@@ -171,7 +179,7 @@ public class Jetty9EmbeddedServer implements EmbeddedServer {
                     FilterHolder filterHolder = new FilterHolder();
                     filterHolder.setClassName(filterConfig.getClassName());
                     filterHolder.setName(filterConfig.getName());
-                    for (String urlPattern : filterConfig.getUrlPattern()) {
+                    for (String urlPattern : filterConfig.getUrlPatterns()) {
                         webapp.addFilter(filterHolder, urlPattern, null);
                     }
                 }

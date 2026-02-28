@@ -24,17 +24,6 @@
 
         <component class="nablarch.fw.web.handler.NormalizationHandler" />
 
-        <!-- ホットデプロイハンドラ -->
-        <component class="nablarch.fw.hotdeploy.HotDeployHandler">
-          <property name="targetPackages">
-            <list>
-              <value>com.nablarch.example.app.web.action</value>
-              <value>com.nablarch.example.app.web.dto</value>
-              <value>com.nablarch.example.app.web.form</value>
-            </list>
-          </property>
-        </component>
-
         <component class="nablarch.fw.web.handler.ForwardingHandler"/>
 
         <component class="nablarch.fw.web.handler.HttpErrorHandler" >

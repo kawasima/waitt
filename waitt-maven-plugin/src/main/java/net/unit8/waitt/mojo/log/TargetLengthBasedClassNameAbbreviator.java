@@ -16,10 +16,10 @@ public class TargetLengthBasedClassNameAbbreviator {
     }
 
     public String abbreviate(String fqClassName) {
-        StringBuilder buf = new StringBuilder(targetLength);
         if (fqClassName == null) {
-            throw new IllegalArgumentException("Class name may not be null");
+            return "<unknown>";
         }
+        StringBuilder buf = new StringBuilder(targetLength);
 
         int inLen = fqClassName.length();
         if (inLen < targetLength) {
@@ -33,15 +33,11 @@ public class TargetLengthBasedClassNameAbbreviator {
 
         int dotCount = computeDotIndexes(fqClassName, dotIndexesArray);
 
-        // System.out.println();
-        // System.out.println("Dot count for [" + className + "] is " + dotCount);
-        // if there are not dots than abbreviation is not possible
+        // if there are no dots then abbreviation is not possible
         if (dotCount == 0) {
             return fqClassName;
         }
-        // printArray("dotArray: ", dotArray);
         computeLengthArray(fqClassName, dotIndexesArray, lengthArray, dotCount);
-        // printArray("lengthArray: ", lengthArray);
         for (int i = 0; i <= dotCount; i++) {
             if (i == 0) {
                 buf.append(fqClassName.substring(0, lengthArray[i] - 1));
@@ -49,7 +45,6 @@ public class TargetLengthBasedClassNameAbbreviator {
                 buf.append(fqClassName.substring(dotIndexesArray[i - 1],
                         dotIndexesArray[i - 1] + lengthArray[i]));
             }
-            // System.out.println("i=" + i + ", buf=" + buf);
         }
 
         return buf.toString();
@@ -76,9 +71,6 @@ public class TargetLengthBasedClassNameAbbreviator {
     void computeLengthArray(final String className, int[] dotArray,
                             int[] lengthArray, int dotCount) {
         int toTrim = className.length() - targetLength;
-        // System.out.println("toTrim=" + toTrim);
-
-        // int toTrimAvarage = 0;
 
         int len;
         for (int i = 0; i < dotCount; i++) {
@@ -87,10 +79,6 @@ public class TargetLengthBasedClassNameAbbreviator {
                 previousDotPosition = dotArray[i - 1];
             }
             int available = dotArray[i] - previousDotPosition - 1;
-            // System.out.println("i=" + i + ", available = " + available);
-
-            len = (available < 1) ? available : 1;
-            // System.out.println("i=" + i + ", toTrim = " + toTrim);
 
             if (toTrim > 0) {
                 len = (available < 1) ? available : 1;

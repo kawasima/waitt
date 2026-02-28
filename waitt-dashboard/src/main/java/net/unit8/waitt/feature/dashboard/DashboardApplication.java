@@ -21,12 +21,11 @@ public class DashboardApplication implements SparkApplication {
                 new Route() {
                     @Override
                     public Object handle(Request request, Response response) throws Exception {
-                        String accessControlRequestHeaders = request
-                                .headers("Access-Control-Request-Headers");
-                        if (accessControlRequestHeaders != null) {
-                            response.header("Access-Control-Allow-Headers",
-                                    accessControlRequestHeaders);
+                        String origin = request.headers("Origin");
+                        if (origin != null && origin.startsWith("http://localhost")) {
+                            response.header("Access-Control-Allow-Origin", origin);
                         }
+                        response.header("Access-Control-Allow-Headers", "Content-Type, Accept");
 
                         String accessControlRequestMethod = request
                                 .headers("Access-Control-Request-Method");
@@ -41,8 +40,11 @@ public class DashboardApplication implements SparkApplication {
         before(new Filter() {
             @Override
             public void handle(Request req, Response res) throws Exception {
-                res.header("Access-Control-Allow-Origin", "*");
-                res.header("Access-Control-Allow-Headers", "*");
+                String origin = req.headers("Origin");
+                if (origin != null && origin.startsWith("http://localhost")) {
+                    res.header("Access-Control-Allow-Origin", origin);
+                }
+                res.header("Access-Control-Allow-Headers", "Content-Type, Accept");
                 res.type("application/json");
             }
         });

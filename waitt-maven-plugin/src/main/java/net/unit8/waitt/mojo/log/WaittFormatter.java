@@ -22,12 +22,16 @@ public class WaittFormatter extends Formatter {
 
     @Override
     public String format(LogRecord record) {
+        String loggerName = record.getLoggerName();
+        if (loggerName == null) {
+            loggerName = "<unknown>";
+        }
         StringBuilder sb = new StringBuilder(256);
         sb.append(formatDate(record.getMillis()))
                 .append(" ")
                 .append(formatLevel(record.getLevel()))
                 .append(" ")
-                .append(formatLoggerName(record.getLoggerName()))
+                .append(formatLoggerName(loggerName))
                 .append(": ")
                 .append(record.getMessage())
                 .append('\n');

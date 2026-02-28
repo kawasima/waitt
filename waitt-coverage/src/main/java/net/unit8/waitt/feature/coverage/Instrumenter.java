@@ -25,8 +25,6 @@ public interface Instrumenter {
 
     void setFailOnError(boolean failOnError);
 
-    // --Commented out by Inspection (14/07/17 15:42):public void setProjectData(ProjectData projectData);
-
     void setThreadsafeRigorous(boolean threadsafeRigorous);
 
     ProjectData getProjectData();

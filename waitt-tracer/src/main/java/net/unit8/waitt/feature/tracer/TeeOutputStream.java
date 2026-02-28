@@ -24,6 +24,12 @@ public class TeeOutputStream extends ServletOutputStream {
     }
 
     @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        o1.write(b, off, len);
+        o2.write(b, off, len);
+    }
+
+    @Override
     public boolean isReady() {
         return true;
     }

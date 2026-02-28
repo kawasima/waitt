@@ -23,7 +23,6 @@ public class ResponseEntry extends EntryBase {
     @NonNull
     private String requestUri;
 
-    @NonNull
     private int statusCode;
 
     @NonNull
@@ -57,7 +56,6 @@ public class ResponseEntry extends EntryBase {
         return this.requestUri;
     }
 
-    @NonNull
     public int getStatusCode() {
         return this.statusCode;
     }
@@ -71,7 +69,7 @@ public class ResponseEntry extends EntryBase {
         this.requestUri = requestUri;
     }
 
-    public void setStatusCode(@NonNull int statusCode) {
+    public void setStatusCode(int statusCode) {
         this.statusCode = statusCode;
     }
 

@@ -40,7 +40,7 @@
                         </server>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
-                            <artifactId>waitt-jetty9</artifactId>
+                            <artifactId>waitt-jetty12</artifactId>
                             <version>${waitt.version}</version>
                         </server>
                     </servers>

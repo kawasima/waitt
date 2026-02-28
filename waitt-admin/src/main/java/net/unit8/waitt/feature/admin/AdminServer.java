@@ -49,6 +49,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void config(WebappConfiguration config) {
+        app.addRoutes(new CorsAction());
         app.addRoutes(new AppAction(config));
         app.addRoutes(new EnvPropertyAction());
         app.addRoutes(new ThreadDumpAction());
@@ -60,7 +61,11 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
                 if (featureConfig != null) {
                     String portStr = featureConfig.get("admin.port");
                     if (portStr != null) {
-                        adminPort = Integer.parseInt(portStr);
+                        try {
+                            adminPort = Integer.parseInt(portStr);
+                        } catch (NumberFormatException e) {
+                            LOG.warning("Invalid admin.port value: " + portStr + ", using default port " + adminPort);
+                        }
                     }
                 }
             }

@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -77,18 +78,13 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
 
         server.addContext("/_coverage", reportDirectory.getAbsolutePath(), getClass().getClassLoader());
         executorService = Executors.newScheduledThreadPool(1);
-        final ExecFileLoader loader = new ExecFileLoader();
-        try {
-            loader.load(new File("jacoco.exec"));
-        } catch (IOException ignore) {}
-
 
         executorService.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
                 try {
                     Agent.getInstance().dump(false);
-
+                    ExecFileLoader loader = new ExecFileLoader();
                     loader.load(new File("jacoco.exec"));
                     final IReportVisitor visitor = createVisitor(Locale.getDefault());
                     visitor.visitInfo(
@@ -96,9 +92,8 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
                             loader.getExecutionDataStore().getContents());
                     createReport(visitor, loader.getExecutionDataStore());
                     visitor.visitEnd();
-                } catch (IOException ex) {
-                    // ignore
-
+                } catch (Exception ex) {
+                    LOG.log(Level.WARNING, "Failed to generate coverage report", ex);
                 }
             }
         }, 0L, 30L, TimeUnit.SECONDS);

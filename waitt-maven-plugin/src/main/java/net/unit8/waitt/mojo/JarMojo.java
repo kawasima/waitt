@@ -58,7 +58,7 @@ public class JarMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.finalName}", readonly = true)
     private String finalName;
 
-    @Parameter(property="embeddedRunnerVersion", defaultValue="1.2.1")
+    @Parameter(property="embeddedRunnerVersion", defaultValue="${project.version}")
     private String embeddedRunnerVersion;
 
     @Parameter
@@ -127,7 +127,7 @@ public class JarMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (servers.isEmpty()) {
+        if (servers == null || servers.isEmpty()) {
             throw new MojoFailureException("Server is not found.");
         }
         DefaultShader shader = new DefaultShader();

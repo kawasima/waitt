@@ -35,11 +35,15 @@ public class Tomcat10EmbeddedServer implements EmbeddedServer {
             StandardHost host = (StandardHost) tomcat.getHost();
             host.setUnpackWARs(true);
             File appBase = new File("target/tomcat10/webapps");
-            if (!appBase.exists()) appBase.mkdirs();
+            if (!appBase.exists() && !appBase.mkdirs()) {
+                throw new IllegalStateException("Failed to create directory: " + appBase.getAbsolutePath());
+            }
             host.setAppBase(appBase.getAbsolutePath());
 
             File workDir = new File("target/tomcat10/work");
-            if (!workDir.exists()) workDir.mkdirs();
+            if (!workDir.exists() && !workDir.mkdirs()) {
+                throw new IllegalStateException("Failed to create directory: " + workDir.getAbsolutePath());
+            }
             host.setWorkDir(workDir.getAbsolutePath());
         }
     }
@@ -102,6 +106,9 @@ public class Tomcat10EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void reload() {
+        if (context == null) {
+            throw new IllegalStateException("Main context has not been set");
+        }
         context.reload();
     }
 
@@ -126,6 +133,7 @@ public class Tomcat10EmbeddedServer implements EmbeddedServer {
     public void stop() {
         try {
             tomcat.stop();
+            tomcat.destroy();
         } catch (LifecycleException e) {
             throw new IllegalStateException(e);
         }
@@ -154,7 +162,7 @@ public class Tomcat10EmbeddedServer implements EmbeddedServer {
                     context.addFilterDef(filterDef);
                     FilterMap filterMap = new FilterMap();
                     filterMap.setFilterName(filterConfig.getName());
-                    for (String urlPattern : filterConfig.getUrlPattern()) {
+                    for (String urlPattern : filterConfig.getUrlPatterns()) {
                         filterMap.addURLPattern(urlPattern);
                     }
                     context.addFilterMap(filterMap);

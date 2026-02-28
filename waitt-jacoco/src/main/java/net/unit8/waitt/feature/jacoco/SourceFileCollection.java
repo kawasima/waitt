@@ -32,7 +32,13 @@ public class SourceFileCollection implements ISourceFileLocator {
         for (final File sourceRoot : sourceRoots) {
             final File file = new File(sourceRoot, r);
             if (file.exists() && file.isFile()) {
-                return new InputStreamReader(new FileInputStream(file), encoding);
+                FileInputStream fis = new FileInputStream(file);
+                try {
+                    return new InputStreamReader(fis, encoding);
+                } catch (Exception e) {
+                    fis.close();
+                    throw e;
+                }
             }
         }
         return null;

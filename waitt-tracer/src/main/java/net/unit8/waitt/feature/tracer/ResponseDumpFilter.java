@@ -28,12 +28,18 @@ public class ResponseDumpFilter implements Filter {
             throws IOException, ServletException {
         LOG.info(((HttpServletRequest) request).getRequestURI());
         final StringWriter writer = new StringWriter();
+        final ByteArrayOutputStream byteCapture = new ByteArrayOutputStream();
         final AtomicInteger statusCode = new AtomicInteger(200);
 
         HttpServletResponseWrapper responseWrapper = new HttpServletResponseWrapper((HttpServletResponse) response) {
             @Override
             public PrintWriter getWriter() throws IOException {
                 return new TeeWriter(super.getWriter(), writer);
+            }
+
+            @Override
+            public jakarta.servlet.ServletOutputStream getOutputStream() throws IOException {
+                return new TeeOutputStream(super.getOutputStream(), byteCapture);
             }
 
             @Override
@@ -47,14 +53,30 @@ public class ResponseDumpFilter implements Filter {
                 super.sendError(sc);
                 statusCode.set(sc);
             }
+
+            @Override
+            public void sendError(int sc, String msg) throws IOException {
+                statusCode.set(sc);
+                super.sendError(sc, msg);
+            }
+
+            @Override
+            public void sendRedirect(String location) throws IOException {
+                statusCode.set(302);
+                super.sendRedirect(location);
+            }
         };
         chain.doFilter(request, responseWrapper);
         String contentType = responseWrapper.getContentType();
         if (contentType != null && contentType.startsWith("text/html")) {
+            String responseBody = writer.toString();
+            if (responseBody.isEmpty() && byteCapture.size() > 0) {
+                responseBody = byteCapture.toString("UTF-8");
+            }
             ResponseEntry responseEntry = new ResponseEntry(
                     ((HttpServletRequest) request).getRequestURI(),
                     statusCode.get(),
-                    writer.toString());
+                    responseBody);
             esClient.post("/waitt/response/", responseEntry);
         }
     }

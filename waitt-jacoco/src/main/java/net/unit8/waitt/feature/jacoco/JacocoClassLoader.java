@@ -10,6 +10,7 @@ import org.jacoco.core.JaCoCo;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Set;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
 public class JacocoClassLoader extends URLClassLoader {
     private static final Logger logger = Logger.getLogger(JacocoClassLoader.class.getName());
     private static volatile JacocoClassLoader instance;
-    private Set<String> targetPackages;
+    private Set<String> targetPackages = Collections.emptySet();
 
     private Instrumenter instrumenter = null;
 

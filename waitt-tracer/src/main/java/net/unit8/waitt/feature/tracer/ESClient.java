@@ -41,8 +41,11 @@ public class ESClient {
         try {
             URL url = new URL(baseUrl + path);
             conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.connect();
             try (OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream())) {
                 out.write(gson.toJson(entry));
@@ -55,9 +58,14 @@ public class ESClient {
         } catch(IOException e) {
             LOG.log(Level.WARNING, "Fail to post elasticsearch", e);
         } finally {
-            if (conn != null) {
-                conn.disconnect();
+            try {
+                InputStream errStream = conn.getErrorStream();
+                if (errStream != null) {
+                    try { while (errStream.read() != -1) {} } finally { errStream.close(); }
+                }
+            } catch (IOException ignored) {
             }
+            conn.disconnect();
         }
     }
 }

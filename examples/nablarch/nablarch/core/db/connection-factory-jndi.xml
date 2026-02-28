@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- JNDIを使用したコネクションファクトリの設定 -->
+<component-configuration
+        xmlns="http://tis.co.jp/nablarch/component-configuration"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration https://nablarch.github.io/schema/component-configuration.xsd">
+
+  <!-- ステートメントファクトリ -->
+  <import file="nablarch/core/db/db-statement-factory.xml"/>
+
+  <import file="nablarch/core/db/db-access-exception-factory.xml"/>
+
+  <!-- データベース接続用設定 -->
+  <component name="connectionFactory"
+             class="nablarch.core.db.connection.BasicDbConnectionFactoryForJndi">
+    <property name="dialect" ref="dialect" />
+    <property name="jndiResourceName" value="${nablarch.connectionFactory.jndiResourceName}" />
+    <property name="statementFactory" ref="statementFactory" />
+    <property name="dbAccessExceptionFactory" ref="dbAccessExceptionFactory" />
+  </component>
+
+</component-configuration>

@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
         type = Csv.CsvType.CUSTOM)
 @CsvFormat(charset = "Shift_JIS", fieldSeparator = ',',
         ignoreEmptyLine = true, lineSeparator = "\r\n", quote = '"',
-        quoteMode = CsvDataBindConfig.QuoteMode.NORMAL, requiredHeader = true)
+        quoteMode = CsvDataBindConfig.QuoteMode.NORMAL, requiredHeader = true, emptyToNull = true)
 @Published
 public class ProjectUploadDto implements Serializable {
 

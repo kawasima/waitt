@@ -12,9 +12,11 @@ import spark.Route;
 
 public class PrometheusRoute implements Route {
     PrometheusMeterRegistry prometheusRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    private final JvmGcMetrics jvmGcMetrics;
 
     public PrometheusRoute() {
-        new JvmGcMetrics().bindTo(prometheusRegistry);
+        this.jvmGcMetrics = new JvmGcMetrics();
+        jvmGcMetrics.bindTo(prometheusRegistry);
         new JvmMemoryMetrics().bindTo(prometheusRegistry);
         new JvmThreadMetrics().bindTo(prometheusRegistry);
     }

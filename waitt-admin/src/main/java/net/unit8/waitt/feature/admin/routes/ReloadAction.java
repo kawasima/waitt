@@ -28,8 +28,11 @@ public class ReloadAction implements Route {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         server.reload();
-        exchange.getResponseHeaders().put("Access-Control-Allow-Origin", Collections.singletonList("*"));
-        exchange.getResponseHeaders().put("Access-Control-Allow-Headers", Collections.singletonList("*"));
-        exchange.sendResponseHeaders(204, 0);
+        String origin = exchange.getRequestHeaders().getFirst("Origin");
+        if (origin != null && origin.startsWith("http://localhost")) {
+            exchange.getResponseHeaders().put("Access-Control-Allow-Origin", Collections.singletonList(origin));
+        }
+        exchange.getResponseHeaders().put("Access-Control-Allow-Headers", Collections.singletonList("Content-Type, Accept"));
+        exchange.sendResponseHeaders(204, -1);
     }
 }

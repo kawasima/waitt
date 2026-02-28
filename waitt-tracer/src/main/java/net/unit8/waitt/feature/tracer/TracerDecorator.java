@@ -4,6 +4,7 @@ import net.unit8.waitt.api.WebappDecorator;
 import net.unit8.waitt.api.configuration.FilterConfiguration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ public class TracerDecorator implements WebappDecorator {
         FilterConfiguration responseDumpFilterConfig = new FilterConfiguration();
         responseDumpFilterConfig.setName("responseDumpConfig");
         responseDumpFilterConfig.setClassName("net.unit8.waitt.feature.tracer.ResponseDumpFilter");
-        responseDumpFilterConfig.setUrlPattern(new String[]{"/*"});
+        responseDumpFilterConfig.setUrlPatterns(Collections.singletonList("/*"));
         filterConfigurations.add(responseDumpFilterConfig);
         return filterConfigurations;
     }

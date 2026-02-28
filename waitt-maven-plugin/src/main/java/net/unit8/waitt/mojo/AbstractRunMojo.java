@@ -35,7 +35,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.Socket;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
@@ -164,9 +164,10 @@ public abstract class AbstractRunMojo extends AbstractMojo {
 
         loadFeature(waittRealm, webappConfig);
 
+        ClassRealm webappRealm = null;
         try {
             embeddedServer.start();
-            ClassRealm webappRealm = new ClassRealm(serverSpec.getClassRealm().getWorld(), "Application", ClassLoader.getSystemClassLoader());
+            webappRealm = new ClassRealm(serverSpec.getClassRealm().getWorld(), "Application", ClassLoader.getSystemClassLoader());
             webappRealm.setParentRealm(serverSpec.getClassRealm());
             Set<URL> classpathUrls = resolveClasspaths();
             for (URL url : classpathUrls) {
@@ -193,7 +194,17 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Fail to start server", e);
         } finally {
+            for (ServerMonitor serverMonitor : serverMonitors) {
+                serverMonitor.stop();
+            }
             embeddedServer.stop();
+            if (webappRealm != null) {
+                try {
+                    webappRealm.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
         }
     }
 
@@ -425,7 +436,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
      * Initialize logger.
      */
     private void initLogger() {
-        Logger logger = Logger.getLogger("");
+        Logger logger = Logger.getLogger("net.unit8.waitt");
         logger.setLevel(ALL);
         for (Handler handler : logger.getHandlers()) {
             logger.removeHandler(handler);
@@ -439,7 +450,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                     return;
                 Level lv = record.getLevel();
                 for (LogListener logListener : logListeners) {
-                    if (Arrays.asList(ALL, CONFIG, FINE, FINER, FINEST).contains(lv)) {
+                    if (lv.intValue() < Level.INFO.intValue()) {
                         logListener.debug(record.getMessage(), record.getThrown());
                     } else if (lv.equals(INFO)) {
                         logListener.info(record.getMessage(), record.getThrown());
@@ -488,11 +499,14 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 classpathUrls.add(url);
             }
 
-            for (URL url : ((URLClassLoader) Thread.currentThread().getContextClassLoader()).getURLs()) {
-                if (url.toString().contains("/org/ow2/asm/")
-                        || url.toString().contains("/waitt-maven-plugin/")
-                        || url.toString().contains("/net/sourceforge/cobertura/")) {
-                    classpathUrls.add(url);
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            if (cl instanceof URLClassLoader) {
+                for (URL url : ((URLClassLoader) cl).getURLs()) {
+                    if (url.toString().contains("/org/ow2/asm/")
+                            || url.toString().contains("/waitt-maven-plugin/")
+                            || url.toString().contains("/net/sourceforge/cobertura/")) {
+                        classpathUrls.add(url);
+                    }
                 }
             }
             for (Artifact artifact : artifacts) {
@@ -551,11 +565,12 @@ public abstract class AbstractRunMojo extends AbstractMojo {
      */
     protected void scanPort() {
         for (int p = startPort; p <= endPort; p++) {
-            try (Socket sock = new Socket("localhost", p)) {
-                // port is in use
-            } catch (IOException e) {
+            try (ServerSocket ss = new ServerSocket(p)) {
+                ss.setReuseAddress(true);
                 port = p;
                 return;
+            } catch (IOException e) {
+                // port in use, try next
             }
         }
         throw new RuntimeException("Can't find available port from " + startPort + " to " + endPort);

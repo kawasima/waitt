@@ -22,7 +22,7 @@
         <module>waitt-api</module>
         <module>waitt-embed-runner</module>
         <module>waitt-maven-plugin</module>
-        <module>waitt-jetty9</module>
+        <module>waitt-jetty12</module>
         <module>waitt-tomcat9</module>
         <module>waitt-tomcat10</module>
         <module>waitt-tomcat11</module>

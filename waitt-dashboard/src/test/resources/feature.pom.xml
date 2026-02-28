@@ -27,7 +27,7 @@
                         </server>
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
-                            <artifactId>waitt-jetty9</artifactId>
+                            <artifactId>waitt-jetty12</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
                         </server>
                     </servers>
