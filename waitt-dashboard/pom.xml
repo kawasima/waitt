@@ -4,6 +4,7 @@
 
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
+    <name>waitt-dashboard</name>
     <packaging>war</packaging>
 
     <parent>

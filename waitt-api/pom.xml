@@ -3,6 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>waitt-api</artifactId>
+    <name>waitt-api</name>
     <packaging>jar</packaging>
 
     <parent>

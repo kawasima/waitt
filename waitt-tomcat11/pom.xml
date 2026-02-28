@@ -10,6 +10,7 @@
 
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat11</artifactId>
+    <name>waitt-tomcat11</name>
     <packaging>jar</packaging>
 
     <properties>

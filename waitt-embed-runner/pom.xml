@@ -3,6 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>waitt-embed-runner</artifactId>
+    <name>waitt-embed-runner</name>
     <packaging>jar</packaging>
 
     <parent>

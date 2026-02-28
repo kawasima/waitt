@@ -4,6 +4,7 @@
 
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty12</artifactId>
+    <name>waitt-jetty12</name>
     <packaging>jar</packaging>
 
     <parent>

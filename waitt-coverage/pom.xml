@@ -4,6 +4,7 @@
 
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
+    <name>waitt-coverage</name>
     <packaging>jar</packaging>
 
     <parent>
