@@ -17,13 +17,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.4.0-SNAPSHOT</version>
+  <version>1.4.0</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
         <artifactId>waitt-tomcat9</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
+        <version>1.4.0</version>
       </server>
     </servers>
   </configuration>
@@ -96,7 +96,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat9</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
   </server>
 ```
 
@@ -106,7 +106,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat10</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
   </server>
 ```
 
@@ -116,7 +116,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat11</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
   </server>
 ```
 
@@ -126,7 +126,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty12</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
   </server>
 ```
 
@@ -145,7 +145,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-coverage</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
   </feature>
 ```
 
@@ -155,7 +155,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
   </feature>
 ```
 
@@ -165,7 +165,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-dashboard</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
     <type>war</type>
   </feature>
 ```
@@ -179,7 +179,7 @@ Add `waitt-admin` feature to your configuration.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
   </feature>
 ```
 
@@ -192,7 +192,7 @@ Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with T
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.4.0</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>
