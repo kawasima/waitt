@@ -10,6 +10,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.logging.Logger;
 
 /**
@@ -23,9 +24,9 @@ public class AdminConfig {
     public void read() {
         File pomFile = new File("pom.xml");
         if (pomFile.exists()) {
-            try {
+            try (InputStream is = new FileInputStream(pomFile)) {
                 DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document doc = documentBuilder.parse(new FileInputStream(pomFile));
+                Document doc = documentBuilder.parse(is);
                 XPathFactory factory = XPathFactory.newInstance();
                 XPath xpath = factory.newXPath();
 

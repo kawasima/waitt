@@ -33,9 +33,9 @@ public class PackageScanner {
         if (files == null)
             return;
 
-        Boolean isAllDirectory = true;
+        boolean isAllDirectory = true;
         for (File f : files) {
-            isAllDirectory = (f != null && f.isDirectory());
+            isAllDirectory &= (f != null && f.isDirectory());
         }
         if (isAllDirectory) {
             for (File f : files) {

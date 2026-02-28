@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class JacocoClassLoader extends URLClassLoader {
     private static final Logger logger = Logger.getLogger(JacocoClassLoader.class.getName());
-    private static JacocoClassLoader instance;
+    private static volatile JacocoClassLoader instance;
     private Set<String> targetPackages;
 
     private Instrumenter instrumenter = null;

@@ -87,6 +87,7 @@ public class ForkedRunner {
             System.exit(1);
         } finally {
             server.stop();
+            webappClassLoader.close();
         }
     }
 }

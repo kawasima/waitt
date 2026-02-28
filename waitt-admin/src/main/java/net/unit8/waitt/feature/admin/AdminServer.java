@@ -9,6 +9,7 @@ import net.unit8.waitt.api.configuration.WebappConfiguration;
 import net.unit8.waitt.feature.admin.routes.*;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -78,7 +79,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         app.addRoutes(new ServerAction(server, rrdPath));
         app.addRoutes(new ReloadAction(server));
         try {
-            adminServer = HttpServer.create(new InetSocketAddress(adminPort), 0);
+            adminServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), adminPort), 0);
             adminServer.setExecutor(executorService);
             adminServer.createContext("/", app);
             adminServer.start();

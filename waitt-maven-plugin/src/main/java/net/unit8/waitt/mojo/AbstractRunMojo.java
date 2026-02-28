@@ -551,9 +551,8 @@ public abstract class AbstractRunMojo extends AbstractMojo {
      */
     protected void scanPort() {
         for (int p = startPort; p <= endPort; p++) {
-            try {
-                Socket sock = new Socket("localhost", p);
-                sock.close();
+            try (Socket sock = new Socket("localhost", p)) {
+                // port is in use
             } catch (IOException e) {
                 port = p;
                 return;

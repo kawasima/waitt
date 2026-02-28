@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("rawtypes")
 public class CoberturaClassLoader extends ClassLoader {
     private static final Logger logger = Logger.getLogger(CoberturaClassLoader.class.getName());
-    private static CoberturaClassLoader instance;
+    private static volatile CoberturaClassLoader instance;
     private Set<String> targetPackages;
 
     private final Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
