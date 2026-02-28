@@ -75,13 +75,13 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
-                    <version>1.4.200</version>
+                    <version>2.3.232</version>
                     <scope>runtime</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-dbcp2</artifactId>
-                    <version>2.12.0</version>
+                    <version>2.14.0</version>
                     <scope>runtime</scope>
                 </dependency>
             </dependencies>
@@ -104,7 +104,7 @@
                             <dependency>
                                 <groupId>com.h2database</groupId>
                                 <artifactId>h2</artifactId>
-                                <version>1.4.200</version>
+                                <version>2.3.232</version>
                                 <scope>runtime</scope>
                             </dependency>
                         </dependencies>
@@ -238,9 +238,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
-            <version>5.4.3.Final</version>
+            <version>6.2.5.Final</version>
         </dependency>
 
         <dependency>
@@ -278,9 +278,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.jdt.core.compiler</groupId>
+            <groupId>org.eclipse.jdt</groupId>
             <artifactId>ecj</artifactId>
-            <version>4.5.1</version>
+            <version>3.40.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -291,16 +291,10 @@
         </dependency>
 
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>findbugs</artifactId>
-            <version>3.0.1</version>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <version>4.9.8</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>dom4j</groupId>
-                    <artifactId>dom4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -418,22 +412,23 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
+                <version>3.6.0</version>
                 <configuration>
                     <excludes>
                         **/com/nablarch/example/app/entity/*.java
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- findBugs -->
+            <!-- SpotBugs (replacement for FindBugs) -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.9.8.2</version>
                 <executions>
                     <execution>
                         <phase>verify</phase>
                         <goals>
-                            <goal>findbugs</goal>
+                            <goal>spotbugs</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -441,14 +436,6 @@
                     <xmlOutput>true</xmlOutput>
                     <excludeFilterFile>${findbugs.config.filter.production}</excludeFilterFile>
                     <jvmArgs>-Dnablarch-findbugs-config=${findbugs.config.published.production}</jvmArgs>
-                    <plugins>
-                        <plugin>
-                            <groupId>com.nablarch.framework</groupId>
-                            <artifactId>nablarch-testing</artifactId>
-                            <!-- プラグインに内包するモジュールはバージョン指定必須 -->
-                            <version>1.0.7</version>
-                        </plugin>
-                    </plugins>
                 </configuration>
             </plugin>
         </plugins>
