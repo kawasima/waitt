@@ -33,6 +33,7 @@ public class ReportGenerator {
     public void report() {
         if (!(classLoader instanceof CoberturaClassLoader)) {
             LOG.warning("CoverageMonitor wasn't loaded from CoberturaClassLoader.");
+            return;
         }
 
         ProjectData data = ((CoberturaClassLoader) classLoader).getInstrumenter().getProjectData();

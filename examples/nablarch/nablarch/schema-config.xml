@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component-configuration
+    xmlns="http://tis.co.jp/nablarch/component-configuration"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://tis.co.jp/nablarch/component-configuration  https://nablarch.github.io/schema/component-configuration.xsd">
+
+    <config-file file="nablarch/schema/batch-request-table-schema.config" />
+    <config-file file="nablarch/schema/business-date-table-schema.config" />
+    <config-file file="nablarch/schema/code-table-schema.config" />
+    <config-file file="nablarch/schema/idgenerator-table-schema.config"/>
+    <config-file file="nablarch/schema/mail-table-schema.config" />
+    <config-file file="nablarch/schema/message-table-schema.config"/>
+    <config-file file="nablarch/schema/permission-check-table-schema.config" />
+    <config-file file="nablarch/schema/request-table-schema.config" />
+</component-configuration>

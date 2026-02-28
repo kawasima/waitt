@@ -11,12 +11,12 @@
 
   <!-- データソース設定 -->
   <component name="dataSource"
-             class="org.apache.commons.dbcp.BasicDataSource">
+             class="org.apache.commons.dbcp2.BasicDataSource">
     <property name="driverClassName" value="${nablarch.db.jdbcDriver}"/>
     <property name="url"             value="${nablarch.db.url}"/>
     <property name="username"        value="${nablarch.db.user}"/>
     <property name="password"        value="${nablarch.db.password}"/>
-    <property name="maxActive"       value="${nablarch.db.maxPoolSize}"/>
+    <property name="maxTotal"         value="${nablarch.db.maxPoolSize}"/>
     <property name="initialSize"     value="${nablarch.db.initialPoolSize}"/>
   </component>
 

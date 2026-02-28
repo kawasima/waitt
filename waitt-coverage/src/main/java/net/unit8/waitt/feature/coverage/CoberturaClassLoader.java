@@ -4,6 +4,7 @@ import net.sourceforge.cobertura.util.IOUtil;
 
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
@@ -16,8 +17,8 @@ import java.util.regex.Pattern;
 @SuppressWarnings("rawtypes")
 public class CoberturaClassLoader extends ClassLoader {
     private static final Logger logger = Logger.getLogger(CoberturaClassLoader.class.getName());
-    private static CoberturaClassLoader instance;
-    private Set<String> targetPackages;
+    private static volatile CoberturaClassLoader instance;
+    private Set<String> targetPackages = Collections.emptySet();
 
     private final Collection<Pattern> ignoreRegexes = new Vector<Pattern>();
     private final Set<String> ignoreMethodAnnotations = new HashSet<String>();
@@ -60,7 +61,7 @@ public class CoberturaClassLoader extends ClassLoader {
         if (clazz != null) {
             return clazz;
         }
-        Boolean isTargetPackage = false;
+        boolean isTargetPackage = false;
         for (String pkgName : targetPackages) {
             isTargetPackage |= className.startsWith(pkgName);
         }
@@ -89,11 +90,9 @@ public class CoberturaClassLoader extends ClassLoader {
             IOUtil.closeInputStream(is);
         }
 
-        if (is != null) {
-            clazz = defineClass(className, instrumentationResult);
-            if (resolve) {
-                resolveClass(clazz);
-            }
+        clazz = defineClass(className, instrumentationResult);
+        if (resolve) {
+            resolveClass(clazz);
         }
 
         return clazz;

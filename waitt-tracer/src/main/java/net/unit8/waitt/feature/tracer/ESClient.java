@@ -20,50 +20,52 @@ public class ESClient {
     private static final Logger LOG = Logger.getLogger(ESClient.class.getName());
     private final String baseUrl;
 
-    private final JsonSerializer<Date> dateSerializer = new JsonSerializer<Date>() {
-        @Override
-        public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext
-                context) {
-            return src == null ? null : new JsonPrimitive(ISO8601Formatter.format(src));
-        }
-    };
-
+    private final Gson gson = new GsonBuilder()
+            .disableHtmlEscaping()
+            .serializeNulls()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+            .registerTypeAdapter(Date.class, new JsonSerializer<Date>() {
+                @Override
+                public JsonElement serialize(Date src, Type typeOfSrc, JsonSerializationContext context) {
+                    return src == null ? null : new JsonPrimitive(ISO8601Formatter.format(src));
+                }
+            })
+            .create();
 
     public ESClient(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
     public void post(String path, Serializable entry) {
-        Gson gson = new GsonBuilder()
-                .disableHtmlEscaping()
-                .serializeNulls()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-                .create();
-
         HttpURLConnection conn = null;
         try {
             URL url = new URL(baseUrl + path);
             conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(3000);
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.connect();
-            OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream());
-            out.write(gson.toJson(entry));
-            out.close();
+            try (OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream())) {
+                out.write(gson.toJson(entry));
+            }
 
-            // Consume a response
-            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            while(true) {
-                String line = in.readLine();
-                if (line == null) break;
+            // Consume the response
+            try (InputStream is = conn.getInputStream()) {
+                while (is.read() != -1) { /* drain */ }
             }
         } catch(IOException e) {
             LOG.log(Level.WARNING, "Fail to post elasticsearch", e);
         } finally {
-            if (conn != null) {
-                conn.disconnect();
+            try {
+                InputStream errStream = conn.getErrorStream();
+                if (errStream != null) {
+                    try { while (errStream.read() != -1) {} } finally { errStream.close(); }
+                }
+            } catch (IOException ignored) {
             }
+            conn.disconnect();
         }
     }
 }

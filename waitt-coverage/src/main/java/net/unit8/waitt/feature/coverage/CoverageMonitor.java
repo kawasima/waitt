@@ -16,7 +16,9 @@ import java.util.logging.Logger;
 
 /**
  * @author kawasima
+ * @deprecated Use waitt-jacoco instead. Cobertura has been unmaintained since 2013.
  */
+@Deprecated
 public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
     private static final Logger LOG = Logger.getLogger(CoverageMonitor.class.getName());
     private final CoverageMonitorConfiguration config;
@@ -71,5 +73,13 @@ public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
     @Override
     public void stop() {
         executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }

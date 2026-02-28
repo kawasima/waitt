@@ -10,9 +10,7 @@
     <title>Basic Struts 2 Application - Welcome</title>
   </head>
   <body>
-</head>
-<body>
     <h1>Welcome To Struts 2!</h1>
-    <p><a href="<s:url action='hello'/>">Hello World</a></p>
+    <p><a href="hello.action">Hello World</a></p>
   </body>
 </html>

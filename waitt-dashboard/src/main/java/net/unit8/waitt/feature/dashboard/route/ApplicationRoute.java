@@ -1,14 +1,14 @@
 package net.unit8.waitt.feature.dashboard.route;
 
 import com.google.gson.Gson;
-import net.unit8.waitt.api.configuration.WebappConfiguration;
+import com.google.gson.reflect.TypeToken;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.unit8.waitt.feature.dashboard.AdminConfig;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import net.unit8.waitt.feature.dashboard.Route;
 
-import javax.xml.bind.JAXB;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -22,22 +22,26 @@ public class ApplicationRoute implements Route {
     }
 
     @Override
-    public Object handle(Request request, Response response) throws Exception {
+    public Object handle(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, Object> attributes = new HashMap<String, Object>();
         if (adminConfig.isAdminAvailable()) {
-            HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + adminConfig.getAdminPort() + "/app").openConnection();
-            InputStream in = conn.getInputStream();
-            try {
-                WebappConfiguration config = JAXB.unmarshal(in, WebappConfiguration.class);
+            HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + adminConfig.getAdminPort() + "/application").openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            try (InputStream in = conn.getInputStream()) {
+                Map<String, Object> config = new Gson().fromJson(
+                        new InputStreamReader(in),
+                        new TypeToken<Map<String, Object>>(){}.getType());
                 attributes.put("configuration", config);
+            } catch (Exception e) {
+                attributes.put("error", e.getMessage());
             } finally {
-                in.close();
                 conn.disconnect();
             }
         }
         attributes.put("adminAvailable", adminConfig.isAdminAvailable());
 
-        response.type("application/json");
+        response.setContentType("application/json");
         return new Gson().toJson(attributes);
     }
 }

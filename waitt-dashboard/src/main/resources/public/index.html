@@ -1,17 +1,249 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>WAITT dashboard</title>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>WAITT dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <header class="masthead">
+    <span class="masthead-logo">WAITT</span>
+  </header>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="//fonts.googleapis.com/css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/css/bootstrap.min.css" integrity="sha384-r4NyP46KrjDleawBgD5tp8Y7UzmLA05oM1iAEQ17CSuDqnUK2+k9luXQOfXJCJ4I" crossorigin="anonymous">
-    <script src="elm.js"></script>
-    </head>
-    <body>
-        <script>
-         var app = Elm.Main.init({});
-        </script>
-    </body>
+  <div class="layout">
+    <nav class="sidebar">
+      <ul>
+        <li><a class="nav-link" data-page="application">Application</a></li>
+        <li><a class="nav-link" data-page="thread">Thread dump</a></li>
+        <li><a class="nav-link" data-page="heap">Heap dump</a></li>
+        <li><a class="nav-link" data-page="env">Environments</a></li>
+        <li><a class="nav-link" data-page="server">Server</a></li>
+      </ul>
+    </nav>
+    <main id="content">
+      <p>Loading...</p>
+    </main>
+  </div>
+
+  <script>
+  (function () {
+    // Derive base from the servlet's context path.
+    // e.g. if served at /_dashboard/index.html, BASE becomes "/_dashboard"
+    var BASE = window.location.pathname.replace(/\/[^/]*$/, '');
+
+    function apiFetch(path) {
+      return fetch(BASE + path, { headers: { Accept: 'application/json' } })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        });
+    }
+
+    function h(tag, attrs, children) {
+      var el = document.createElement(tag);
+      if (attrs) Object.keys(attrs).forEach(function (k) {
+        if (k === 'class') el.className = attrs[k];
+        else el.setAttribute(k, attrs[k]);
+      });
+      (children || []).forEach(function (c) {
+        el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+      });
+      return el;
+    }
+
+    function setContent(el) {
+      var c = document.getElementById('content');
+      c.innerHTML = '';
+      c.appendChild(el);
+    }
+
+    function loading() {
+      return h('p', {}, ['Loading...']);
+    }
+
+    function errorMsg(msg) {
+      return h('p', { class: 'text-danger' }, ['Error: ' + msg]);
+    }
+
+    // ---- Pages ----
+
+    function pageApplication() {
+      setContent(loading());
+      apiFetch('/application').then(function (data) {
+        var config = data.configuration || {};
+        var div = h('div', {});
+
+        div.appendChild(h('h2', {}, ['Application']));
+        var dl = h('dl', {});
+        [
+          ['Name', config.applicationName || ''],
+          ['Base directory', config.baseDirectory || ''],
+          ['Source directory', config.sourceDirectory || ''],
+        ].forEach(function (pair) {
+          dl.appendChild(h('dt', {}, [pair[0]]));
+          dl.appendChild(h('dd', {}, [pair[1]]));
+        });
+        div.appendChild(dl);
+
+        if (config.packages && config.packages.length) {
+          div.appendChild(h('h4', {}, ['Packages']));
+          var ul = h('ul', {});
+          config.packages.forEach(function (p) {
+            ul.appendChild(h('li', {}, [p]));
+          });
+          div.appendChild(ul);
+        }
+
+        if (config.features && config.features.length) {
+          div.appendChild(h('h4', {}, ['Features']));
+          var table = h('table', {});
+          var thead = h('thead', {});
+          thead.appendChild(h('tr', {}, [h('th', {}, ['groupId']), h('th', {}, ['artifactId']), h('th', {}, ['version'])]));
+          table.appendChild(thead);
+          var tbody = h('tbody', {});
+          config.features.forEach(function (f) {
+            tbody.appendChild(h('tr', {}, [
+              h('td', {}, [f.groupId || '']),
+              h('td', {}, [f.artifactId || '']),
+              h('td', {}, [f.version || '']),
+            ]));
+          });
+          table.appendChild(tbody);
+          div.appendChild(table);
+        }
+
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageThread() {
+      setContent(loading());
+      apiFetch('/thread').then(function (data) {
+        var threads = data.threads || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Thread dump']));
+        threads.forEach(function (t) {
+          var block = h('div', { class: 'thread-block' });
+          block.appendChild(h('strong', {}, [t.threadName + ' (' + t.threadState + ')']));
+          var pre = document.createElement('pre');
+          pre.className = 'stack-trace';
+          pre.textContent = (t.stackTrace || []).join('\n');
+          block.appendChild(pre);
+          div.appendChild(block);
+        });
+        if (!threads.length) div.appendChild(h('p', {}, ['No threads.']));
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageHeap() {
+      setContent(loading());
+      apiFetch('/heap').then(function (data) {
+        var rows = data.heapdump || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Heap dump']));
+        var table = h('table', {});
+        var thead = h('thead', {});
+        thead.appendChild(h('tr', {}, [
+          h('th', {}, ['Class name']),
+          h('th', {}, ['Instance count']),
+          h('th', {}, ['Total size (bytes)']),
+        ]));
+        table.appendChild(thead);
+        var tbody = h('tbody', {});
+        rows.forEach(function (r) {
+          tbody.appendChild(h('tr', {}, [
+            h('td', {}, [r.className || '']),
+            h('td', {}, [String(r.instanceCount || 0)]),
+            h('td', {}, [String(r.totalSize || 0)]),
+          ]));
+        });
+        table.appendChild(tbody);
+        div.appendChild(table);
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageEnv() {
+      setContent(loading());
+      apiFetch('/env').then(function (data) {
+        var div = h('div', {});
+
+        function kvTable(title, pairs) {
+          div.appendChild(h('h4', {}, [title]));
+          var table = h('table', {});
+          var thead = h('thead', {});
+          thead.appendChild(h('tr', {}, [h('th', {}, ['Key']), h('th', {}, ['Value'])]));
+          table.appendChild(thead);
+          var tbody = h('tbody', {});
+          (pairs || []).forEach(function (p) {
+            tbody.appendChild(h('tr', {}, [h('td', {}, [p.key || '']), h('td', {}, [p.value || ''])]));
+          });
+          table.appendChild(tbody);
+          div.appendChild(table);
+        }
+
+        div.appendChild(h('h2', {}, ['Environments']));
+        kvTable('Environment variables', data.environments);
+        kvTable('System properties', data.properties);
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageServer() {
+      setContent(loading());
+      apiFetch('/server').then(function (data) {
+        var meta = data.serverMetadata || {};
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Server']));
+        var dl = h('dl', {});
+        [['Name', meta.name || ''], ['Status', meta.status || '']].forEach(function (pair) {
+          dl.appendChild(h('dt', {}, [pair[0]]));
+          dl.appendChild(h('dd', {}, [pair[1]]));
+        });
+        div.appendChild(dl);
+
+        // Reload button
+        var btn = h('button', { class: 'btn btn-warning' }, ['Reload']);
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          fetch(BASE + '/server/reload', { method: 'POST' })
+            .then(function () { btn.textContent = 'Reloaded'; })
+            .catch(function () { btn.textContent = 'Failed'; })
+            .finally(function () { btn.disabled = false; });
+        });
+        div.appendChild(btn);
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    // ---- Router ----
+
+    var pages = {
+      application: pageApplication,
+      thread: pageThread,
+      heap: pageHeap,
+      env: pageEnv,
+      server: pageServer,
+    };
+
+    function navigate(page) {
+      document.querySelectorAll('[data-page]').forEach(function (a) {
+        a.classList.toggle('active', a.dataset.page === page);
+      });
+      window.location.hash = page;
+      (pages[page] || pageApplication)();
+    }
+
+    document.querySelectorAll('[data-page]').forEach(function (a) {
+      a.addEventListener('click', function () { navigate(a.dataset.page); });
+    });
+
+    // Initial route from hash
+    var initial = (window.location.hash || '#application').replace(/^#/, '') || 'application';
+    navigate(pages[initial] ? initial : 'application');
+  })();
+  </script>
+</body>
 </html>

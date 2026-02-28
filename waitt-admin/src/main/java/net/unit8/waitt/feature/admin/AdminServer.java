@@ -9,6 +9,7 @@ import net.unit8.waitt.api.configuration.WebappConfiguration;
 import net.unit8.waitt.feature.admin.routes.*;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -48,6 +49,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void config(WebappConfiguration config) {
+        app.addRoutes(new CorsAction());
         app.addRoutes(new AppAction(config));
         app.addRoutes(new EnvPropertyAction());
         app.addRoutes(new ThreadDumpAction());
@@ -59,7 +61,11 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
                 if (featureConfig != null) {
                     String portStr = featureConfig.get("admin.port");
                     if (portStr != null) {
-                        adminPort = Integer.parseInt(portStr);
+                        try {
+                            adminPort = Integer.parseInt(portStr);
+                        } catch (NumberFormatException e) {
+                            LOG.warning("Invalid admin.port value: " + portStr + ", using default port " + adminPort);
+                        }
                     }
                 }
             }
@@ -78,7 +84,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         app.addRoutes(new ServerAction(server, rrdPath));
         app.addRoutes(new ReloadAction(server));
         try {
-            adminServer = HttpServer.create(new InetSocketAddress(adminPort), 0);
+            adminServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), adminPort), 0);
             adminServer.setExecutor(executorService);
             adminServer.createContext("/", app);
             adminServer.start();
@@ -89,6 +95,18 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void stop() {
+        if (adminServer != null) {
+            adminServer.stop(0);
+        }
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
 }

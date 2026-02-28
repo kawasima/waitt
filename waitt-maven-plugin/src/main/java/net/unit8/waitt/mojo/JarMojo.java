@@ -25,9 +25,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
-import org.codehaus.plexus.logging.Logger;
-import org.codehaus.plexus.logging.console.ConsoleLogger;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -61,7 +58,7 @@ public class JarMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.finalName}", readonly = true)
     private String finalName;
 
-    @Parameter(property="embeddedRunnerVersion", defaultValue="1.2.1")
+    @Parameter(property="embeddedRunnerVersion", defaultValue="${project.version}")
     private String embeddedRunnerVersion;
 
     @Parameter
@@ -108,7 +105,7 @@ public class JarMojo extends AbstractMojo {
             mainClassField.set(transformer, mainClass);
             return transformer;
         } catch (Exception e) {
-            throw new MojoExecutionException("", e);
+            throw new MojoExecutionException("Failed to create manifest transformer", e);
         }
     }
 
@@ -130,11 +127,10 @@ public class JarMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (servers.isEmpty()) {
+        if (servers == null || servers.isEmpty()) {
             throw new MojoFailureException("Server is not found.");
         }
         DefaultShader shader = new DefaultShader();
-        shader.enableLogging(new ConsoleLogger(Logger.LEVEL_DEBUG, "shader"));
 
         ShadeRequest request = new ShadeRequest();
 
@@ -161,7 +157,7 @@ public class JarMojo extends AbstractMojo {
         try {
             shader.shade(request);
         } catch (IOException ex) {
-            throw new MojoExecutionException("", ex);
+            throw new MojoExecutionException("Failed to create shaded JAR", ex);
         }
     }
 

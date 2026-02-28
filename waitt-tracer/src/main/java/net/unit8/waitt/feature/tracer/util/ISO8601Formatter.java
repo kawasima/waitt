@@ -10,6 +10,11 @@ public class ISO8601Formatter {
     public static String format(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
+        int offsetMs = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
+        int offsetMinutes = offsetMs / 60000;
+        int offsetHours = offsetMinutes / 60;
+        int offsetMins = Math.abs(offsetMinutes % 60);
+        String tz = String.format("%+03d:%02d", offsetHours, offsetMins);
         String sb = lpad(cal.get(Calendar.YEAR), 4) +
                 '-' +
                 lpad(cal.get(Calendar.MONTH) + 1, 2) +
@@ -22,7 +27,8 @@ public class ISO8601Formatter {
                 ':' +
                 lpad(cal.get(Calendar.SECOND), 2) +
                 '.' +
-                lpad(cal.get(Calendar.MILLISECOND), 3);
+                lpad(cal.get(Calendar.MILLISECOND), 3) +
+                tz;
         return sb;
     }
 
@@ -30,11 +36,11 @@ public class ISO8601Formatter {
         String elStr = Integer.toString(dateElement);
         int elStrLen = elStr.length();
         if (elStrLen >= length) {
-            return elStr.substring(elStrLen - elStr.length());
+            return elStr.substring(elStrLen - length);
         } else {
             StringBuilder sb = new StringBuilder(length);
             for (int i=0; i < length - elStrLen; i++)
-                sb.append(' ');
+                sb.append('0');
             sb.append(elStr);
             return sb.toString();
         }

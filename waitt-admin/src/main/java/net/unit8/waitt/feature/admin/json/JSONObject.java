@@ -100,7 +100,7 @@ public class JSONObject extends HashMap<String, Object> implements Map<String, O
 	}
 
 	public static String toString(String key,Object value){
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append('\"');
         if(key == null)
             sb.append("null");

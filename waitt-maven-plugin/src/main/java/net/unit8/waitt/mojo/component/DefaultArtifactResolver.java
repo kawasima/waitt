@@ -43,6 +43,7 @@ public class DefaultArtifactResolver implements ArtifactResolver {
             for (Exception e : artifactResult.getExceptions()) {
                 LOG.log(Level.SEVERE, "resolve error.", e);
             }
+            throw new RuntimeException("Failed to resolve artifact: " + artifact);
         }
         try {
             ClassRealm realm = new ClassRealm(parent.getWorld(), artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion(), ClassLoader.getSystemClassLoader());

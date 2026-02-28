@@ -1,15 +1,16 @@
 package net.unit8.waitt.feature.jacoco;
 
-import org.jacoco.agent.rt.internal_b6258fc.asm.MethodVisitor;
-import org.jacoco.agent.rt.internal_b6258fc.asm.Opcodes;
-import org.jacoco.agent.rt.internal_b6258fc.core.instr.Instrumenter;
-import org.jacoco.agent.rt.internal_b6258fc.core.internal.instr.InstrSupport;
-import org.jacoco.agent.rt.internal_b6258fc.core.runtime.IExecutionDataAccessorGenerator;
+import org.jacoco.agent.rt.internal_aeaf9ab.asm.MethodVisitor;
+import org.jacoco.agent.rt.internal_aeaf9ab.asm.Opcodes;
+import org.jacoco.agent.rt.internal_aeaf9ab.core.instr.Instrumenter;
+import org.jacoco.agent.rt.internal_aeaf9ab.core.internal.instr.InstrSupport;
+import org.jacoco.agent.rt.internal_aeaf9ab.core.runtime.IExecutionDataAccessorGenerator;
 import org.jacoco.core.JaCoCo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Set;
@@ -21,8 +22,8 @@ import java.util.logging.Logger;
  */
 public class JacocoClassLoader extends URLClassLoader {
     private static final Logger logger = Logger.getLogger(JacocoClassLoader.class.getName());
-    private static JacocoClassLoader instance;
-    private Set<String> targetPackages;
+    private static volatile JacocoClassLoader instance;
+    private Set<String> targetPackages = Collections.emptySet();
 
     private Instrumenter instrumenter = null;
 
@@ -68,11 +69,11 @@ public class JacocoClassLoader extends URLClassLoader {
         if (clazz != null) {
             return clazz;
         }
-        Boolean isTargetPackage = false;
+        boolean isTargetPackage = false;
         for (String pkgName : targetPackages) {
             isTargetPackage |= className.startsWith(pkgName);
         }
-        if (isTargetPackage) {
+        if (isTargetPackage && !className.contains("$$")) {
             logger.fine("[ClassLoad] " + className + " from JaCoCoLoader");
             return defineClass(className, resolve);
         } else {
@@ -84,6 +85,10 @@ public class JacocoClassLoader extends URLClassLoader {
         Class clazz;
         String path = className.replace('.', '/') + ".class";
         InputStream is = getParent().getResourceAsStream(path);
+
+        if (is == null) {
+            throw new ClassNotFoundException(className + " (resource not found in " + getParent() + ")");
+        }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(32768);
         try {

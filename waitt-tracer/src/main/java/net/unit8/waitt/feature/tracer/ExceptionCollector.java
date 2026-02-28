@@ -14,7 +14,7 @@ import net.unit8.waitt.feature.tracer.entry.ExceptionLogEntry;
  */
 public class ExceptionCollector implements LogListener, ConfigurableFeature {
     private static final Logger LOG = Logger.getLogger(ExceptionCollector.class.getName());
-    private ESClient esClient;
+    private volatile ESClient esClient;
 
     @Override
     public void config(WebappConfiguration config) {
@@ -48,7 +48,7 @@ public class ExceptionCollector implements LogListener, ConfigurableFeature {
 
     @Override
     public void error(CharSequence message, Throwable t) {
-        if (t != null) {
+        if (t != null && esClient != null) {
             esClient.post("/waitt/exception/", new ExceptionLogEntry(message.toString(), t.getStackTrace()));
         }
     }

@@ -48,6 +48,13 @@ public class Runner {
         } catch (Exception e) {
             throw new RuntimeException("Fail to start server", e);
         } finally {
+            for (ServerMonitor serverMonitor : serverMonitors) {
+                try {
+                    serverMonitor.stop();
+                } catch (Exception e) {
+                    // log or ignore
+                }
+            }
             embeddedServer.stop();
         }
     }
@@ -63,9 +70,9 @@ public class Runner {
         }
         Runner runner = new Runner();
         runner.setPort(Integer.parseInt(cmd.getOptionValue("port", "3000")));
-        runner.setContextPath(cmd.getOptionValue("path", ""));
+        runner.setContextPath(cmd.getOptionValue("prefix", ""));
         String appdir = cmd.getOptionValue("appdir", ".");
-        if (!appdir.startsWith("/")) {
+        if (!new File(appdir).isAbsolute()) {
             appdir = new File(appdir).getAbsolutePath();
         }
         runner.setDocBase(appdir);

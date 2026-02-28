@@ -49,7 +49,7 @@ public class HeapDumpAction  implements Route {
             List<HeapHistogram.ClassRecord> ht = new ArrayList<HeapHistogram.ClassRecord>(histo.getHisto());
             ht.add(collector.asClassRecord());
             Collections.sort(ht, HeapHistogram.BY_SIZE);
-            List<HeapHistogram.ClassRecord> top500 = ht.subList(0, 500);
+            List<HeapHistogram.ClassRecord> top500 = ht.subList(0, Math.min(ht.size(), 500));
 
             JSONArray records = new JSONArray();
             for (HeapHistogram.ClassRecord r : top500) {

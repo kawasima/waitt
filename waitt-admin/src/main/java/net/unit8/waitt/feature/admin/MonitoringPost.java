@@ -9,11 +9,14 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author kawasima
  */
 public class MonitoringPost implements Runnable {
+    private static final Logger LOG = Logger.getLogger(MonitoringPost.class.getName());
     private final String rrdPath;
 
     public MonitoringPost(String rrdPath) {
@@ -21,7 +24,7 @@ public class MonitoringPost implements Runnable {
     }
 
     protected RrdDef createRrdDef() {
-        RrdDef def = new RrdDef(rrdPath, 300);
+        RrdDef def = new RrdDef(rrdPath, 60);
         def.addArchive(ConsolFun.AVERAGE, 0.5, 1, 288);
         def.addArchive(ConsolFun.AVERAGE, 0.5, 3, 672);
         def.addArchive(ConsolFun.AVERAGE, 0.5, 12, 744);
@@ -68,16 +71,17 @@ public class MonitoringPost implements Runnable {
 
     @Override
     public void run() {
-        while(true) {
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 update();
-            } catch (IOException ignore) {
-                ignore.printStackTrace();
+            } catch (IOException e) {
+                LOG.log(Level.WARNING, "Failed to update RRD", e);
             }
 
             try {
                 TimeUnit.MINUTES.sleep(1);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 break;
             }
         }

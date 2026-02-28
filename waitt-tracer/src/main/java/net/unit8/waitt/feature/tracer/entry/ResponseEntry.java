@@ -9,10 +9,20 @@ import java.net.UnknownHostException;
  * @author kawasima
  */
 public class ResponseEntry extends EntryBase {
+    private static final String CACHED_HOST_NAME;
+    static {
+        String name;
+        try {
+            name = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            name = "UNKNOWN";
+        }
+        CACHED_HOST_NAME = name;
+    }
+
     @NonNull
     private String requestUri;
 
-    @NonNull
     private int statusCode;
 
     @NonNull
@@ -26,13 +36,7 @@ public class ResponseEntry extends EntryBase {
         this.requestUri = requestUri;
         this.statusCode = statusCode;
         this.responseBody = responseBody;
-
-        try {
-            hostName = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            hostName = "UNKNOWN";
-        }
-
+        this.hostName = CACHED_HOST_NAME;
     }
 
     public String getHostName() {
@@ -52,7 +56,6 @@ public class ResponseEntry extends EntryBase {
         return this.requestUri;
     }
 
-    @NonNull
     public int getStatusCode() {
         return this.statusCode;
     }
@@ -66,7 +69,7 @@ public class ResponseEntry extends EntryBase {
         this.requestUri = requestUri;
     }
 
-    public void setStatusCode(@NonNull int statusCode) {
+    public void setStatusCode(int statusCode) {
         this.statusCode = statusCode;
     }
 

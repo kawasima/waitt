@@ -25,6 +25,7 @@ public class AdminServerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         when(exchange.getResponseBody()).thenReturn(baos);
         when(exchange.getResponseHeaders()).thenReturn(new Headers());
+        when(exchange.getRequestHeaders()).thenReturn(new Headers());
         appAction.handle(exchange);
     }
 }

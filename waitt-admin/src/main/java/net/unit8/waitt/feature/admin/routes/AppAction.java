@@ -9,7 +9,6 @@ import net.unit8.waitt.feature.admin.json.JSONArray;
 import net.unit8.waitt.feature.admin.json.JSONObject;
 
 import java.io.IOException;
-import java.io.StringWriter;
 
 /**
  * Provide information about the application.
@@ -31,7 +30,6 @@ public class AppAction implements Route {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        StringWriter sw = new StringWriter();
         JSONObject json = new JSONObject();
         json.put("applicationName", config.getApplicationName());
         json.put("sourceDirectory", config.getSourceDirectory().getAbsolutePath());

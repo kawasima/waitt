@@ -10,6 +10,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -23,9 +25,13 @@ public class AdminConfig {
     public void read() {
         File pomFile = new File("pom.xml");
         if (pomFile.exists()) {
-            try {
-                DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document doc = documentBuilder.parse(new FileInputStream(pomFile));
+            try (InputStream is = new FileInputStream(pomFile)) {
+                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+                dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                DocumentBuilder documentBuilder = dbf.newDocumentBuilder();
+                Document doc = documentBuilder.parse(is);
                 XPathFactory factory = XPathFactory.newInstance();
                 XPath xpath = factory.newXPath();
 
@@ -39,8 +45,10 @@ public class AdminConfig {
                         adminPort = Integer.parseInt(portStr);
                     }
                 }
-            } catch(Exception e) {
-                LOG.info("read pom failure. Disabled an admin feature.");
+            } catch (NumberFormatException e) {
+                LOG.log(Level.WARNING, "Invalid admin.port value in pom.xml", e);
+            } catch (Exception e) {
+                LOG.log(Level.WARNING, "read pom failure. Disabled an admin feature.", e);
             }
         }
     }

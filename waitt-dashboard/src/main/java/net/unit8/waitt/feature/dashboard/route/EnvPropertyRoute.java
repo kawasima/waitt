@@ -1,15 +1,15 @@
 package net.unit8.waitt.feature.dashboard.route;
 
 import com.google.gson.Gson;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import net.unit8.waitt.feature.dashboard.Route;
 
 import java.util.*;
 
 public class EnvPropertyRoute implements Route {
     @Override
-    public Object handle(Request request, Response response) throws Exception {
+    public Object handle(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, Object> attributes = new HashMap<String, Object>();
         List<KeyValuePair> environments = new ArrayList<KeyValuePair>();
         for (Map.Entry<String, String> e : System.getenv().entrySet()) {
@@ -30,13 +30,15 @@ public class EnvPropertyRoute implements Route {
         private final String key;
         private final String value;
 
-        KeyValuePair(String key, String value){
+        KeyValuePair(String key, String value) {
             this.key = key;
-            this.value =value;
+            this.value = value;
         }
+
         public String getKey() {
             return key;
         }
+
         public String getValue() {
             return value;
         }
