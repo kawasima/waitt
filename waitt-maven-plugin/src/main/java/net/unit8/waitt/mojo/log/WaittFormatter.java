@@ -34,10 +34,10 @@ public class WaittFormatter extends Formatter {
 
         if (record.getThrown() != null) {
             StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            pw.println();
-            record.getThrown().printStackTrace(pw);
-            pw.close();
+            try (PrintWriter pw = new PrintWriter(sw)) {
+                pw.println();
+                record.getThrown().printStackTrace(pw);
+            }
             sb.append(sw.toString());
         }
 

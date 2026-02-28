@@ -21,7 +21,6 @@
         <dependency>
             <groupId>org.gridkit.jvmtool</groupId>
             <artifactId>hprof-heap</artifactId>
-            <version>0.16</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

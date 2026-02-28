@@ -158,7 +158,8 @@ public class Tomcat11EmbeddedServer implements EmbeddedServer {
                         filterMap.addURLPattern(urlPattern);
                     }
                     context.addFilterMap(filterMap);
-
+                }
+                if (decorator.getClass().getClassLoader() instanceof ClassRealm && loader instanceof ClassRealm) {
                     for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
                         ((ClassRealm) loader).addURL(url);
                     }

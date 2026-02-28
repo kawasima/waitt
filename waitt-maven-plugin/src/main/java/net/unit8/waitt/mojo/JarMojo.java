@@ -105,7 +105,7 @@ public class JarMojo extends AbstractMojo {
             mainClassField.set(transformer, mainClass);
             return transformer;
         } catch (Exception e) {
-            throw new MojoExecutionException("", e);
+            throw new MojoExecutionException("Failed to create manifest transformer", e);
         }
     }
 
@@ -157,7 +157,7 @@ public class JarMojo extends AbstractMojo {
         try {
             shader.shade(request);
         } catch (IOException ex) {
-            throw new MojoExecutionException("", ex);
+            throw new MojoExecutionException("Failed to create shaded JAR", ex);
         }
     }
 

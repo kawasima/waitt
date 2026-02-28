@@ -29,18 +29,15 @@ public class ServerRestartRoute implements Route {
             return new Gson().toJson(problem);
         }
         HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + adminConfig.getAdminPort() + "/reload").openConnection();
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(5000);
         conn.setDoOutput(true);
         conn.setRequestMethod("POST");
 
         try {
             conn.getOutputStream().close();
-            InputStream is = conn.getInputStream();
-            try {
-                //noinspection StatementWithEmptyBody
-                while (is.read() >= 0) ;
-                is.close();
-            } finally {
-                is.close();
+            try (InputStream is = conn.getInputStream()) {
+                while (is.read() >= 0) { /* drain */ }
             }
 
             Map<String, Object> body = new HashMap<String, Object>();

@@ -26,12 +26,12 @@ public class ApplicationRoute implements Route {
         Map<String, Object> attributes = new HashMap<String, Object>();
         if (adminConfig.isAdminAvailable()) {
             HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + adminConfig.getAdminPort() + "/app").openConnection();
-            InputStream in = conn.getInputStream();
-            try {
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            try (InputStream in = conn.getInputStream()) {
                 WebappConfiguration config = JAXB.unmarshal(in, WebappConfiguration.class);
                 attributes.put("configuration", config);
             } finally {
-                in.close();
                 conn.disconnect();
             }
         }

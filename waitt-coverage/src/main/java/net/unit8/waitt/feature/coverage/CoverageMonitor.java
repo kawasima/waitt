@@ -73,5 +73,13 @@ public class CoverageMonitor implements ServerMonitor,ConfigurableFeature {
     @Override
     public void stop() {
         executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }

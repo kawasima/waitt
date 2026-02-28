@@ -14,17 +14,10 @@ public class CorsAction implements Route {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String accessControlRequestHeaders = exchange.getRequestHeaders().getFirst("Access-Control-Request-Headers");
-        if (accessControlRequestHeaders != null) {
-            exchange.getResponseHeaders().put("Access-Control-Allow-Headers",
-                    Arrays.asList(accessControlRequestHeaders));
-        }
-
-        String accessControlRequestMethods = exchange.getRequestHeaders().getFirst("Access-Control-Request-Methods");
-        if (accessControlRequestMethods != null) {
-            exchange.getResponseHeaders().put("Access-Control-Allow-Methods",
-                    Arrays.asList(accessControlRequestMethods));
-        }
+        exchange.getResponseHeaders().put("Access-Control-Allow-Headers",
+                Arrays.asList("Content-Type", "Accept"));
+        exchange.getResponseHeaders().put("Access-Control-Allow-Methods",
+                Arrays.asList("GET", "POST", "OPTIONS"));
 
         exchange.sendResponseHeaders(200, -1);
     }

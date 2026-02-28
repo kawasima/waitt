@@ -30,11 +30,11 @@ public class ISO8601Formatter {
         String elStr = Integer.toString(dateElement);
         int elStrLen = elStr.length();
         if (elStrLen >= length) {
-            return elStr.substring(elStrLen - elStr.length());
+            return elStr.substring(elStrLen - length);
         } else {
             StringBuilder sb = new StringBuilder(length);
             for (int i=0; i < length - elStrLen; i++)
-                sb.append(' ');
+                sb.append('0');
             sb.append(elStr);
             return sb.toString();
         }

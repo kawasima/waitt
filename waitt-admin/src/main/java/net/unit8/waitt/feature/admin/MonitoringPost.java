@@ -68,16 +68,17 @@ public class MonitoringPost implements Runnable {
 
     @Override
     public void run() {
-        while(true) {
+        while (!Thread.currentThread().isInterrupted()) {
             try {
                 update();
-            } catch (IOException ignore) {
-                ignore.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
             try {
                 TimeUnit.MINUTES.sleep(1);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 break;
             }
         }

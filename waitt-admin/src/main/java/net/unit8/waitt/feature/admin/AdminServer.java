@@ -90,6 +90,18 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void stop() {
+        if (adminServer != null) {
+            adminServer.stop(0);
+        }
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
 }

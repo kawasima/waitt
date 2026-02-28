@@ -40,7 +40,7 @@ public class HeapDumpRoute implements Route {
             List<HeapHistogram.ClassRecord> ht = new ArrayList<HeapHistogram.ClassRecord>(histo.getHisto());
             ht.add(collector.asClassRecord());
             Collections.sort(ht, HeapHistogram.BY_SIZE);
-            return ht.subList(0, 500);
+            return ht.subList(0, Math.min(ht.size(), 500));
         } finally {
             if (dumpFile != null && dumpFile.exists()) {
                 dumpFile.delete();

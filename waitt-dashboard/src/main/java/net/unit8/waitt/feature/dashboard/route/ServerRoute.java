@@ -10,6 +10,7 @@ import spark.Route;
 
 import javax.xml.bind.JAXB;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,12 +26,14 @@ public class ServerRoute implements Route {
     public Object handle(Request request, Response response) throws Exception {
         Map<String, Object> attributes = new HashMap<String, Object>();
         if (adminConfig.isAdminAvailable()) {
-            InputStream in = new URL("http://localhost:" + adminConfig.getAdminPort() + "/server").openStream();
-            try {
+            HttpURLConnection conn = (HttpURLConnection) new URL("http://localhost:" + adminConfig.getAdminPort() + "/server").openConnection();
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+            try (InputStream in = conn.getInputStream()) {
                 ServerMetadata metadata = JAXB.unmarshal(in, ServerMetadata.class);
                 attributes.put("serverMetadata", metadata);
             } finally {
-                in.close();
+                conn.disconnect();
             }
         }
         attributes.put("adminAvailable", adminConfig.isAdminAvailable());

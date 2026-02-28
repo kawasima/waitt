@@ -89,11 +89,9 @@ public class CoberturaClassLoader extends ClassLoader {
             IOUtil.closeInputStream(is);
         }
 
-        if (is != null) {
-            clazz = defineClass(className, instrumentationResult);
-            if (resolve) {
-                resolveClass(clazz);
-            }
+        clazz = defineClass(className, instrumentationResult);
+        if (resolve) {
+            resolveClass(clazz);
         }
 
         return clazz;

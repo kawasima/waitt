@@ -15,19 +15,11 @@ public class WaittLogFilter implements Filter {
 
     WaittLogFilter() {
         Properties props = new Properties();
-        InputStream in = null;
-        try {
-            in = getClass().getClassLoader().getResourceAsStream("waitt-loglevel.properties");
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream("waitt-loglevel.properties")) {
             if (in != null) {
                 props.load(in);
             }
         } catch (IOException ignore) {
-
-        } finally {
-            try {
-                if (in != null)
-                    in.close();
-            } catch (IOException ignore2) {}
         }
 
         matchers = new ArrayList<LoggerMatcher>();

@@ -25,7 +25,11 @@ public class AdminConfig {
         File pomFile = new File("pom.xml");
         if (pomFile.exists()) {
             try (InputStream is = new FileInputStream(pomFile)) {
-                DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+                dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+                DocumentBuilder documentBuilder = dbf.newDocumentBuilder();
                 Document doc = documentBuilder.parse(is);
                 XPathFactory factory = XPathFactory.newInstance();
                 XPath xpath = factory.newXPath();

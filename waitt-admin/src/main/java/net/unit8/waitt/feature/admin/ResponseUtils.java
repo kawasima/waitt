@@ -10,7 +10,7 @@ public class ResponseUtils {
     public static void responseJSON(HttpExchange exchange, JSONObject jsonObject) throws IOException {
         exchange.getResponseHeaders().put("content-type", Collections.singletonList("application/json"));
         exchange.getResponseHeaders().put("Access-Control-Allow-Origin", Collections.singletonList("*"));
-        exchange.getResponseHeaders().put("Access-Control-Allow-Headers", Collections.singletonList("*"));
+        exchange.getResponseHeaders().put("Access-Control-Allow-Headers", Collections.singletonList("Content-Type, Accept"));
 
         byte[] json = jsonObject.toJSONString().getBytes("UTF-8");
         exchange.sendResponseHeaders(200, json.length);
