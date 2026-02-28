@@ -60,35 +60,29 @@ All submodule versions are managed from the parent POM. Submodule-to-submodule d
 
 ### Version UP (development)
 
+Use the update script to set a new version across all modules, README.md, and examples at once:
+
 ```bash
-# Set new version across all modules at once
-mvn versions:set -DnewVersion=1.4.0-SNAPSHOT -DgenerateBackupPoms=false
+./scripts/update-version.sh 1.4.0-SNAPSHOT
 ```
 
-This updates the parent POM version and all submodule `<parent><version>` entries automatically.
-
-**Note:** `examples/` are outside the reactor. After `versions:set`, update `<waitt.version>` property in each example's pom.xml manually:
-
-- `examples/sa-struts/pom.xml`
-- `examples/struts2/pom.xml`
-- `examples/spring-boot/pom.xml`
-- `examples/nablarch/pom.xml`
+This runs `mvn versions:set`, updates `<version>` in `README.md`, and updates `<waitt.version>` in all `examples/*/pom.xml`.
 
 ### Release to Maven Central
 
 ```bash
 # 1. Set release version
-mvn versions:set -DnewVersion=1.3.1 -DgenerateBackupPoms=false
+./scripts/update-version.sh 1.4.0
 
 # 2. Commit and tag
-git add -A && git commit -m "Release v1.3.1"
-git tag v1.3.1
+git add -A && git commit -m "Release v1.4.0"
+git tag v1.4.0
 
 # 3. Deploy with release profile (source, javadoc, GPG signing)
 mvn clean deploy -Prelease
 
 # 4. Set next development version
-mvn versions:set -DnewVersion=1.3.2-SNAPSHOT -DgenerateBackupPoms=false
+./scripts/update-version.sh 1.4.1-SNAPSHOT
 git add -A && git commit -m "Prepare next development version"
 
 # 5. Push
