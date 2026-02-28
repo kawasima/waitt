@@ -1,12 +1,11 @@
 package net.unit8.waitt.feature.dashboard.route;
 
 import com.google.gson.Gson;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import net.unit8.waitt.feature.dashboard.AdminConfig;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import net.unit8.waitt.feature.dashboard.Route;
 
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -23,10 +22,10 @@ public class ServerRestartRoute implements Route {
     }
 
     @Override
-    public Object handle(Request request, Response response) throws Exception {
-        response.type("application/json");
+    public Object handle(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        response.setContentType("application/json");
         if (!adminConfig.isAdminAvailable()) {
-            response.status(403);
+            response.setStatus(403);
             Map<String, Object> problem = new HashMap<String, Object>();
             problem.put("detail", "Admin feature is unavailable");
             return new Gson().toJson(problem);
@@ -39,16 +38,21 @@ public class ServerRestartRoute implements Route {
 
         try {
             conn.getOutputStream().close();
-            try (InputStream is = conn.getInputStream()) {
-                while (is.read() >= 0) { /* drain */ }
+            int code = conn.getResponseCode();
+            if (code >= 200 && code < 300) {
+                Map<String, Object> body = new HashMap<String, Object>();
+                body.put("detail", "Restarted successfully");
+                return new Gson().toJson(body);
+            } else {
+                LOG.log(Level.SEVERE, "Server restart failed with HTTP " + code);
+                response.setStatus(500);
+                Map<String, Object> problem = new HashMap<String, Object>();
+                problem.put("title", "Internal Server Error");
+                return new Gson().toJson(problem);
             }
-
-            Map<String, Object> body = new HashMap<String, Object>();
-            body.put("detail", "Restarted successfully");
-            return new Gson().toJson(body);
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Server restart failed", e);
-            response.status(500);
+            response.setStatus(500);
             Map<String, Object> problem = new HashMap<String, Object>();
             problem.put("title", "Internal Server Error");
             return new Gson().toJson(problem);

@@ -20,7 +20,9 @@ import org.eclipse.jetty.ee10.webapp.WebInfConfiguration;
 import org.eclipse.jetty.ee10.webapp.WebXmlConfiguration;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
 
@@ -45,6 +47,7 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     private final ContextHandlerCollection handlers;
     private WebAppContext mainWebapp;
     private List<WebappDecorator> decorators;
+    private boolean started = false;
 
     public Jetty12EmbeddedServer() {
         server = new Server();
@@ -71,20 +74,24 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     @Override
     public void setMainContext(String contextPath, String baseDir, ClassLoader loader) {
         mainWebapp = addWebapp(contextPath, baseDir, loader, true);
-        try {
-            mainWebapp.start();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
     public void addContext(String contextPath, String baseDir, ClassLoader loader) {
-        WebAppContext webapp = addWebapp(contextPath, baseDir, loader, false);
-        try {
-            webapp.start();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        File base = new File(baseDir);
+        // WAR file → deploy as a full webapp; plain directory → serve as static files
+        if (base.isFile() && baseDir.endsWith(".war")) {
+            addWebapp(contextPath, baseDir, loader, false);
+        } else {
+            if (!base.exists()) {
+                base.mkdirs();
+            }
+            ResourceHandler resourceHandler = new ResourceHandler();
+            resourceHandler.setBaseResource(ResourceFactory.of(resourceHandler).newResource(base.toPath()));
+            resourceHandler.setDirAllowed(true);
+            ContextHandler contextHandler = new ContextHandler(contextPath);
+            contextHandler.setHandler(resourceHandler);
+            handlers.addHandler(contextHandler);
         }
     }
 
@@ -95,6 +102,12 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void start() {
+        // Deferred: actual server start happens in await() after all contexts are registered.
+        // AbstractRunMojo calls start() before setMainContext(), so we cannot start here.
+        started = true;
+    }
+
+    private void doStart() {
         try {
             server.start();
         } catch (Exception e) {
@@ -104,6 +117,9 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void reload() {
+        if (mainWebapp == null) {
+            throw new IllegalStateException("Main context has not been set");
+        }
         try {
             mainWebapp.stop();
             mainWebapp.start();
@@ -116,6 +132,8 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     public ServerStatus getStatus() {
         if (server.isRunning()) {
             return ServerStatus.RUNNING;
+        } else if (started && !server.isRunning()) {
+            return ServerStatus.RUNNING; // started flag set, server about to run
         } else if (server.isStopped()) {
             return ServerStatus.STOPPED;
         } else {
@@ -125,6 +143,9 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void await() {
+        if (!server.isRunning()) {
+            doStart();
+        }
         try {
             server.join();
         } catch (InterruptedException e) {
@@ -170,6 +191,10 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
         }
 
         webapp.setExtractWAR(true);
+        webapp.setThrowUnavailableOnStartupException(true);
+        // Disable the default descriptor: its servlets/listeners (DefaultServlet, IntrospectorCleaner)
+        // cannot be loaded via the ClassRealm-based classloader hierarchy used by waitt.
+        webapp.setDefaultsDescriptor(null);
         // Let AnnotationConfiguration discover JettyJasperInitializer via ServiceLoader
         webapp.setAttribute(
                 "org.eclipse.jetty.containerInitializerOrder",
