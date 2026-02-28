@@ -6,6 +6,9 @@
     <version>0.1.0-SNAPSHOT</version>
     <packaging>war</packaging>
     <description/>
+    <properties>
+        <waitt.version>1.3.1-SNAPSHOT</waitt.version>
+    </properties>
     <build>
         <finalName>${artifactId}</finalName>
         <plugins>
@@ -52,7 +55,7 @@
             <plugin>
                 <groupId>net.unit8.waitt</groupId>
                 <artifactId>waitt-maven-plugin</artifactId>
-                <version>1.3.1-SNAPSHOT</version>
+                <version>${waitt.version}</version>
                 <configuration>
                     <forkJvm>true</forkJvm>
                     <forkJdkVersion>1.8</forkJdkVersion>
@@ -60,7 +63,7 @@
                         <server>
                             <groupId>net.unit8.waitt.server</groupId>
                             <artifactId>waitt-tomcat9</artifactId>
-                            <version>1.3.1-SNAPSHOT</version>
+                            <version>${waitt.version}</version>
                         </server>
                     </servers>
                 </configuration>

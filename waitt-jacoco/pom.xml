@@ -14,7 +14,6 @@
 
     <properties>
         <jacoco.version>0.8.8</jacoco.version>
-        <commons-io.version>2.11.0</commons-io.version>
     </properties>
 
     <dependencies>
@@ -59,11 +58,6 @@
             <groupId>org.jacoco</groupId>
             <artifactId>org.jacoco.report</artifactId>
             <version>${jacoco.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
         </dependency>
     </dependencies>
 </project>
