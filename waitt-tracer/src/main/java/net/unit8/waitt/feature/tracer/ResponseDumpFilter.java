@@ -1,88 +1,63 @@
 package net.unit8.waitt.feature.tracer;
 
-import net.unit8.waitt.feature.tracer.entry.ResponseEntry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpServletResponseWrapper;
-import java.io.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
+ * Servlet filter that creates OpenTelemetry spans for each HTTP request.
+ *
  * @author kawasima
  */
 public class ResponseDumpFilter implements Filter {
-    private static final Logger LOG = Logger.getLogger(ResponseDumpFilter.class.getName());
-    private ESClient esClient;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-        // TODO config
-        esClient = new ESClient("http://localhost:9200");
     }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        LOG.info(((HttpServletRequest) request).getRequestURI());
-        final StringWriter writer = new StringWriter();
-        final ByteArrayOutputStream byteCapture = new ByteArrayOutputStream();
-        final AtomicInteger statusCode = new AtomicInteger(200);
+        Tracer tracer = TracerLifecycle.getTracer();
+        if (tracer == null) {
+            chain.doFilter(request, response);
+            return;
+        }
 
-        HttpServletResponseWrapper responseWrapper = new HttpServletResponseWrapper((HttpServletResponse) response) {
-            @Override
-            public PrintWriter getWriter() throws IOException {
-                return new TeeWriter(super.getWriter(), writer);
-            }
+        HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletResponse res = (HttpServletResponse) response;
+        String method = req.getMethod();
+        String path = req.getRequestURI();
 
-            @Override
-            public jakarta.servlet.ServletOutputStream getOutputStream() throws IOException {
-                return new TeeOutputStream(super.getOutputStream(), byteCapture);
-            }
+        Span span = tracer.spanBuilder("HTTP " + method)
+                .setAttribute("http.request.method", method)
+                .setAttribute("url.path", path)
+                .setAttribute("server.port", (long) req.getServerPort())
+                .startSpan();
 
-            @Override
-            public void setStatus(int sc) {
-                super.setStatus(sc);
-                statusCode.set(sc);
+        try (Scope scope = span.makeCurrent()) {
+            chain.doFilter(request, response);
+            int statusCode = res.getStatus();
+            span.setAttribute("http.response.status_code", (long) statusCode);
+            if (statusCode >= 500) {
+                span.setStatus(StatusCode.ERROR);
             }
-
-            @Override
-            public void sendError(int sc) throws IOException {
-                super.sendError(sc);
-                statusCode.set(sc);
-            }
-
-            @Override
-            public void sendError(int sc, String msg) throws IOException {
-                statusCode.set(sc);
-                super.sendError(sc, msg);
-            }
-
-            @Override
-            public void sendRedirect(String location) throws IOException {
-                statusCode.set(302);
-                super.sendRedirect(location);
-            }
-        };
-        chain.doFilter(request, responseWrapper);
-        String contentType = responseWrapper.getContentType();
-        if (contentType != null && contentType.startsWith("text/html")) {
-            String responseBody = writer.toString();
-            if (responseBody.isEmpty() && byteCapture.size() > 0) {
-                responseBody = byteCapture.toString("UTF-8");
-            }
-            ResponseEntry responseEntry = new ResponseEntry(
-                    ((HttpServletRequest) request).getRequestURI(),
-                    statusCode.get(),
-                    responseBody);
-            esClient.post("/waitt/response/", responseEntry);
+        } catch (Exception e) {
+            span.setStatus(StatusCode.ERROR, e.getMessage());
+            span.recordException(e);
+            throw e;
+        } finally {
+            span.end();
         }
     }
 
     @Override
     public void destroy() {
-
     }
 }

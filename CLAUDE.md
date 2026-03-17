@@ -19,7 +19,7 @@ waitt-parent (pom.xml)          -- Parent POM, version management
 ├── waitt-jacoco                -- JaCoCo coverage
 ├── waitt-dashboard             -- Dashboard UI (war)
 ├── waitt-admin                 -- Admin feature (memory/CPU monitoring, heap dump, reload)
-└── waitt-tracer                -- Response tracing feature (jakarta.servlet, Tomcat 10/11 only)
+└── waitt-tracer                -- OpenTelemetry tracing (jakarta.servlet, Tomcat 10/11, Jetty 12)
 ```
 
 `examples/` directory contains sample apps that are **not** part of the reactor build:

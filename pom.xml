@@ -185,6 +185,13 @@
                 <artifactId>hprof-heap</artifactId>
                 <version>0.16</version>
             </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>1.46.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <distributionManagement>
