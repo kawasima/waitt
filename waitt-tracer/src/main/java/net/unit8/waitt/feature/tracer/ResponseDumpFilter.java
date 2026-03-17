@@ -10,7 +10,10 @@ import java.util.logging.Logger;
 
 /**
  * Servlet filter that creates OpenTelemetry spans for each HTTP request.
- * Uses reflection to access the Tracer across ClassLoader boundaries.
+ *
+ * <p>Uses reflection to bridge ClassLoader boundaries: the OTel Tracer is
+ * created in the feature ClassRealm while this filter runs in the webapp
+ * ClassLoader. All reflection is done once in {@link #init} and cached.</p>
  *
  * @author kawasima
  */
@@ -18,75 +21,17 @@ public class ResponseDumpFilter implements Filter {
     private static final Logger LOG = Logger.getLogger(ResponseDumpFilter.class.getName());
 
     private Object tracer;
-    private Method spanBuilderMethod;
-    private Method setAttributeStringMethod;
-    private Method setAttributeLongMethod;
-    private Method startSpanMethod;
-    private Method makeCurrentMethod;
-    private Method endMethod;
-    private Method setStatusMethod;
-    private Method setStatusWithDescMethod;
-    private Method recordExceptionMethod;
-    private Method scopeCloseMethod;
-    private Object statusError;
+    private OtelReflection otel;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         tracer = System.getProperties().get("waitt.otel.tracer");
         if (tracer == null) {
-            LOG.info("OpenTelemetry tracer not found. Tracing disabled.");
+            LOG.info("OpenTelemetry tracer not available. Tracing disabled.");
             return;
         }
         try {
-            ClassLoader otelClassLoader = tracer.getClass().getClassLoader();
-            Class<?> tracerClass = otelClassLoader.loadClass("io.opentelemetry.api.trace.Tracer");
-            Class<?> spanBuilderClass = otelClassLoader.loadClass("io.opentelemetry.api.trace.SpanBuilder");
-            Class<?> spanClass = otelClassLoader.loadClass("io.opentelemetry.api.trace.Span");
-            Class<?> statusCodeClass = otelClassLoader.loadClass("io.opentelemetry.api.trace.StatusCode");
-            Class<?> scopeClass = otelClassLoader.loadClass("io.opentelemetry.context.Scope");
-            Class<?> attributeKeyClass = otelClassLoader.loadClass("io.opentelemetry.api.common.AttributeKey");
-
-            spanBuilderMethod = tracerClass.getMethod("spanBuilder", String.class);
-            spanBuilderMethod.setAccessible(true);
-
-            // SpanBuilder methods
-            Method sbSetAttributeString = spanBuilderClass.getMethod("setAttribute", String.class, String.class);
-            sbSetAttributeString.setAccessible(true);
-            Method sbSetAttributeKey = spanBuilderClass.getMethod("setAttribute", attributeKeyClass, Object.class);
-            sbSetAttributeKey.setAccessible(true);
-            startSpanMethod = spanBuilderClass.getMethod("startSpan");
-            startSpanMethod.setAccessible(true);
-
-            // Use setAttribute(String, String) for string attributes
-            setAttributeStringMethod = sbSetAttributeString;
-
-            // For long attributes, use AttributeKey.longKey()
-            Method longKeyMethod = attributeKeyClass.getMethod("longKey", String.class);
-            setAttributeLongMethod = sbSetAttributeKey;
-
-            // Span methods
-            makeCurrentMethod = spanClass.getMethod("makeCurrent");
-            makeCurrentMethod.setAccessible(true);
-            endMethod = spanClass.getMethod("end");
-            endMethod.setAccessible(true);
-            setStatusMethod = spanClass.getMethod("setStatus", statusCodeClass);
-            setStatusMethod.setAccessible(true);
-            setStatusWithDescMethod = spanClass.getMethod("setStatus", statusCodeClass, String.class);
-            setStatusWithDescMethod.setAccessible(true);
-            recordExceptionMethod = spanClass.getMethod("recordException", Throwable.class);
-            recordExceptionMethod.setAccessible(true);
-
-            // Scope close
-            scopeCloseMethod = scopeClass.getMethod("close");
-            scopeCloseMethod.setAccessible(true);
-
-            // StatusCode.ERROR
-            statusError = statusCodeClass.getField("ERROR").get(null);
-
-            // Cache longKey method for attribute setting
-            System.getProperties().put("waitt.otel.longKeyMethod", longKeyMethod);
-
-            LOG.info("OpenTelemetry tracing filter initialized.");
+            otel = new OtelReflection(tracer.getClass().getClassLoader());
         } catch (Exception e) {
             LOG.log(Level.WARNING, "Failed to initialize OTel reflection. Tracing disabled.", e);
             tracer = null;
@@ -109,56 +54,104 @@ public class ResponseDumpFilter implements Filter {
         Object span = null;
         Object scope = null;
         try {
-            Method longKeyMethod = (Method) System.getProperties().get("waitt.otel.longKeyMethod");
+            Object builder = otel.spanBuilder.invoke(tracer, "HTTP " + method);
+            builder = otel.setAttributeString.invoke(builder, "http.request.method", method);
+            builder = otel.setAttributeString.invoke(builder, "url.path", path);
+            Object portKey = otel.longKey.invoke(null, "server.port");
+            builder = otel.setAttributeKey.invoke(builder, portKey, (long) req.getServerPort());
+            span = otel.startSpan.invoke(builder);
 
-            // Build span
-            Object builder = spanBuilderMethod.invoke(tracer, "HTTP " + method);
-            builder = setAttributeStringMethod.invoke(builder, "http.request.method", method);
-            builder = setAttributeStringMethod.invoke(builder, "url.path", path);
-            Object portKey = longKeyMethod.invoke(null, "server.port");
-            builder = setAttributeLongMethod.invoke(builder, portKey, (long) req.getServerPort());
-            span = startSpanMethod.invoke(builder);
-
-            scope = makeCurrentMethod.invoke(span);
+            scope = otel.makeCurrent.invoke(span);
             chain.doFilter(request, response);
 
             int statusCode = res.getStatus();
-            Object statusCodeKey = longKeyMethod.invoke(null, "http.response.status_code");
-            Method spanSetAttribute = span.getClass().getMethod("setAttribute",
-                    span.getClass().getClassLoader().loadClass("io.opentelemetry.api.common.AttributeKey"),
-                    Object.class);
-            spanSetAttribute.setAccessible(true);
-            spanSetAttribute.invoke(span, statusCodeKey, (long) statusCode);
+            Object statusCodeKey = otel.longKey.invoke(null, "http.response.status_code");
+            otel.spanSetAttributeKey.invoke(span, statusCodeKey, (long) statusCode);
             if (statusCode >= 500) {
-                setStatusMethod.invoke(span, statusError);
+                otel.setStatus.invoke(span, otel.statusError);
             }
         } catch (IOException | ServletException e) {
-            if (span != null) {
-                try {
-                    setStatusWithDescMethod.invoke(span, statusError, e.getMessage());
-                    recordExceptionMethod.invoke(span, e);
-                } catch (Exception ignored) {}
-            }
+            recordError(span, e);
+            throw e;
+        } catch (RuntimeException e) {
+            recordError(span, e);
             throw e;
         } catch (Exception e) {
-            if (span != null) {
-                try {
-                    setStatusWithDescMethod.invoke(span, statusError, e.getMessage());
-                    recordExceptionMethod.invoke(span, e);
-                } catch (Exception ignored) {}
-            }
+            recordError(span, e);
             throw new ServletException(e);
         } finally {
-            if (scope != null) {
-                try { scopeCloseMethod.invoke(scope); } catch (Exception ignored) {}
-            }
-            if (span != null) {
-                try { endMethod.invoke(span); } catch (Exception ignored) {}
-            }
+            closeQuietly(scope);
+            endQuietly(span);
         }
+    }
+
+    private void recordError(Object span, Exception e) {
+        if (span == null || otel == null) return;
+        try {
+            otel.setStatusWithDesc.invoke(span, otel.statusError, e.getMessage());
+            otel.recordException.invoke(span, e);
+        } catch (Exception ignored) {}
+    }
+
+    private void closeQuietly(Object scope) {
+        if (scope == null || otel == null) return;
+        try { otel.scopeClose.invoke(scope); } catch (Exception ignored) {}
+    }
+
+    private void endQuietly(Object span) {
+        if (span == null || otel == null) return;
+        try { otel.spanEnd.invoke(span); } catch (Exception ignored) {}
     }
 
     @Override
     public void destroy() {
+    }
+
+    /**
+     * Holds cached reflection references to OTel API methods.
+     * Initialized once in {@link ResponseDumpFilter#init}.
+     */
+    private static class OtelReflection {
+        final Method spanBuilder;
+        final Method setAttributeString;
+        final Method setAttributeKey;
+        final Method startSpan;
+        final Method makeCurrent;
+        final Method spanEnd;
+        final Method spanSetAttributeKey;
+        final Method setStatus;
+        final Method setStatusWithDesc;
+        final Method recordException;
+        final Method scopeClose;
+        final Method longKey;
+        final Object statusError;
+
+        OtelReflection(ClassLoader cl) throws Exception {
+            Class<?> tracerClass = cl.loadClass("io.opentelemetry.api.trace.Tracer");
+            Class<?> spanBuilderClass = cl.loadClass("io.opentelemetry.api.trace.SpanBuilder");
+            Class<?> spanClass = cl.loadClass("io.opentelemetry.api.trace.Span");
+            Class<?> statusCodeClass = cl.loadClass("io.opentelemetry.api.trace.StatusCode");
+            Class<?> scopeClass = cl.loadClass("io.opentelemetry.context.Scope");
+            Class<?> attributeKeyClass = cl.loadClass("io.opentelemetry.api.common.AttributeKey");
+
+            spanBuilder = accessible(tracerClass.getMethod("spanBuilder", String.class));
+            setAttributeString = accessible(spanBuilderClass.getMethod("setAttribute", String.class, String.class));
+            setAttributeKey = accessible(spanBuilderClass.getMethod("setAttribute", attributeKeyClass, Object.class));
+            startSpan = accessible(spanBuilderClass.getMethod("startSpan"));
+            makeCurrent = accessible(spanClass.getMethod("makeCurrent"));
+            spanEnd = accessible(spanClass.getMethod("end"));
+            spanSetAttributeKey = accessible(spanClass.getMethod("setAttribute", attributeKeyClass, Object.class));
+            setStatus = accessible(spanClass.getMethod("setStatus", statusCodeClass));
+            setStatusWithDesc = accessible(spanClass.getMethod("setStatus", statusCodeClass, String.class));
+            recordException = accessible(spanClass.getMethod("recordException", Throwable.class));
+            scopeClose = accessible(scopeClass.getMethod("close"));
+            longKey = accessible(attributeKeyClass.getMethod("longKey", String.class));
+            statusError = statusCodeClass.getField("ERROR").get(null);
+        }
+
+        private static Method accessible(Method m) {
+            m.setAccessible(true);
+            return m;
+        }
     }
 }
