@@ -39,11 +39,12 @@ public class ExceptionCollector implements LogListener {
         if (tracer == null) {
             return;
         }
+        String msg = message != null ? message.toString() : t.getMessage();
         Span span = tracer.spanBuilder("exception")
-                .setAttribute("exception.message", message.toString())
+                .setAttribute("exception.message", msg)
                 .startSpan();
         try {
-            span.setStatus(StatusCode.ERROR, message.toString());
+            span.setStatus(StatusCode.ERROR, msg);
             span.recordException(t);
         } finally {
             span.end();

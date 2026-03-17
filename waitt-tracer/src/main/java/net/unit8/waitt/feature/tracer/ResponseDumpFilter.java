@@ -57,16 +57,14 @@ public class ResponseDumpFilter implements Filter {
             Object builder = otel.spanBuilder.invoke(tracer, "HTTP " + method);
             builder = otel.setAttributeString.invoke(builder, "http.request.method", method);
             builder = otel.setAttributeString.invoke(builder, "url.path", path);
-            Object portKey = otel.longKey.invoke(null, "server.port");
-            builder = otel.setAttributeKey.invoke(builder, portKey, (long) req.getServerPort());
+            builder = otel.setAttributeKey.invoke(builder, otel.serverPortKey, (long) req.getServerPort());
             span = otel.startSpan.invoke(builder);
 
             scope = otel.makeCurrent.invoke(span);
             chain.doFilter(request, response);
 
             int statusCode = res.getStatus();
-            Object statusCodeKey = otel.longKey.invoke(null, "http.response.status_code");
-            otel.spanSetAttributeKey.invoke(span, statusCodeKey, (long) statusCode);
+            otel.spanSetAttributeKey.invoke(span, otel.statusCodeKey, (long) statusCode);
             if (statusCode >= 500) {
                 otel.setStatus.invoke(span, otel.statusError);
             }
@@ -123,8 +121,9 @@ public class ResponseDumpFilter implements Filter {
         final Method setStatusWithDesc;
         final Method recordException;
         final Method scopeClose;
-        final Method longKey;
         final Object statusError;
+        final Object serverPortKey;
+        final Object statusCodeKey;
 
         OtelReflection(ClassLoader cl) throws Exception {
             Class<?> tracerClass = cl.loadClass("io.opentelemetry.api.trace.Tracer");
@@ -134,24 +133,22 @@ public class ResponseDumpFilter implements Filter {
             Class<?> scopeClass = cl.loadClass("io.opentelemetry.context.Scope");
             Class<?> attributeKeyClass = cl.loadClass("io.opentelemetry.api.common.AttributeKey");
 
-            spanBuilder = accessible(tracerClass.getMethod("spanBuilder", String.class));
-            setAttributeString = accessible(spanBuilderClass.getMethod("setAttribute", String.class, String.class));
-            setAttributeKey = accessible(spanBuilderClass.getMethod("setAttribute", attributeKeyClass, Object.class));
-            startSpan = accessible(spanBuilderClass.getMethod("startSpan"));
-            makeCurrent = accessible(spanClass.getMethod("makeCurrent"));
-            spanEnd = accessible(spanClass.getMethod("end"));
-            spanSetAttributeKey = accessible(spanClass.getMethod("setAttribute", attributeKeyClass, Object.class));
-            setStatus = accessible(spanClass.getMethod("setStatus", statusCodeClass));
-            setStatusWithDesc = accessible(spanClass.getMethod("setStatus", statusCodeClass, String.class));
-            recordException = accessible(spanClass.getMethod("recordException", Throwable.class));
-            scopeClose = accessible(scopeClass.getMethod("close"));
-            longKey = accessible(attributeKeyClass.getMethod("longKey", String.class));
+            spanBuilder = tracerClass.getMethod("spanBuilder", String.class);
+            setAttributeString = spanBuilderClass.getMethod("setAttribute", String.class, String.class);
+            setAttributeKey = spanBuilderClass.getMethod("setAttribute", attributeKeyClass, Object.class);
+            startSpan = spanBuilderClass.getMethod("startSpan");
+            makeCurrent = spanClass.getMethod("makeCurrent");
+            spanEnd = spanClass.getMethod("end");
+            spanSetAttributeKey = spanClass.getMethod("setAttribute", attributeKeyClass, Object.class);
+            setStatus = spanClass.getMethod("setStatus", statusCodeClass);
+            setStatusWithDesc = spanClass.getMethod("setStatus", statusCodeClass, String.class);
+            recordException = spanClass.getMethod("recordException", Throwable.class);
+            scopeClose = scopeClass.getMethod("close");
             statusError = statusCodeClass.getField("ERROR").get(null);
-        }
 
-        private static Method accessible(Method m) {
-            m.setAccessible(true);
-            return m;
+            Method longKeyMethod = attributeKeyClass.getMethod("longKey", String.class);
+            serverPortKey = longKeyMethod.invoke(null, "server.port");
+            statusCodeKey = longKeyMethod.invoke(null, "http.response.status_code");
         }
     }
 }
