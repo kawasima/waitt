@@ -16,7 +16,6 @@ waitt-parent (pom.xml)          -- Parent POM, version management
 ├── waitt-tomcat10              -- Tomcat 10.1 server (jakarta.servlet / Servlet 6.0)
 ├── waitt-tomcat11              -- Tomcat 11.0 server (jakarta.servlet / Servlet 6.1)
 ├── waitt-jetty12               -- Jetty 12 server (jakarta.servlet / Servlet 6.0)
-├── waitt-coverage              -- Cobertura coverage
 ├── waitt-jacoco                -- JaCoCo coverage
 ├── waitt-dashboard             -- Dashboard UI (war)
 ├── waitt-admin                 -- Admin feature (memory/CPU monitoring, heap dump, reload)
