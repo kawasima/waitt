@@ -7,10 +7,16 @@ import net.unit8.waitt.api.LogListener;
 
 /**
  * Collects application exceptions and records them as OpenTelemetry spans.
+ * Runs in the same ClassRealm as TracerLifecycle, so direct API access works.
  *
  * @author kawasima
  */
 public class ExceptionCollector implements LogListener {
+
+    private Tracer getTracer() {
+        Object obj = System.getProperties().get("waitt.otel.tracer");
+        return (obj instanceof Tracer) ? (Tracer) obj : null;
+    }
 
     @Override
     public void info(CharSequence message, Throwable t) {
@@ -29,7 +35,7 @@ public class ExceptionCollector implements LogListener {
         if (t == null) {
             return;
         }
-        Tracer tracer = TracerLifecycle.getTracer();
+        Tracer tracer = getTracer();
         if (tracer == null) {
             return;
         }

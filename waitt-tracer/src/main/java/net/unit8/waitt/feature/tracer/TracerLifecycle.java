@@ -1,13 +1,13 @@
 package net.unit8.waitt.feature.tracer;
 
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import net.unit8.waitt.api.ConfigurableFeature;
 import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
@@ -20,13 +20,14 @@ import java.util.logging.Logger;
 
 /**
  * Manages the OpenTelemetry SDK lifecycle.
+ * Shares the Tracer instance via System properties to bridge ClassLoader boundaries.
  *
  * @author kawasima
  */
 public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
     private static final Logger LOG = Logger.getLogger(TracerLifecycle.class.getName());
     private static final String DEFAULT_ENDPOINT = "http://localhost:4318";
-    private static volatile Tracer tracer;
+    private static final String TRACER_PROPERTY_KEY = "waitt.otel.tracer";
 
     private OpenTelemetrySdk sdk;
     private String endpoint = DEFAULT_ENDPOINT;
@@ -77,9 +78,8 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                     .setTracerProvider(tracerProvider)
                     .build();
 
-            tracer = sdk.getTracer("waitt-tracer");
-            // Store tracer in system properties to share across ClassLoaders
-            System.getProperties().put("waitt.otel.tracer", tracer);
+            Tracer tracer = sdk.getTracer("waitt-tracer");
+            System.getProperties().put(TRACER_PROPERTY_KEY, tracer);
             LOG.info("OpenTelemetry tracer initialized (endpoint=" + endpoint + ", service=" + serviceName + ")");
         } catch (Exception e) {
             LOG.log(Level.WARNING, "Failed to initialize OpenTelemetry tracer", e);
@@ -93,15 +93,10 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void stop() {
+        System.getProperties().remove(TRACER_PROPERTY_KEY);
         if (sdk != null) {
             sdk.close();
             LOG.info("OpenTelemetry tracer shut down.");
         }
-        tracer = null;
-        System.getProperties().remove("waitt.otel.tracer");
-    }
-
-    public static Tracer getTracer() {
-        return tracer;
     }
 }
