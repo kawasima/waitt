@@ -1,11 +1,10 @@
 package net.unit8.waitt.feature.jacoco;
 
-import org.jacoco.agent.rt.internal_aeaf9ab.asm.MethodVisitor;
-import org.jacoco.agent.rt.internal_aeaf9ab.asm.Opcodes;
-import org.jacoco.agent.rt.internal_aeaf9ab.core.instr.Instrumenter;
-import org.jacoco.agent.rt.internal_aeaf9ab.core.internal.instr.InstrSupport;
-import org.jacoco.agent.rt.internal_aeaf9ab.core.runtime.IExecutionDataAccessorGenerator;
 import org.jacoco.core.JaCoCo;
+import org.jacoco.core.instr.Instrumenter;
+import org.jacoco.core.runtime.IExecutionDataAccessorGenerator;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,7 +51,13 @@ public class JacocoClassLoader extends URLClassLoader {
             public int generateDataAccessor(long classid, String classname, int probecount, MethodVisitor mv) {
                 mv.visitLdcInsn(Long.valueOf(classid));
                 mv.visitLdcInsn(classname);
-                InstrSupport.push(mv, probecount);
+                if (probecount <= Byte.MAX_VALUE) {
+                    mv.visitIntInsn(Opcodes.BIPUSH, probecount);
+                } else if (probecount <= Short.MAX_VALUE) {
+                    mv.visitIntInsn(Opcodes.SIPUSH, probecount);
+                } else {
+                    mv.visitLdcInsn(probecount);
+                }
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, JaCoCo.RUNTIMEPACKAGE.replace('.', '/') + "/Offline", "getProbes",
                         "(JLjava/lang/String;I)[Z", false);
                 return 4;
