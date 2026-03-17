@@ -1,39 +1,17 @@
 package net.unit8.waitt.feature.tracer;
 
-import java.util.Map;
-import java.util.logging.Logger;
-
-import net.unit8.waitt.api.ConfigurableFeature;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
 import net.unit8.waitt.api.LogListener;
-import net.unit8.waitt.api.configuration.Feature;
-import net.unit8.waitt.api.configuration.WebappConfiguration;
-import net.unit8.waitt.feature.tracer.entry.ExceptionLogEntry;
 
 /**
+ * Collects application exceptions and records them as OpenTelemetry spans.
+ *
  * @author kawasima
  */
-public class ExceptionCollector implements LogListener, ConfigurableFeature {
-    private static final Logger LOG = Logger.getLogger(ExceptionCollector.class.getName());
-    private volatile ESClient esClient;
+public class ExceptionCollector implements LogListener {
 
-    @Override
-    public void config(WebappConfiguration config) {
-        String baseUrl = null;
-        for (Feature feature : config.getFeatures()) {
-            if ("waitt-tracer".equals(feature.getArtifactId()) && "net.unit8.waitt.feature".equals(feature.getGroupId())) {
-                Map<String, String> featureConfig = feature.getConfiguration();
-                if (featureConfig != null) {
-                    baseUrl = featureConfig.get("elasticsearch.url");
-                }
-            }
-        }
-        if (baseUrl == null) {
-            baseUrl = "http://localhost:9200";
-        }
-        esClient = new ESClient(baseUrl);
-        LOG.info("setup ESClient for " + baseUrl);
-    }
-    
     @Override
     public void info(CharSequence message, Throwable t) {
     }
@@ -48,8 +26,21 @@ public class ExceptionCollector implements LogListener, ConfigurableFeature {
 
     @Override
     public void error(CharSequence message, Throwable t) {
-        if (t != null && esClient != null) {
-            esClient.post("/waitt/exception/", new ExceptionLogEntry(message.toString(), t.getStackTrace()));
+        if (t == null) {
+            return;
+        }
+        Tracer tracer = TracerLifecycle.getTracer();
+        if (tracer == null) {
+            return;
+        }
+        Span span = tracer.spanBuilder("exception")
+                .setAttribute("exception.message", message.toString())
+                .startSpan();
+        try {
+            span.setStatus(StatusCode.ERROR, message.toString());
+            span.recordException(t);
+        } finally {
+            span.end();
         }
     }
 }
