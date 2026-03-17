@@ -62,8 +62,10 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                     ))
             );
 
+            String tracesEndpoint = endpoint.endsWith("/") ?
+                    endpoint + "v1/traces" : endpoint + "/v1/traces";
             OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
-                    .setEndpoint(endpoint)
+                    .setEndpoint(tracesEndpoint)
                     .build();
 
             SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
@@ -76,6 +78,8 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                     .build();
 
             tracer = sdk.getTracer("waitt-tracer");
+            // Store tracer in system properties to share across ClassLoaders
+            System.getProperties().put("waitt.otel.tracer", tracer);
             LOG.info("OpenTelemetry tracer initialized (endpoint=" + endpoint + ", service=" + serviceName + ")");
         } catch (Exception e) {
             LOG.log(Level.WARNING, "Failed to initialize OpenTelemetry tracer", e);
@@ -94,6 +98,7 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
             LOG.info("OpenTelemetry tracer shut down.");
         }
         tracer = null;
+        System.getProperties().remove("waitt.otel.tracer");
     }
 
     public static Tracer getTracer() {
