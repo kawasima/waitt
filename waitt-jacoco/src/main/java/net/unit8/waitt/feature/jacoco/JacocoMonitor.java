@@ -116,6 +116,9 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
 
     @Override
     public void stop() {
+        if (executorService == null) {
+            return;
+        }
         executorService.shutdown();
         try {
             if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
