@@ -18,7 +18,7 @@ public class TracerDecorator implements WebappDecorator {
         List<FilterConfiguration> filterConfigurations = new ArrayList<FilterConfiguration>();
         FilterConfiguration config = new FilterConfiguration();
         config.setName("otelTracingFilter");
-        config.setClassName("net.unit8.waitt.feature.tracer.ResponseDumpFilter");
+        config.setClassName("net.unit8.waitt.feature.tracer.OtelTracingFilter");
         config.setUrlPatterns(Collections.singletonList("/*"));
         filterConfigurations.add(config);
         return filterConfigurations;
