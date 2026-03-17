@@ -6,7 +6,6 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
-import org.jacoco.agent.rt.IAgent;
 import org.jacoco.agent.rt.RT;
 import org.jacoco.core.analysis.IBundleCoverage;
 import org.jacoco.core.data.ExecutionDataStore;
@@ -58,12 +57,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             }
         });
 
-        try {
-            final IAgent agent = RT.getAgent();
-            LOG.info("Start a jacoco agent. " + agent);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        LOG.info("JaCoCo offline instrumentation enabled.");
     }
 
     @Override
@@ -80,9 +74,9 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             @Override
             public void run() {
                 try {
-                    RT.getAgent().dump(false);
+                    byte[] data = RT.getAgent().getExecutionData(false);
                     ExecFileLoader loader = new ExecFileLoader();
-                    loader.load(new File("jacoco.exec"));
+                    loader.load(new java.io.ByteArrayInputStream(data));
                     final IReportVisitor visitor = createVisitor(Locale.getDefault());
                     visitor.visitInfo(
                             loader.getSessionInfoStore().getInfos(),
@@ -93,7 +87,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
                     LOG.log(Level.WARNING, "Failed to generate coverage report", ex);
                 }
             }
-        }, 0L, 30L, TimeUnit.SECONDS);
+        }, 30L, 30L, TimeUnit.SECONDS);
     }
     void createReport(final IReportGroupVisitor visitor, ExecutionDataStore executionDataStore) throws IOException {
         final BundleCreator creator = new BundleCreator();
