@@ -17,8 +17,8 @@ import java.util.logging.Logger;
  *
  * @author kawasima
  */
-public class ResponseDumpFilter implements Filter {
-    private static final Logger LOG = Logger.getLogger(ResponseDumpFilter.class.getName());
+public class OtelTracingFilter implements Filter {
+    private static final Logger LOG = Logger.getLogger(OtelTracingFilter.class.getName());
 
     private Object tracer;
     private OtelReflection otel;
@@ -57,14 +57,14 @@ public class ResponseDumpFilter implements Filter {
             Object builder = otel.spanBuilder.invoke(tracer, "HTTP " + method);
             builder = otel.setAttributeString.invoke(builder, "http.request.method", method);
             builder = otel.setAttributeString.invoke(builder, "url.path", path);
-            builder = otel.setAttributeKey.invoke(builder, otel.serverPortKey, (long) req.getServerPort());
+            builder = otel.setAttributeLong.invoke(builder, "server.port", (long) req.getServerPort());
             span = otel.startSpan.invoke(builder);
 
             scope = otel.makeCurrent.invoke(span);
             chain.doFilter(request, response);
 
             int statusCode = res.getStatus();
-            otel.spanSetAttributeKey.invoke(span, otel.statusCodeKey, (long) statusCode);
+            otel.spanSetAttributeLong.invoke(span, "http.response.status_code", (long) statusCode);
             if (statusCode >= 500) {
                 otel.setStatus.invoke(span, otel.statusError);
             }
@@ -86,7 +86,8 @@ public class ResponseDumpFilter implements Filter {
     private void recordError(Object span, Exception e) {
         if (span == null || otel == null) return;
         try {
-            otel.setStatusWithDesc.invoke(span, otel.statusError, e.getMessage());
+            String desc = e.getMessage() != null ? e.getMessage() : e.toString();
+            otel.setStatusWithDesc.invoke(span, otel.statusError, desc);
             otel.recordException.invoke(span, e);
         } catch (Exception ignored) {}
     }
@@ -107,23 +108,21 @@ public class ResponseDumpFilter implements Filter {
 
     /**
      * Holds cached reflection references to OTel API methods.
-     * Initialized once in {@link ResponseDumpFilter#init}.
+     * Initialized once in {@link OtelTracingFilter#init}.
      */
     private static class OtelReflection {
         final Method spanBuilder;
         final Method setAttributeString;
-        final Method setAttributeKey;
+        final Method setAttributeLong;
         final Method startSpan;
         final Method makeCurrent;
         final Method spanEnd;
-        final Method spanSetAttributeKey;
+        final Method spanSetAttributeLong;
         final Method setStatus;
         final Method setStatusWithDesc;
         final Method recordException;
         final Method scopeClose;
         final Object statusError;
-        final Object serverPortKey;
-        final Object statusCodeKey;
 
         OtelReflection(ClassLoader cl) throws Exception {
             Class<?> tracerClass = cl.loadClass("io.opentelemetry.api.trace.Tracer");
@@ -131,24 +130,19 @@ public class ResponseDumpFilter implements Filter {
             Class<?> spanClass = cl.loadClass("io.opentelemetry.api.trace.Span");
             Class<?> statusCodeClass = cl.loadClass("io.opentelemetry.api.trace.StatusCode");
             Class<?> scopeClass = cl.loadClass("io.opentelemetry.context.Scope");
-            Class<?> attributeKeyClass = cl.loadClass("io.opentelemetry.api.common.AttributeKey");
 
             spanBuilder = tracerClass.getMethod("spanBuilder", String.class);
             setAttributeString = spanBuilderClass.getMethod("setAttribute", String.class, String.class);
-            setAttributeKey = spanBuilderClass.getMethod("setAttribute", attributeKeyClass, Object.class);
+            setAttributeLong = spanBuilderClass.getMethod("setAttribute", String.class, long.class);
             startSpan = spanBuilderClass.getMethod("startSpan");
             makeCurrent = spanClass.getMethod("makeCurrent");
             spanEnd = spanClass.getMethod("end");
-            spanSetAttributeKey = spanClass.getMethod("setAttribute", attributeKeyClass, Object.class);
+            spanSetAttributeLong = spanClass.getMethod("setAttribute", String.class, long.class);
             setStatus = spanClass.getMethod("setStatus", statusCodeClass);
             setStatusWithDesc = spanClass.getMethod("setStatus", statusCodeClass, String.class);
             recordException = spanClass.getMethod("recordException", Throwable.class);
             scopeClose = scopeClass.getMethod("close");
             statusError = statusCodeClass.getField("ERROR").get(null);
-
-            Method longKeyMethod = attributeKeyClass.getMethod("longKey", String.class);
-            serverPortKey = longKeyMethod.invoke(null, "server.port");
-            statusCodeKey = longKeyMethod.invoke(null, "http.response.status_code");
         }
     }
 }

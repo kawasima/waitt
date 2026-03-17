@@ -39,7 +39,8 @@ public class ExceptionCollector implements LogListener {
         if (tracer == null) {
             return;
         }
-        String msg = message != null ? message.toString() : t.getMessage();
+        String msg = message != null ? message.toString()
+                : t.getMessage() != null ? t.getMessage() : t.toString();
         Span span = tracer.spanBuilder("exception")
                 .setAttribute("exception.message", msg)
                 .startSpan();
