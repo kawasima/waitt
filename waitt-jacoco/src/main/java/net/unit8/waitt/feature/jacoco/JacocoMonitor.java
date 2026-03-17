@@ -6,8 +6,8 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
-import org.jacoco.agent.rt.internal_aeaf9ab.Agent;
-import org.jacoco.agent.rt.internal_aeaf9ab.core.runtime.AgentOptions;
+import org.jacoco.agent.rt.IAgent;
+import org.jacoco.agent.rt.RT;
 import org.jacoco.core.analysis.IBundleCoverage;
 import org.jacoco.core.data.ExecutionDataStore;
 import org.jacoco.core.tools.ExecFileLoader;
@@ -58,11 +58,8 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             }
         });
 
-        final AgentOptions agentOptions = new AgentOptions();
-        agentOptions.setAppend(true);
-        agentOptions.setDumpOnExit(true);
         try {
-            final Agent agent = Agent.getInstance(agentOptions);
+            final IAgent agent = RT.getAgent();
             LOG.info("Start a jacoco agent. " + agent);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -83,7 +80,7 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             @Override
             public void run() {
                 try {
-                    Agent.getInstance().dump(false);
+                    RT.getAgent().dump(false);
                     ExecFileLoader loader = new ExecFileLoader();
                     loader.load(new File("jacoco.exec"));
                     final IReportVisitor visitor = createVisitor(Locale.getDefault());
