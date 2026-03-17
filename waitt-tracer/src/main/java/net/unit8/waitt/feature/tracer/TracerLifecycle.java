@@ -63,8 +63,9 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                     ))
             );
 
-            String tracesEndpoint = endpoint.endsWith("/") ?
-                    endpoint + "v1/traces" : endpoint + "/v1/traces";
+            String tracesEndpoint = endpoint.contains("/v1/traces") ? endpoint
+                    : endpoint.endsWith("/") ? endpoint + "v1/traces"
+                    : endpoint + "/v1/traces";
             OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
                     .setEndpoint(tracesEndpoint)
                     .build();
