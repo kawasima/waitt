@@ -26,7 +26,6 @@
         <module>waitt-tomcat9</module>
         <module>waitt-tomcat10</module>
         <module>waitt-tomcat11</module>
-        <module>waitt-coverage</module>
         <module>waitt-jacoco</module>
         <module>waitt-dashboard</module>
         <module>waitt-admin</module>

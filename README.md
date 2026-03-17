@@ -136,20 +136,7 @@ If you set multiple servers and maven is executed in the interactive mode, you c
 
 ### Coverage
 
-You can use JaCoCo or Cobertura.
 When you access to `/_coverage/`, you can see the coverages of your code.
-
-#### Cobertura
-
-```xml
-  <feature>
-    <groupId>net.unit8.waitt.feature</groupId>
-    <artifactId>waitt-coverage</artifactId>
-    <version>1.4.1-SNAPSHOT</version>
-  </feature>
-```
-
-#### JaCoCo
 
 ```xml
   <feature>
