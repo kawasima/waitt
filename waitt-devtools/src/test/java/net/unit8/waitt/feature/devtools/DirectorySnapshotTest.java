@@ -6,6 +6,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.file.Files;
 
 import static org.junit.Assert.*;
 
@@ -33,8 +34,7 @@ public class DirectorySnapshotTest {
 
         DirectorySnapshot before = new DirectorySnapshot(dir);
 
-        // Ensure different lastModified
-        Thread.sleep(1100);
+        // Different content length triggers size change detection
         writeFile(file, "bytecode2-changed");
 
         DirectorySnapshot after = new DirectorySnapshot(dir);
@@ -64,7 +64,7 @@ public class DirectorySnapshotTest {
 
         DirectorySnapshot before = new DirectorySnapshot(dir);
 
-        file.delete();
+        Files.delete(file.toPath());
 
         DirectorySnapshot after = new DirectorySnapshot(dir);
 
@@ -80,8 +80,8 @@ public class DirectorySnapshotTest {
 
         DirectorySnapshot before = new DirectorySnapshot(dir);
 
-        Thread.sleep(1100);
-        writeFile(new File(subDir, "App.class"), "bytecode2");
+        // Different content length triggers size change detection
+        writeFile(new File(subDir, "App.class"), "bytecode2-updated");
 
         DirectorySnapshot after = new DirectorySnapshot(dir);
 

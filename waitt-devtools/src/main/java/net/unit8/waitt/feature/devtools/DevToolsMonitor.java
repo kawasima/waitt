@@ -68,8 +68,9 @@ public class DevToolsMonitor implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void start(EmbeddedServer server) {
-        if (outputDirectory == null || !outputDirectory.exists()) {
-            LOG.warning("Output directory not available. Auto-reload disabled.");
+        if (outputDirectory == null || !outputDirectory.isDirectory()) {
+            LOG.warning("Output directory not available or not a directory: "
+                    + outputDirectory + ". Auto-reload disabled.");
             return;
         }
         poller = new FileSystemPoller(outputDirectory, server, pollInterval, quietPeriod);
