@@ -35,6 +35,35 @@ public class DefaultServerProvider implements ServerProvider {
     @Component
     protected RepositorySystem repositorySystem;
 
+    private ServerSpec selectByProperty(List<ServerSpec> serverSpecs, String serverProp) throws MojoFailureException {
+        // Try as index
+        try {
+            int index = Integer.parseInt(serverProp);
+            if (index >= 0 && index < serverSpecs.size()) {
+                LOG.info("Selected server by index: " + serverSpecs.get(index).getEmbeddedServer().getName());
+                return serverSpecs.get(index);
+            }
+            throw new MojoFailureException("Server index out of range: " + index
+                    + " (available: 0-" + (serverSpecs.size() - 1) + ")");
+        } catch (NumberFormatException e) {
+            // Not a number, try as name match
+        }
+
+        // Try as name (partial match on server name or artifactId)
+        for (ServerSpec spec : serverSpecs) {
+            if (spec.getEmbeddedServer().getName().contains(serverProp)) {
+                LOG.info("Selected server by name: " + spec.getEmbeddedServer().getName());
+                return spec;
+            }
+        }
+
+        List<String> names = new ArrayList<String>();
+        for (ServerSpec spec : serverSpecs) {
+            names.add(spec.getEmbeddedServer().getName());
+        }
+        throw new MojoFailureException("No server matching '" + serverProp + "'. Available: " + names);
+    }
+
     @Override
     public ServerSpec getServer(Server server, ClassRealm parentRealm) {
         Artifact artifact = repositorySystem.createArtifact(server.getGroupId(), server.getArtifactId(), server.getVersion(), "jar");
@@ -59,6 +88,11 @@ public class DefaultServerProvider implements ServerProvider {
         for (Server server : servers) {
             ServerSpec serverSpec = getServer(server, parentRealm);
             serverSpecs.add(serverSpec);
+        }
+
+        String serverProp = System.getProperty("waitt.server");
+        if (serverProp != null && !serverProp.isEmpty()) {
+            return selectByProperty(serverSpecs, serverProp);
         }
 
         if (interactive && serverSpecs.size() > 1) {
