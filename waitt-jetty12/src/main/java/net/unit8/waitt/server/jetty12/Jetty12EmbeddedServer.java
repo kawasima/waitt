@@ -31,7 +31,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -131,10 +134,17 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
             mainWebapp.stop();
             handlers.removeHandler(mainWebapp);
             mainWebapp.destroy();
-            mainWebapp = addWebapp(mainContextPath, mainBaseDir, mainLoader, true);
-            mainWebapp.start();
+            WebAppContext newWebapp = addWebapp(mainContextPath, mainBaseDir, mainLoader, true);
+            try {
+                newWebapp.start();
+            } catch (Exception startEx) {
+                handlers.removeHandler(newWebapp);
+                newWebapp.destroy();
+                throw startEx;
+            }
+            mainWebapp = newWebapp;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to reload context", e);
         } finally {
             Thread.currentThread().setContextClassLoader(previousTccl);
         }
@@ -234,9 +244,9 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
                 }
                 if (decorator.getClass().getClassLoader() instanceof ClassRealm && loader instanceof ClassRealm) {
                     ClassRealm loaderRealm = (ClassRealm) loader;
-                    java.util.Set<URL> existingUrls = new java.util.HashSet<URL>(java.util.Arrays.asList(loaderRealm.getURLs()));
+                    Set<URL> existingUrls = new HashSet<URL>(Arrays.asList(loaderRealm.getURLs()));
                     for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
-                        if (!existingUrls.contains(url)) {
+                        if (existingUrls.add(url)) {
                             loaderRealm.addURL(url);
                         }
                     }
