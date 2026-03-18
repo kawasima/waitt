@@ -127,35 +127,32 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     }
 
     private void doStart() {
-        if (requestListener != null) {
-            Handler original = server.getHandler();
-            server.setHandler(new Handler.Wrapper(original) {
-                @Override
-                public boolean handle(Request request, Response response, Callback callback) throws Exception {
+        Handler original = server.getHandler();
+        server.setHandler(new Handler.Wrapper(original) {
+            @Override
+            public boolean handle(Request request, Response response, Callback callback) throws Exception {
+                RequestListener rl = requestListener;
+                if (rl != null) {
                     long t0 = System.nanoTime();
                     Callback wrapped = Callback.from(
                             () -> {
                                 long duration = (System.nanoTime() - t0) / 1_000_000;
-                                requestListener.onRequest(
-                                        request.getMethod(),
-                                        Request.getPathInContext(request),
-                                        response.getStatus(),
-                                        duration);
+                                rl.onRequest(request.getMethod(), Request.getPathInContext(request),
+                                        response.getStatus(), duration);
                                 callback.succeeded();
                             },
                             (t) -> {
                                 long duration = (System.nanoTime() - t0) / 1_000_000;
-                                requestListener.onRequest(
-                                        request.getMethod(),
-                                        Request.getPathInContext(request),
-                                        response.getStatus(),
-                                        duration);
+                                rl.onRequest(request.getMethod(), Request.getPathInContext(request),
+                                        response.getStatus(), duration);
                                 callback.failed(t);
                             });
                     return super.handle(request, response, wrapped);
+                } else {
+                    return super.handle(request, response, callback);
                 }
-            });
-        }
+            }
+        });
         try {
             server.start();
         } catch (Exception e) {
