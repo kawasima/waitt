@@ -177,22 +177,23 @@ public abstract class AbstractRunMojo extends AbstractMojo {
 
             List<String[]> startupTimeline = new ArrayList<String[]>();
             for (ServerMonitor serverMonitor : serverMonitors) {
-                long t0 = System.currentTimeMillis();
+                long t0 = System.nanoTime();
                 serverMonitor.init(embeddedServer);
-                long elapsed = System.currentTimeMillis() - t0;
+                long elapsed = (System.nanoTime() - t0) / 1_000_000;
                 startupTimeline.add(new String[]{serverMonitor.getClass().getSimpleName(), "init", String.valueOf(elapsed)});
             }
             embeddedServer.setWebappDecorators(webappDecorators);
             embeddedServer.setMainContext(contextPath, docBase.getAbsolutePath(), webappRealm);
+            System.getProperties().put("waitt.webapp.classloader", webappRealm);
             for (ExtraWebapp extraWebapp : extraWebapps) {
                 extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
                 embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
             }
 
             for (ServerMonitor serverMonitor : serverMonitors) {
-                long t0 = System.currentTimeMillis();
+                long t0 = System.nanoTime();
                 serverMonitor.start(embeddedServer);
-                long elapsed = System.currentTimeMillis() - t0;
+                long elapsed = (System.nanoTime() - t0) / 1_000_000;
                 startupTimeline.add(new String[]{serverMonitor.getClass().getSimpleName(), "start", String.valueOf(elapsed)});
             }
             System.getProperties().put("waitt.startup.timeline", startupTimeline);

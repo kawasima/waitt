@@ -53,21 +53,26 @@ public class LoggersAction implements Route {
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {
-        String path = exchange.getRequestURI().getPath();
-        // /loggers/{name}
-        String loggerName = path.substring("/loggers/".length());
-
         BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), "UTF-8"));
         StringBuilder body = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
             body.append(line);
         }
-        // Simple parsing: {"level":"DEBUG"}
-        String level = extractLevel(body.toString());
+        String bodyStr = body.toString();
+
+        // Read name from path (/loggers/{name}) or from body ({"name":"...","level":"..."})
+        String path = exchange.getRequestURI().getPath();
+        String loggerName;
+        if (path.length() > "/loggers/".length()) {
+            loggerName = path.substring("/loggers/".length());
+        } else {
+            loggerName = extractField(bodyStr, "name");
+        }
+        String level = extractField(bodyStr, "level");
 
         boolean success = false;
-        if (level != null) {
+        if (loggerName != null && level != null) {
             success = trySetLogbackLevel(loggerName, level) || setJulLevel(loggerName, level);
         }
 
@@ -78,9 +83,8 @@ public class LoggersAction implements Route {
         ResponseUtils.responseJSON(exchange, json);
     }
 
-    private String extractLevel(String json) {
-        // Simple JSON parsing for {"level":"VALUE"}
-        int idx = json.indexOf("\"level\"");
+    private String extractField(String json, String field) {
+        int idx = json.indexOf("\"" + field + "\"");
         if (idx < 0) return null;
         int colon = json.indexOf(':', idx);
         if (colon < 0) return null;
@@ -97,12 +101,6 @@ public class LoggersAction implements Route {
             return "logback";
         } catch (ClassNotFoundException e) {
             // not logback
-        }
-        try {
-            Class.forName("org.apache.logging.log4j.core.config.Configurator");
-            return "log4j2";
-        } catch (ClassNotFoundException e) {
-            // not log4j2
         }
         return "jul";
     }
