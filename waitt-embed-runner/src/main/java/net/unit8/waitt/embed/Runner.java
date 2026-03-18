@@ -29,6 +29,7 @@ public class Runner {
     private final List<LogListener> logListeners = new ArrayList<LogListener>();
     private final List<WebappDecorator> webappDecorators = new ArrayList<WebappDecorator>();
     private boolean featuresLoaded = false;
+    private Handler logHandler;
     private String contextPath = "";
     private String docBase = ".";
     private int port = 3000;
@@ -72,7 +73,10 @@ public class Runner {
         }
         Logger logger = Logger.getLogger("net.unit8.waitt");
         logger.setLevel(Level.ALL);
-        logger.addHandler(new Handler() {
+        if (logHandler != null) {
+            logger.removeHandler(logHandler);
+        }
+        logHandler = new Handler() {
             @Override
             public void publish(LogRecord record) {
                 if (record.getLoggerName() != null && record.getLoggerName().startsWith("sun.awt."))
@@ -98,7 +102,8 @@ public class Runner {
             @Override
             public void close() throws SecurityException {
             }
-        });
+        };
+        logger.addHandler(logHandler);
     }
 
     public void execute(EmbeddedServer embeddedServer) throws RuntimeException {
