@@ -175,8 +175,12 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 webappRealm.addURL(url);
             }
 
+            List<String[]> startupTimeline = new ArrayList<String[]>();
             for (ServerMonitor serverMonitor : serverMonitors) {
+                long t0 = System.currentTimeMillis();
                 serverMonitor.init(embeddedServer);
+                long elapsed = System.currentTimeMillis() - t0;
+                startupTimeline.add(new String[]{serverMonitor.getClass().getSimpleName(), "init", String.valueOf(elapsed)});
             }
             embeddedServer.setWebappDecorators(webappDecorators);
             embeddedServer.setMainContext(contextPath, docBase.getAbsolutePath(), webappRealm);
@@ -186,8 +190,12 @@ public abstract class AbstractRunMojo extends AbstractMojo {
             }
 
             for (ServerMonitor serverMonitor : serverMonitors) {
+                long t0 = System.currentTimeMillis();
                 serverMonitor.start(embeddedServer);
+                long elapsed = System.currentTimeMillis() - t0;
+                startupTimeline.add(new String[]{serverMonitor.getClass().getSimpleName(), "start", String.valueOf(elapsed)});
             }
+            System.getProperties().put("waitt.startup.timeline", startupTimeline);
             path = path == null ? "" : path;
 
             afterStart();

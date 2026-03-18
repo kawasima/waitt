@@ -15,10 +15,15 @@
     <nav class="sidebar">
       <ul>
         <li><a class="nav-link" data-page="application">Application</a></li>
+        <li><a class="nav-link" data-page="server">Server</a></li>
+        <li><a class="nav-link" data-page="requests">Request Log</a></li>
+        <li><a class="nav-link" data-page="loggers">Loggers</a></li>
         <li><a class="nav-link" data-page="thread">Thread dump</a></li>
         <li><a class="nav-link" data-page="heap">Heap dump</a></li>
         <li><a class="nav-link" data-page="env">Environments</a></li>
-        <li><a class="nav-link" data-page="server">Server</a></li>
+        <li><a class="nav-link" data-page="startup">Startup</a></li>
+        <li><a class="nav-link" data-page="classloaders">ClassLoaders</a></li>
+        <li><a class="nav-link" data-page="dependencies">Dependencies</a></li>
       </ul>
     </nav>
     <main id="content">
@@ -191,6 +196,21 @@
       }).catch(function (e) { setContent(errorMsg(e.message)); });
     }
 
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+      return (bytes / 1073741824).toFixed(2) + ' GB';
+    }
+
+    function formatDuration(ms) {
+      if (ms < 1000) return ms + 'ms';
+      if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+      var min = Math.floor(ms / 60000);
+      var sec = Math.floor((ms % 60000) / 1000);
+      return min + 'm ' + sec + 's';
+    }
+
     function pageServer() {
       setContent(loading());
       apiFetch('/server').then(function (data) {
@@ -198,11 +218,71 @@
         var div = h('div', {});
         div.appendChild(h('h2', {}, ['Server']));
         var dl = h('dl', {});
-        [['Name', meta.name || ''], ['Status', meta.status || '']].forEach(function (pair) {
+        var items = [
+          ['Name', meta.name || ''],
+          ['Status', meta.status || ''],
+          ['Uptime', data.uptime ? formatDuration(data.uptime) : ''],
+        ];
+        items.forEach(function (pair) {
           dl.appendChild(h('dt', {}, [pair[0]]));
           dl.appendChild(h('dd', {}, [pair[1]]));
         });
         div.appendChild(dl);
+
+        // Memory
+        if (data.heap) {
+          div.appendChild(h('h3', {}, ['Memory']));
+          var memTable = h('table', {});
+          memTable.appendChild(h('thead', {}, [h('tr', {}, [
+            h('th', {}, ['Area']), h('th', {}, ['Used']), h('th', {}, ['Committed']), h('th', {}, ['Max'])
+          ])]));
+          var memBody = h('tbody', {});
+          [['Heap', data.heap], ['Non-Heap', data.nonHeap]].forEach(function (pair) {
+            var m = pair[1] || {};
+            memBody.appendChild(h('tr', {}, [
+              h('td', {}, [pair[0]]),
+              h('td', {}, [formatBytes(m.used || 0)]),
+              h('td', {}, [formatBytes(m.committed || 0)]),
+              h('td', {}, [m.max > 0 ? formatBytes(m.max) : 'N/A']),
+            ]));
+          });
+          memTable.appendChild(memBody);
+          div.appendChild(memTable);
+        }
+
+        // GC
+        if (data.gc && data.gc.length) {
+          div.appendChild(h('h3', {}, ['Garbage Collectors']));
+          var gcTable = h('table', {});
+          gcTable.appendChild(h('thead', {}, [h('tr', {}, [
+            h('th', {}, ['Name']), h('th', {}, ['Collections']), h('th', {}, ['Total Time'])
+          ])]));
+          var gcBody = h('tbody', {});
+          data.gc.forEach(function (g) {
+            gcBody.appendChild(h('tr', {}, [
+              h('td', {}, [g.name || '']),
+              h('td', {}, [String(g.collectionCount || 0)]),
+              h('td', {}, [formatDuration(g.collectionTime || 0)]),
+            ]));
+          });
+          gcTable.appendChild(gcBody);
+          div.appendChild(gcTable);
+        }
+
+        // Classes
+        if (data.loadedClassCount !== undefined) {
+          div.appendChild(h('h3', {}, ['Classes']));
+          var clDl = h('dl', {});
+          [
+            ['Loaded', String(data.loadedClassCount)],
+            ['Total loaded', String(data.totalLoadedClassCount || 0)],
+            ['Unloaded', String(data.unloadedClassCount || 0)],
+          ].forEach(function (pair) {
+            clDl.appendChild(h('dt', {}, [pair[0]]));
+            clDl.appendChild(h('dd', {}, [pair[1]]));
+          });
+          div.appendChild(clDl);
+        }
 
         // Reload button
         var btn = h('button', { class: 'btn btn-warning' }, ['Reload']);
@@ -218,14 +298,168 @@
       }).catch(function (e) { setContent(errorMsg(e.message)); });
     }
 
+    function pageRequests() {
+      setContent(loading());
+      apiFetch('/requests').then(function (data) {
+        var reqs = data.requests || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Request Log (' + reqs.length + ' entries)']));
+        if (!reqs.length) {
+          div.appendChild(h('p', {}, ['No requests recorded yet.']));
+          setContent(div); return;
+        }
+        var table = h('table', {});
+        table.appendChild(h('thead', {}, [h('tr', {}, [
+          h('th', {}, ['Time']), h('th', {}, ['Method']), h('th', {}, ['Path']),
+          h('th', {}, ['Status']), h('th', {}, ['Duration'])
+        ])]));
+        var tbody = h('tbody', {});
+        reqs.forEach(function (r) {
+          var time = r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : '';
+          tbody.appendChild(h('tr', {}, [
+            h('td', {}, [time]),
+            h('td', {}, [r.method || '']),
+            h('td', {}, [r.path || '']),
+            h('td', {}, [String(r.status || '')]),
+            h('td', {}, [r.duration !== undefined ? r.duration + 'ms' : '']),
+          ]));
+        });
+        table.appendChild(tbody);
+        div.appendChild(table);
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageLoggers() {
+      setContent(loading());
+      apiFetch('/loggers').then(function (data) {
+        var loggers = data.loggers || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Loggers (' + data.backend + ')']));
+        var table = h('table', {});
+        table.appendChild(h('thead', {}, [h('tr', {}, [
+          h('th', {}, ['Name']), h('th', {}, ['Configured']), h('th', {}, ['Effective']), h('th', {}, ['Action'])
+        ])]));
+        var tbody = h('tbody', {});
+        var levels = ['TRACE', 'DEBUG', 'INFO', 'WARN', 'ERROR', 'OFF'];
+        loggers.forEach(function (l) {
+          var select = h('select', {});
+          levels.forEach(function (lv) {
+            var opt = h('option', { value: lv }, [lv]);
+            if (lv === (l.effectiveLevel || '').toUpperCase()) opt.selected = true;
+            select.appendChild(opt);
+          });
+          var changeBtn = h('button', { class: 'btn btn-sm' }, ['Set']);
+          changeBtn.addEventListener('click', function () {
+            fetch(BASE + '/loggers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: l.name, level: select.value })
+            }).then(function () { pageLoggers(); });
+          });
+          tbody.appendChild(h('tr', {}, [
+            h('td', {}, [l.name || '']),
+            h('td', {}, [l.configuredLevel || '(inherited)']),
+            h('td', {}, [l.effectiveLevel || '']),
+            h('td', {}, [select, changeBtn]),
+          ]));
+        });
+        table.appendChild(tbody);
+        div.appendChild(table);
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageStartup() {
+      setContent(loading());
+      apiFetch('/startup').then(function (data) {
+        var timeline = data.timeline || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Startup Timeline']));
+        div.appendChild(h('p', {}, ['Uptime: ' + formatDuration(data.uptime || 0)]));
+        if (!timeline.length) {
+          div.appendChild(h('p', {}, ['No startup data available.']));
+          setContent(div); return;
+        }
+        var table = h('table', {});
+        table.appendChild(h('thead', {}, [h('tr', {}, [
+          h('th', {}, ['Component']), h('th', {}, ['Phase']), h('th', {}, ['Duration'])
+        ])]));
+        var tbody = h('tbody', {});
+        timeline.forEach(function (e) {
+          tbody.appendChild(h('tr', {}, [
+            h('td', {}, [e.component || '']),
+            h('td', {}, [e.phase || '']),
+            h('td', {}, [formatDuration(e.duration || 0)]),
+          ]));
+        });
+        table.appendChild(tbody);
+        div.appendChild(table);
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageClassLoaders() {
+      setContent(loading());
+      apiFetch('/classloaders').then(function (data) {
+        var chain = data.classLoaders || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['ClassLoader Hierarchy']));
+        chain.forEach(function (cl, i) {
+          var block = h('div', { class: 'thread-block' });
+          block.appendChild(h('strong', {}, [(i === 0 ? '▶ ' : '  ↳ ') + cl.name]));
+          block.appendChild(h('p', { class: 'text-muted' }, [cl.identity || '']));
+          if (cl.urls && cl.urls.length) {
+            var urlList = h('ul', { class: 'url-list' });
+            cl.urls.forEach(function (url) {
+              var shortUrl = url.replace(/.*\//, '');
+              urlList.appendChild(h('li', {}, [shortUrl]));
+            });
+            block.appendChild(urlList);
+          }
+          div.appendChild(block);
+        });
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageDependencies() {
+      setContent(loading());
+      apiFetch('/dependencies').then(function (data) {
+        var deps = data.dependencies || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Dependencies (' + deps.length + ')']));
+        var table = h('table', {});
+        table.appendChild(h('thead', {}, [h('tr', {}, [
+          h('th', {}, ['GroupId']), h('th', {}, ['ArtifactId']), h('th', {}, ['Version'])
+        ])]));
+        var tbody = h('tbody', {});
+        deps.forEach(function (d) {
+          tbody.appendChild(h('tr', {}, [
+            h('td', {}, [d.groupId || '']),
+            h('td', {}, [d.artifactId || '']),
+            h('td', {}, [d.version || '']),
+          ]));
+        });
+        table.appendChild(tbody);
+        div.appendChild(table);
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
     // ---- Router ----
 
     var pages = {
       application: pageApplication,
+      server: pageServer,
+      requests: pageRequests,
+      loggers: pageLoggers,
       thread: pageThread,
       heap: pageHeap,
       env: pageEnv,
-      server: pageServer,
+      startup: pageStartup,
+      classloaders: pageClassLoaders,
+      dependencies: pageDependencies,
     };
 
     function navigate(page) {

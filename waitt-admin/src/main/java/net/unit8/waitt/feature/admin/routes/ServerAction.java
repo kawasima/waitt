@@ -12,6 +12,14 @@ import org.rrd4j.graph.RrdGraphDef;
 
 import java.awt.*;
 import java.io.IOException;
+import java.lang.management.ClassLoadingMXBean;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Provide information about the server.
@@ -53,6 +61,41 @@ public class ServerAction implements Route {
             serverMetadata.put("status", server.getStatus().name());
 
             json.put("serverMetadata", serverMetadata);
+
+            // JVM metrics
+            RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+            json.put("uptime", runtime.getUptime());
+            json.put("startTime", runtime.getStartTime());
+
+            MemoryMXBean memory = ManagementFactory.getMemoryMXBean();
+            MemoryUsage heap = memory.getHeapMemoryUsage();
+            JSONObject heapJson = new JSONObject();
+            heapJson.put("used", heap.getUsed());
+            heapJson.put("committed", heap.getCommitted());
+            heapJson.put("max", heap.getMax());
+            json.put("heap", heapJson);
+
+            MemoryUsage nonHeap = memory.getNonHeapMemoryUsage();
+            JSONObject nonHeapJson = new JSONObject();
+            nonHeapJson.put("used", nonHeap.getUsed());
+            nonHeapJson.put("committed", nonHeap.getCommitted());
+            nonHeapJson.put("max", nonHeap.getMax());
+            json.put("nonHeap", nonHeapJson);
+
+            ClassLoadingMXBean classLoading = ManagementFactory.getClassLoadingMXBean();
+            json.put("loadedClassCount", classLoading.getLoadedClassCount());
+            json.put("totalLoadedClassCount", classLoading.getTotalLoadedClassCount());
+            json.put("unloadedClassCount", classLoading.getUnloadedClassCount());
+
+            List<JSONObject> gcList = new ArrayList<JSONObject>();
+            for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
+                JSONObject gcJson = new JSONObject();
+                gcJson.put("name", gc.getName());
+                gcJson.put("collectionCount", gc.getCollectionCount());
+                gcJson.put("collectionTime", gc.getCollectionTime());
+                gcList.add(gcJson);
+            }
+            json.put("gc", gcList);
 
             ResponseUtils.responseJSON(exchange, json);
         }
