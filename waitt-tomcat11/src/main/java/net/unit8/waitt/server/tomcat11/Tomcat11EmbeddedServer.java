@@ -8,8 +8,11 @@ import net.unit8.waitt.api.configuration.FilterConfiguration;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.Wrapper;
+import org.apache.catalina.connector.Request;
+import org.apache.catalina.connector.Response;
 import org.apache.catalina.core.AprLifecycleListener;
 import org.apache.catalina.core.StandardHost;
+import org.apache.catalina.valves.ValveBase;
 import org.apache.catalina.core.StandardServer;
 import org.apache.catalina.loader.WebappLoader;
 import org.apache.catalina.startup.Constants;
@@ -28,6 +31,12 @@ public class Tomcat11EmbeddedServer implements EmbeddedServer {
     final Tomcat tomcat;
     Context context;
     List<WebappDecorator> decorators;
+    private RequestListener requestListener;
+
+    @Override
+    public void setRequestListener(RequestListener listener) {
+        this.requestListener = listener;
+    }
 
     public Tomcat11EmbeddedServer() {
         tomcat = new Tomcat();
@@ -97,6 +106,24 @@ public class Tomcat11EmbeddedServer implements EmbeddedServer {
         server.setParentClassLoader(getClass().getClassLoader());
         tomcat.getConnector().setURIEncoding("UTF-8");
         tomcat.getConnector().setUseBodyEncodingForURI(true);
+        if (requestListener != null) {
+            tomcat.getHost().getPipeline().addValve(new ValveBase() {
+                @Override
+                public void invoke(Request request, Response response) throws java.io.IOException, jakarta.servlet.ServletException {
+                    long t0 = System.nanoTime();
+                    try {
+                        getNext().invoke(request, response);
+                    } finally {
+                        long duration = (System.nanoTime() - t0) / 1_000_000;
+                        requestListener.onRequest(
+                                request.getMethod(),
+                                request.getRequestURI(),
+                                response.getStatus(),
+                                duration);
+                    }
+                }
+            });
+        }
         try {
             server.start();
         } catch (LifecycleException e) {

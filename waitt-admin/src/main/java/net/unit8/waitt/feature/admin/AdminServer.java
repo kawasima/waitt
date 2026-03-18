@@ -80,6 +80,13 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
     @Override
     public void init(EmbeddedServer server) {
         executorService.execute(new MonitoringPost(rrdPath));
+        // Set up request listener for application request logging
+        server.setRequestListener(new EmbeddedServer.RequestListener() {
+            @Override
+            public void onRequest(String method, String path, int status, long durationMs) {
+                RequestLogAction.record(method, path, status, durationMs);
+            }
+        });
     }
 
     @Override
