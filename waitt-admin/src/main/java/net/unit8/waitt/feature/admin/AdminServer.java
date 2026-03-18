@@ -87,8 +87,10 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         long startedAt = System.currentTimeMillis();
         app.addRoutes(new ServerAction(server, rrdPath));
         app.addRoutes(new ReloadAction(server));
-        app.addRoutes(new ClassLoadersAction(Thread.currentThread().getContextClassLoader()));
-        app.addRoutes(new DependenciesAction(Thread.currentThread().getContextClassLoader()));
+        Object webappCl = System.getProperties().get("waitt.webapp.classloader");
+        ClassLoader appClassLoader = webappCl instanceof ClassLoader ? (ClassLoader) webappCl : Thread.currentThread().getContextClassLoader();
+        app.addRoutes(new ClassLoadersAction(appClassLoader));
+        app.addRoutes(new DependenciesAction(appClassLoader));
         // Static file handler must be last (fallback for dashboard UI)
         app.addRoutes(new StaticFileAction());
         try {

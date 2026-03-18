@@ -54,12 +54,16 @@ public class DependenciesAction implements Route {
 
             if (urls != null) {
                 for (URL url : urls) {
-                    String path = url.getPath();
-                    if (path.endsWith(".jar")) {
-                        JSONObject dep = parseJar(path);
-                        if (dep != null) {
-                            deps.add(dep);
+                    try {
+                        java.nio.file.Path filePath = java.nio.file.Paths.get(url.toURI());
+                        if (filePath.toString().endsWith(".jar")) {
+                            JSONObject dep = parseJar(filePath.toString());
+                            if (dep != null) {
+                                deps.add(dep);
+                            }
                         }
+                    } catch (java.net.URISyntaxException e) {
+                        // skip malformed URLs
                     }
                 }
             }
@@ -104,12 +108,9 @@ public class DependenciesAction implements Route {
     private String extractVersion(String filename) {
         // Extract version from filename like "commons-io-2.14.0.jar"
         String noExt = filename.replace(".jar", "");
-        int lastDash = noExt.length() - 1;
-        while (lastDash > 0 && (Character.isDigit(noExt.charAt(lastDash)) || noExt.charAt(lastDash) == '.' || noExt.charAt(lastDash) == '-')) {
-            lastDash--;
-        }
-        if (lastDash < noExt.length() - 1 && noExt.charAt(lastDash) == '-') {
-            return noExt.substring(lastDash + 1);
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("-([0-9][\\w.\\-]*)$").matcher(noExt);
+        if (m.find()) {
+            return m.group(1);
         }
         return "";
     }
