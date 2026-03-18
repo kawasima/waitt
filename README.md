@@ -17,13 +17,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.5.0</version>
+  <version>1.5.1-SNAPSHOT</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
         <artifactId>waitt-tomcat9</artifactId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
       </server>
     </servers>
   </configuration>
@@ -96,7 +96,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat9</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -106,7 +106,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat10</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -116,7 +116,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat11</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -126,7 +126,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty12</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -142,7 +142,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </feature>
 ```
 
@@ -155,7 +155,7 @@ Access `http://localhost:1192/` to view the dashboard (application info, JVM met
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </feature>
 ```
 
@@ -168,7 +168,7 @@ Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with T
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>
@@ -184,7 +184,7 @@ No manual reload trigger needed — just run `mvn compile` in another terminal.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-devtools</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </feature>
 ```
 
