@@ -42,23 +42,22 @@ public class StaticFileAction implements Route {
             path = "/index.html";
         }
         String resourcePath = "/public" + path;
-        InputStream in = getClass().getResourceAsStream(resourcePath);
-        if (in == null) {
-            ResponseUtils.sendError(exchange, 404, "Not found");
-            return;
-        }
-
-        String contentType = guessContentType(path);
-        exchange.getResponseHeaders().put("Content-Type", Collections.singletonList(contentType));
-        exchange.sendResponseHeaders(200, 0);
-        try (OutputStream os = exchange.getResponseBody()) {
-            byte[] buf = new byte[4096];
-            int len;
-            while ((len = in.read(buf)) != -1) {
-                os.write(buf, 0, len);
+        try (InputStream in = getClass().getResourceAsStream(resourcePath)) {
+            if (in == null) {
+                ResponseUtils.sendError(exchange, 404, "Not found");
+                return;
             }
-        } finally {
-            in.close();
+
+            String contentType = guessContentType(path);
+            exchange.getResponseHeaders().put("Content-Type", Collections.singletonList(contentType));
+            exchange.sendResponseHeaders(200, 0);
+            try (OutputStream os = exchange.getResponseBody()) {
+                byte[] buf = new byte[4096];
+                int len;
+                while ((len = in.read(buf)) != -1) {
+                    os.write(buf, 0, len);
+                }
+            }
         }
     }
 
