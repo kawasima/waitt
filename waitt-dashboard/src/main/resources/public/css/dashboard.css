@@ -110,5 +110,14 @@ pre.stack-trace {
 }
 .btn-warning:disabled { opacity: .65; cursor: default; }
 
+.btn-sm {
+    padding: .2rem .5rem;
+    font-size: .8em;
+    margin-left: .5rem;
+}
+
 /* Utility */
 .text-danger { color: #c0392b; }
+.text-muted { color: #777; font-size: .85em; margin: .2rem 0; }
+.url-list { font-size: .8em; color: #555; max-height: 150px; overflow-y: auto; }
+select { padding: .2rem; font-size: .85em; }

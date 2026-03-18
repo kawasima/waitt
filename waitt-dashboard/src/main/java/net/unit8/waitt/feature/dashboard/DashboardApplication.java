@@ -29,7 +29,15 @@ public class DashboardApplication extends HttpServlet {
         getRoutes.put("/heap", new HeapDumpRoute());
         getRoutes.put("/thread", new ThreadDumpRoute());
         getRoutes.put("/prometheus", new PrometheusRoute());
+        getRoutes.put("/loggers", new LoggersRoute(adminConfig));
+        getRoutes.put("/startup", new AdminProxyRoute(adminConfig, "/startup"));
+        getRoutes.put("/classloaders", new AdminProxyRoute(adminConfig, "/classloaders"));
+        getRoutes.put("/dependencies", new AdminProxyRoute(adminConfig, "/dependencies"));
+        getRoutes.put("/requests", new AdminProxyRoute(adminConfig, "/requests"));
         postRoutes.put("/server/reload", new ServerRestartRoute(adminConfig));
+        // LoggersRoute handles both GET and POST
+        LoggersRoute loggersRoute = (LoggersRoute) getRoutes.get("/loggers");
+        postRoutes.put("/loggers", loggersRoute);
     }
 
     @Override
