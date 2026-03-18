@@ -22,6 +22,16 @@
             <result name="success">/HelloWorld.jsp</result>
         </action>
 
+        <action name="greeting" class="net.unit8.waitt.examples.struts2.GreetingAction">
+            <result name="success">/greetingResult.jsp</result>
+            <result name="input">/greeting.jsp</result>
+        </action>
+
+        <action name="calculator" class="net.unit8.waitt.examples.struts2.CalculatorAction">
+            <result name="success">/calculator.jsp</result>
+            <result name="input">/calculator.jsp</result>
+        </action>
+
     </package>
 
 </struts>
