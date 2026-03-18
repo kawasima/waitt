@@ -126,13 +126,17 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
         if (mainWebapp == null) {
             throw new IllegalStateException("Main context has not been set");
         }
+        ClassLoader previousTccl = Thread.currentThread().getContextClassLoader();
         try {
             mainWebapp.stop();
             handlers.removeHandler(mainWebapp);
+            mainWebapp.destroy();
             mainWebapp = addWebapp(mainContextPath, mainBaseDir, mainLoader, true);
             mainWebapp.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            Thread.currentThread().setContextClassLoader(previousTccl);
         }
     }
 
@@ -229,8 +233,12 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
                     }
                 }
                 if (decorator.getClass().getClassLoader() instanceof ClassRealm && loader instanceof ClassRealm) {
+                    ClassRealm loaderRealm = (ClassRealm) loader;
+                    java.util.Set<URL> existingUrls = new java.util.HashSet<URL>(java.util.Arrays.asList(loaderRealm.getURLs()));
                     for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
-                        ((ClassRealm) loader).addURL(url);
+                        if (!existingUrls.contains(url)) {
+                            loaderRealm.addURL(url);
+                        }
                     }
                 }
             }
