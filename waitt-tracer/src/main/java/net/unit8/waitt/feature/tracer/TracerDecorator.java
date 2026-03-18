@@ -8,17 +8,19 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * Registers the OTel tracing filter as a WebappDecorator.
+ *
  * @author kawasima
  */
 public class TracerDecorator implements WebappDecorator {
     @Override
     public List<FilterConfiguration> getFilterConfigs() {
         List<FilterConfiguration> filterConfigurations = new ArrayList<FilterConfiguration>();
-        FilterConfiguration responseDumpFilterConfig = new FilterConfiguration();
-        responseDumpFilterConfig.setName("responseDumpConfig");
-        responseDumpFilterConfig.setClassName("net.unit8.waitt.feature.tracer.ResponseDumpFilter");
-        responseDumpFilterConfig.setUrlPatterns(Collections.singletonList("/*"));
-        filterConfigurations.add(responseDumpFilterConfig);
+        FilterConfiguration config = new FilterConfiguration();
+        config.setName("otelTracingFilter");
+        config.setClassName("net.unit8.waitt.feature.tracer.OtelTracingFilter");
+        config.setUrlPatterns(Collections.singletonList("/*"));
+        filterConfigurations.add(config);
         return filterConfigurations;
     }
 }

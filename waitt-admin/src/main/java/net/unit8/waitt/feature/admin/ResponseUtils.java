@@ -8,6 +8,14 @@ import java.io.OutputStream;
 import java.util.Collections;
 
 public class ResponseUtils {
+    public static void sendError(HttpExchange exchange, int status, String message) throws IOException {
+        byte[] body = message.getBytes("UTF-8");
+        exchange.sendResponseHeaders(status, body.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(body);
+        }
+    }
+
     public static void responseJSON(HttpExchange exchange, JSONObject jsonObject) throws IOException {
         String origin = exchange.getRequestHeaders().getFirst("Origin");
         if (origin != null && origin.startsWith("http://localhost")) {

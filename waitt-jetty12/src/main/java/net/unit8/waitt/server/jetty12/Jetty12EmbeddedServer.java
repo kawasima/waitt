@@ -18,11 +18,15 @@ import org.eclipse.jetty.ee.webapp.CachingWebAppClassLoader;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.ee10.webapp.WebInfConfiguration;
 import org.eclipse.jetty.ee10.webapp.WebXmlConfiguration;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
 
@@ -31,7 +35,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,8 +53,17 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     private final Server server;
     private final ContextHandlerCollection handlers;
     private WebAppContext mainWebapp;
+    private String mainContextPath;
+    private String mainBaseDir;
+    private ClassLoader mainLoader;
     private List<WebappDecorator> decorators;
     private boolean started = false;
+    private volatile RequestListener requestListener;
+
+    @Override
+    public void setRequestListener(RequestListener listener) {
+        this.requestListener = listener;
+    }
 
     public Jetty12EmbeddedServer() {
         server = new Server();
@@ -73,6 +89,9 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void setMainContext(String contextPath, String baseDir, ClassLoader loader) {
+        this.mainContextPath = contextPath;
+        this.mainBaseDir = baseDir;
+        this.mainLoader = loader;
         mainWebapp = addWebapp(contextPath, baseDir, loader, true);
     }
 
@@ -108,6 +127,32 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     }
 
     private void doStart() {
+        Handler original = server.getHandler();
+        server.setHandler(new Handler.Wrapper(original) {
+            @Override
+            public boolean handle(Request request, Response response, Callback callback) throws Exception {
+                RequestListener rl = requestListener;
+                if (rl != null) {
+                    long t0 = System.nanoTime();
+                    Callback wrapped = Callback.from(
+                            () -> {
+                                long duration = (System.nanoTime() - t0) / 1_000_000;
+                                rl.onRequest(request.getMethod(), Request.getPathInContext(request),
+                                        response.getStatus(), duration);
+                                callback.succeeded();
+                            },
+                            (t) -> {
+                                long duration = (System.nanoTime() - t0) / 1_000_000;
+                                rl.onRequest(request.getMethod(), Request.getPathInContext(request),
+                                        response.getStatus(), duration);
+                                callback.failed(t);
+                            });
+                    return super.handle(request, response, wrapped);
+                } else {
+                    return super.handle(request, response, callback);
+                }
+            }
+        });
         try {
             server.start();
         } catch (Exception e) {
@@ -120,11 +165,24 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
         if (mainWebapp == null) {
             throw new IllegalStateException("Main context has not been set");
         }
+        ClassLoader previousTccl = Thread.currentThread().getContextClassLoader();
         try {
             mainWebapp.stop();
-            mainWebapp.start();
+            handlers.removeHandler(mainWebapp);
+            mainWebapp.destroy();
+            WebAppContext newWebapp = addWebapp(mainContextPath, mainBaseDir, mainLoader, true);
+            try {
+                newWebapp.start();
+            } catch (Exception startEx) {
+                handlers.removeHandler(newWebapp);
+                newWebapp.destroy();
+                throw startEx;
+            }
+            mainWebapp = newWebapp;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to reload context", e);
+        } finally {
+            Thread.currentThread().setContextClassLoader(previousTccl);
         }
     }
 
@@ -221,8 +279,12 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
                     }
                 }
                 if (decorator.getClass().getClassLoader() instanceof ClassRealm && loader instanceof ClassRealm) {
+                    ClassRealm loaderRealm = (ClassRealm) loader;
+                    Set<URL> existingUrls = new HashSet<URL>(Arrays.asList(loaderRealm.getURLs()));
                     for (URL url : ((ClassRealm) decorator.getClass().getClassLoader()).getURLs()) {
-                        ((ClassRealm) loader).addURL(url);
+                        if (existingUrls.add(url)) {
+                            loaderRealm.addURL(url);
+                        }
                     }
                 }
             }

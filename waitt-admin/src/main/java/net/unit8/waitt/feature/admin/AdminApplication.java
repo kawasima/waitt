@@ -29,15 +29,11 @@ public class AdminApplication implements HttpHandler {
                     return;
                 }
             }
-            byte[] body404 = "Not found".getBytes("UTF-8");
-            exchange.sendResponseHeaders(404, body404.length);
-            exchange.getResponseBody().write(body404);
+            ResponseUtils.sendError(exchange, 404, "Not found");
         } catch (Exception e) {
             LOG.log(Level.SEVERE, "Error handling request", e);
             try {
-                byte[] errorBody = "Internal Server Error".getBytes("UTF-8");
-                exchange.sendResponseHeaders(500, errorBody.length);
-                exchange.getResponseBody().write(errorBody);
+                ResponseUtils.sendError(exchange, 500, "Internal Server Error");
             } catch (IOException ignored) {
                 // Response may have already been sent
             }

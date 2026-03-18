@@ -4,7 +4,7 @@
 
     <groupId>net.unit8.waitt</groupId>
     <artifactId>waitt-parent</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
     <packaging>pom</packaging>
 
     <name>waitt-parent</name>
@@ -26,11 +26,10 @@
         <module>waitt-tomcat9</module>
         <module>waitt-tomcat10</module>
         <module>waitt-tomcat11</module>
-        <module>waitt-coverage</module>
         <module>waitt-jacoco</module>
-        <module>waitt-dashboard</module>
         <module>waitt-admin</module>
         <module>waitt-tracer</module>
+        <module>waitt-devtools</module>
     </modules>
 
     <build>
@@ -109,6 +108,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
         </plugins>
@@ -184,6 +184,13 @@
                 <groupId>org.gridkit.jvmtool</groupId>
                 <artifactId>hprof-heap</artifactId>
                 <version>0.16</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>1.46.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

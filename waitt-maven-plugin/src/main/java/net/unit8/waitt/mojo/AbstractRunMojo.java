@@ -153,6 +153,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         webappConfig.setBaseDirectory(docBase);
         webappConfig.setPackages(PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
         webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
+        webappConfig.setOutputDirectory(new File(project.getBuild().getOutputDirectory()));
 
         ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
 
@@ -174,19 +175,28 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 webappRealm.addURL(url);
             }
 
+            List<String[]> startupTimeline = new ArrayList<String[]>();
             for (ServerMonitor serverMonitor : serverMonitors) {
+                long t0 = System.nanoTime();
                 serverMonitor.init(embeddedServer);
+                long elapsed = (System.nanoTime() - t0) / 1_000_000;
+                startupTimeline.add(new String[]{serverMonitor.getClass().getSimpleName(), "init", String.valueOf(elapsed)});
             }
             embeddedServer.setWebappDecorators(webappDecorators);
             embeddedServer.setMainContext(contextPath, docBase.getAbsolutePath(), webappRealm);
+            System.getProperties().put("waitt.webapp.classloader", webappRealm);
             for (ExtraWebapp extraWebapp : extraWebapps) {
                 extraWebapp.getRealm().setParentRealm(serverSpec.getClassRealm());
                 embeddedServer.addContext("/_" + extraWebapp.getName(), extraWebapp.getWarPath(), extraWebapp.getRealm());
             }
 
             for (ServerMonitor serverMonitor : serverMonitors) {
+                long t0 = System.nanoTime();
                 serverMonitor.start(embeddedServer);
+                long elapsed = (System.nanoTime() - t0) / 1_000_000;
+                startupTimeline.add(new String[]{serverMonitor.getClass().getSimpleName(), "start", String.valueOf(elapsed)});
             }
+            System.getProperties().put("waitt.startup.timeline", startupTimeline);
             path = path == null ? "" : path;
 
             afterStart();
@@ -198,6 +208,8 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 serverMonitor.stop();
             }
             embeddedServer.stop();
+            System.getProperties().remove("waitt.startup.timeline");
+            System.getProperties().remove("waitt.webapp.classloader");
             if (webappRealm != null) {
                 try {
                     webappRealm.close();

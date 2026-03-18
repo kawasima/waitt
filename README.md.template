@@ -88,7 +88,7 @@ Choose a server based on the Servlet API version your application uses.
 | waitt-tomcat9 | Servlet 4.0 | `javax.servlet` |
 | waitt-tomcat10 | Servlet 6.0 (Jakarta EE 10) | `jakarta.servlet` |
 | waitt-tomcat11 | Servlet 6.1 (Jakarta EE 11) | `jakarta.servlet` |
-| waitt-jetty9 | Servlet 3.1 | `javax.servlet` |
+| waitt-jetty12 | Servlet 6.0 (Jakarta EE 10) | `jakarta.servlet` |
 
 - Tomcat 9 (javax.servlet)
 
@@ -120,12 +120,12 @@ Choose a server based on the Servlet API version your application uses.
   </server>
 ```
 
-- Jetty 9 (javax.servlet)
+- Jetty 12 (jakarta.servlet)
 
 ```xml
   <server>
     <groupId>net.unit8.waitt.server</groupId>
-    <artifactId>waitt-jetty9</artifactId>
+    <artifactId>waitt-jetty12</artifactId>
     <version>@PROJECT_VERSION@</version>
   </server>
 ```
@@ -136,20 +136,7 @@ If you set multiple servers and maven is executed in the interactive mode, you c
 
 ### Coverage
 
-You can use JaCoCo or Cobertura.
 When you access to `/_coverage/`, you can see the coverages of your code.
-
-#### Cobertura
-
-```xml
-  <feature>
-    <groupId>net.unit8.waitt.feature</groupId>
-    <artifactId>waitt-coverage</artifactId>
-    <version>@PROJECT_VERSION@</version>
-  </feature>
-```
-
-#### JaCoCo
 
 ```xml
   <feature>
@@ -159,21 +146,10 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   </feature>
 ```
 
-### Dashboard
+### Dashboard & Admin
 
-```xml
-  <feature>
-    <groupId>net.unit8.waitt.feature</groupId>
-    <artifactId>waitt-dashboard</artifactId>
-    <version>@PROJECT_VERSION@</version>
-    <type>war</type>
-  </feature>
-```
-
-When you access to `/_dashboard/`, you can see the information of your application.
-
-In dashboard, you can monitor the memory usage / cpu load of a server and redeploy your application.
-Add `waitt-admin` feature to your configuration.
+The admin server provides a built-in dashboard UI and monitoring API.
+Access `http://localhost:1192/` to view the dashboard (application info, JVM metrics, thread/heap dumps, loggers, dependencies, etc.).
 
 ```xml
   <feature>
@@ -186,7 +162,7 @@ Add `waitt-admin` feature to your configuration.
 ### Tracer
 
 You can show and search HTTP request/response logs at development in Kibana.
-Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with Tomcat 10/11.
+Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with Tomcat 10/11 and Jetty 12.
 
 ```xml
   <feature>
@@ -196,6 +172,19 @@ Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with T
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>
+  </feature>
+```
+
+### DevTools (Auto-Reload)
+
+Automatically reloads the application when compiled classes change in `target/classes`.
+No manual reload trigger needed — just run `mvn compile` in another terminal.
+
+```xml
+  <feature>
+    <groupId>net.unit8.waitt.feature</groupId>
+    <artifactId>waitt-devtools</artifactId>
+    <version>@PROJECT_VERSION@</version>
   </feature>
 ```
 
@@ -218,6 +207,12 @@ To run an example:
 ```
 
 ## for Developer
+
+Refresh README and examples version placeholders from `pom.xml`:
+
+```shell
+% ./scripts/update-version.sh
+```
 
 ClassLoader hierarchy
 

@@ -68,4 +68,21 @@ public interface EmbeddedServer {
      * Stop an embedded server.
      */
     void stop();
+
+    /**
+     * Set a callback to receive request completion events.
+     * Called by the server for each HTTP request with method, path, status, and duration.
+     *
+     * @param listener the request listener, or null to disable
+     */
+    default void setRequestListener(RequestListener listener) {
+        // Default no-op for backward compatibility
+    }
+
+    /**
+     * Callback interface for HTTP request events.
+     */
+    interface RequestListener {
+        void onRequest(String method, String path, int status, long durationMs);
+    }
 }

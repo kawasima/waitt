@@ -45,6 +45,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
     String rrdPath;
 
     final AdminApplication app = new AdminApplication();
+    PrometheusAction prometheusAction;
     int adminPort = 1192;
 
     @Override
@@ -54,6 +55,11 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         app.addRoutes(new EnvPropertyAction());
         app.addRoutes(new ThreadDumpAction());
         app.addRoutes(new HeapDumpAction());
+        app.addRoutes(new LoggersAction());
+        app.addRoutes(new StartupAction());
+        app.addRoutes(new RequestLogAction());
+        prometheusAction = new PrometheusAction();
+        app.addRoutes(prometheusAction);
 
         for (Feature feature : config.getFeatures()) {
             if ("waitt-admin".equals(feature.getArtifactId()) && "net.unit8.waitt.feature".equals(feature.getGroupId())) {
@@ -76,13 +82,25 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
     @Override
     public void init(EmbeddedServer server) {
         executorService.execute(new MonitoringPost(rrdPath));
+        // Set up request listener for application request logging
+        server.setRequestListener(new EmbeddedServer.RequestListener() {
+            @Override
+            public void onRequest(String method, String path, int status, long durationMs) {
+                RequestLogAction.record(method, path, status, durationMs);
+            }
+        });
     }
 
     @Override
     public void start(EmbeddedServer server) {
-        long startedAt = System.currentTimeMillis();
         app.addRoutes(new ServerAction(server, rrdPath));
         app.addRoutes(new ReloadAction(server));
+        Object webappCl = System.getProperties().get("waitt.webapp.classloader");
+        ClassLoader appClassLoader = webappCl instanceof ClassLoader ? (ClassLoader) webappCl : Thread.currentThread().getContextClassLoader();
+        app.addRoutes(new ClassLoadersAction(appClassLoader));
+        app.addRoutes(new DependenciesAction(appClassLoader));
+        // Static file handler must be last (fallback for dashboard UI)
+        app.addRoutes(new StaticFileAction());
         try {
             adminServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), adminPort), 0);
             adminServer.setExecutor(executorService);
@@ -95,6 +113,10 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void stop() {
+        System.getProperties().remove(RequestLogAction.LOG_KEY);
+        if (prometheusAction != null) {
+            prometheusAction.close();
+        }
         if (adminServer != null) {
             adminServer.stop(0);
         }

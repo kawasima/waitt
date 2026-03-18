@@ -16,11 +16,10 @@ waitt-parent (pom.xml)          -- Parent POM, version management
 ├── waitt-tomcat10              -- Tomcat 10.1 server (jakarta.servlet / Servlet 6.0)
 ├── waitt-tomcat11              -- Tomcat 11.0 server (jakarta.servlet / Servlet 6.1)
 ├── waitt-jetty12               -- Jetty 12 server (jakarta.servlet / Servlet 6.0)
-├── waitt-coverage              -- Cobertura coverage
 ├── waitt-jacoco                -- JaCoCo coverage
-├── waitt-dashboard             -- Dashboard UI (war)
-├── waitt-admin                 -- Admin feature (memory/CPU monitoring, heap dump, reload)
-└── waitt-tracer                -- Response tracing feature (jakarta.servlet, Tomcat 10/11 only)
+├── waitt-admin                 -- Admin server with Dashboard UI (monitoring, reload, metrics)
+├── waitt-tracer                -- OpenTelemetry tracing (jakarta.servlet, Tomcat 10/11, Jetty 12)
+└── waitt-devtools              -- Development tools (auto-reload on file changes)
 ```
 
 `examples/` directory contains sample apps that are **not** part of the reactor build:

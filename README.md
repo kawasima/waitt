@@ -17,13 +17,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
         <artifactId>waitt-tomcat9</artifactId>
-        <version>1.4.0</version>
+        <version>1.5.0</version>
       </server>
     </servers>
   </configuration>
@@ -96,7 +96,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat9</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
   </server>
 ```
 
@@ -106,7 +106,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat10</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
   </server>
 ```
 
@@ -116,7 +116,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat11</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
   </server>
 ```
 
@@ -126,7 +126,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty12</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
   </server>
 ```
 
@@ -136,50 +136,26 @@ If you set multiple servers and maven is executed in the interactive mode, you c
 
 ### Coverage
 
-You can use JaCoCo or Cobertura.
 When you access to `/_coverage/`, you can see the coverages of your code.
-
-#### Cobertura
-
-```xml
-  <feature>
-    <groupId>net.unit8.waitt.feature</groupId>
-    <artifactId>waitt-coverage</artifactId>
-    <version>1.4.0</version>
-  </feature>
-```
-
-#### JaCoCo
 
 ```xml
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
   </feature>
 ```
 
-### Dashboard
+### Dashboard & Admin
 
-```xml
-  <feature>
-    <groupId>net.unit8.waitt.feature</groupId>
-    <artifactId>waitt-dashboard</artifactId>
-    <version>1.4.0</version>
-    <type>war</type>
-  </feature>
-```
-
-When you access to `/_dashboard/`, you can see the information of your application.
-
-In dashboard, you can monitor the memory usage / cpu load of a server and redeploy your application.
-Add `waitt-admin` feature to your configuration.
+The admin server provides a built-in dashboard UI and monitoring API.
+Access `http://localhost:1192/` to view the dashboard (application info, JVM metrics, thread/heap dumps, loggers, dependencies, etc.).
 
 ```xml
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
   </feature>
 ```
 
@@ -192,10 +168,23 @@ Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with T
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>1.4.0</version>
+    <version>1.5.0</version>
     <configuration>
       <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
     </configuration>
+  </feature>
+```
+
+### DevTools (Auto-Reload)
+
+Automatically reloads the application when compiled classes change in `target/classes`.
+No manual reload trigger needed — just run `mvn compile` in another terminal.
+
+```xml
+  <feature>
+    <groupId>net.unit8.waitt.feature</groupId>
+    <artifactId>waitt-devtools</artifactId>
+    <version>1.5.0</version>
   </feature>
 ```
 

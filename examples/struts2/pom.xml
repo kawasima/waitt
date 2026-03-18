@@ -8,7 +8,7 @@
     <name>struts2-example</name>
 
     <properties>
-        <waitt.version>1.4.0</waitt.version>
+        <waitt.version>1.5.0</waitt.version>
         <struts2.version>6.8.0</struts2.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -48,9 +48,8 @@
                          </feature>
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
-                            <artifactId>waitt-dashboard</artifactId>
+                            <artifactId>waitt-devtools</artifactId>
                             <version>${waitt.version}</version>
-                            <type>war</type>
                          </feature>
                     </features>
                 </configuration>

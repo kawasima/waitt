@@ -58,7 +58,7 @@ public class JarMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.finalName}", readonly = true)
     private String finalName;
 
-    @Parameter(property="embeddedRunnerVersion", defaultValue="${project.version}")
+    @Parameter(property="embeddedRunnerVersion", defaultValue="${plugin.version}")
     private String embeddedRunnerVersion;
 
     @Parameter
@@ -125,8 +125,7 @@ public class JarMojo extends AbstractMojo {
         }
     }
 
-    @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    protected File buildStandaloneJar() throws MojoExecutionException, MojoFailureException {
         if (servers == null || servers.isEmpty()) {
             throw new MojoFailureException("Server is not found.");
         }
@@ -137,7 +136,8 @@ public class JarMojo extends AbstractMojo {
         File jarFile = getJarFile(outputDirectory, finalName);
         createArchive(jarFile);
 
-        request.setUberJar(new File(outputDirectory, project.getBuild().getFinalName() + "-standalone.jar"));
+        File standaloneJar = new File(outputDirectory, project.getBuild().getFinalName() + "-standalone.jar");
+        request.setUberJar(standaloneJar);
 
         Set<File> jars = getDependencies();
         Server server = servers.get(0);
@@ -147,7 +147,14 @@ public class JarMojo extends AbstractMojo {
         jars.add(new File(outputDirectory, project.getBuild().getFinalName() + ".jar"));
 
         request.setJars(jars);
-        request.setFilters(Collections.<Filter>emptyList());
+        List<Filter> filters = new ArrayList<Filter>();
+        filters.add(new org.apache.maven.plugins.shade.filter.SimpleFilter(
+                jars, Collections.<String>emptySet(),
+                new HashSet<String>(Arrays.asList(
+                        "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+                ))
+        ));
+        request.setFilters(filters);
         request.setRelocators(Collections.<Relocator>emptyList());
 
         List<ResourceTransformer> transformers = new ArrayList<ResourceTransformer>();
@@ -159,6 +166,12 @@ public class JarMojo extends AbstractMojo {
         } catch (IOException ex) {
             throw new MojoExecutionException("Failed to create shaded JAR", ex);
         }
+        return standaloneJar;
+    }
+
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        buildStandaloneJar();
     }
 
 }

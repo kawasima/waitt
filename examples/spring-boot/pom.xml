@@ -16,7 +16,7 @@
     <url>https://github.com/kawasima/waitt</url>
 
     <properties>
-        <waitt.version>1.4.0</waitt.version>
+        <waitt.version>1.5.0</waitt.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>17</java.version>
     </properties>
@@ -49,12 +49,6 @@
                             <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-admin</artifactId>
                             <version>${waitt.version}</version>
-                        </feature>
-                        <feature>
-                            <groupId>net.unit8.waitt.feature</groupId>
-                            <artifactId>waitt-dashboard</artifactId>
-                            <version>${waitt.version}</version>
-                            <type>war</type>
                         </feature>
                         <feature>
                             <groupId>net.unit8.waitt.feature</groupId>

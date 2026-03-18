@@ -1,11 +1,10 @@
 package net.unit8.waitt.feature.jacoco;
 
-import org.jacoco.agent.rt.internal_aeaf9ab.asm.MethodVisitor;
-import org.jacoco.agent.rt.internal_aeaf9ab.asm.Opcodes;
-import org.jacoco.agent.rt.internal_aeaf9ab.core.instr.Instrumenter;
-import org.jacoco.agent.rt.internal_aeaf9ab.core.internal.instr.InstrSupport;
-import org.jacoco.agent.rt.internal_aeaf9ab.core.runtime.IExecutionDataAccessorGenerator;
 import org.jacoco.core.JaCoCo;
+import org.jacoco.core.instr.Instrumenter;
+import org.jacoco.core.runtime.IExecutionDataAccessorGenerator;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,7 +21,6 @@ import java.util.logging.Logger;
  */
 public class JacocoClassLoader extends URLClassLoader {
     private static final Logger logger = Logger.getLogger(JacocoClassLoader.class.getName());
-    private static volatile JacocoClassLoader instance;
     private Set<String> targetPackages = Collections.emptySet();
 
     private Instrumenter instrumenter = null;
@@ -32,18 +30,8 @@ public class JacocoClassLoader extends URLClassLoader {
         initInstrumenter();
     }
 
-    public static synchronized JacocoClassLoader create(ClassLoader parent) {
-        if (instance == null) {
-            instance = new JacocoClassLoader(parent);
-        }
-        return instance;
-    }
-
-    public static JacocoClassLoader getInstance() {
-        if (instance == null) {
-            throw new IllegalStateException("JacocoClassLoader hasn't been instantiated yet.");
-        }
-        return instance;
+    public static JacocoClassLoader create(ClassLoader parent) {
+        return new JacocoClassLoader(parent);
     }
 
     private void initInstrumenter() {
@@ -52,7 +40,13 @@ public class JacocoClassLoader extends URLClassLoader {
             public int generateDataAccessor(long classid, String classname, int probecount, MethodVisitor mv) {
                 mv.visitLdcInsn(Long.valueOf(classid));
                 mv.visitLdcInsn(classname);
-                InstrSupport.push(mv, probecount);
+                if (probecount <= Byte.MAX_VALUE) {
+                    mv.visitIntInsn(Opcodes.BIPUSH, probecount);
+                } else if (probecount <= Short.MAX_VALUE) {
+                    mv.visitIntInsn(Opcodes.SIPUSH, probecount);
+                } else {
+                    mv.visitLdcInsn(probecount);
+                }
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, JaCoCo.RUNTIMEPACKAGE.replace('.', '/') + "/Offline", "getProbes",
                         "(JLjava/lang/String;I)[Z", false);
                 return 4;

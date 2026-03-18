@@ -19,6 +19,7 @@ public class WebappConfiguration implements Serializable {
     private String applicationName;
     private File baseDirectory;
     private File sourceDirectory;
+    private File outputDirectory;
     private Set<String> packages = new HashSet<>();
 
     private List<Feature> features = new ArrayList<>();

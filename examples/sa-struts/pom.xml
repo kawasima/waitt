@@ -7,7 +7,7 @@
     <packaging>war</packaging>
     <description/>
     <properties>
-        <waitt.version>1.4.0</waitt.version>
+        <waitt.version>1.5.0</waitt.version>
     </properties>
     <build>
         <finalName>${artifactId}</finalName>
@@ -122,7 +122,7 @@
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-            <version>1.5</version>
+            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -249,7 +249,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.200</version>
+            <version>2.2.220</version>
         </dependency>
     </dependencies>
 
