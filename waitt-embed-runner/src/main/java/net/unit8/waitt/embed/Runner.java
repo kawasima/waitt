@@ -14,6 +14,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * @author kawasima
@@ -26,12 +30,61 @@ public class Runner {
     private String docBase = ".";
     private int port = 3000;
 
+    private void loadFeatures() {
+        for (ServerMonitor monitor : ServiceLoader.load(ServerMonitor.class)) {
+            serverMonitors.add(monitor);
+        }
+        for (LogListener listener : ServiceLoader.load(LogListener.class)) {
+            logListeners.add(listener);
+        }
+        for (WebappDecorator decorator : ServiceLoader.load(WebappDecorator.class)) {
+            webappDecorators.add(decorator);
+        }
+    }
+
+    private void initLogger() {
+        if (logListeners.isEmpty()) {
+            return;
+        }
+        Logger logger = Logger.getLogger("");
+        logger.addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                if (record.getLoggerName() != null && record.getLoggerName().startsWith("sun.awt."))
+                    return;
+                Level lv = record.getLevel();
+                for (LogListener logListener : logListeners) {
+                    if (lv.intValue() < Level.INFO.intValue()) {
+                        logListener.debug(record.getMessage(), record.getThrown());
+                    } else if (lv.equals(Level.INFO)) {
+                        logListener.info(record.getMessage(), record.getThrown());
+                    } else if (lv.equals(Level.WARNING)) {
+                        logListener.warn(record.getMessage(), record.getThrown());
+                    } else if (lv.equals(Level.SEVERE)) {
+                        logListener.error(record.getMessage(), record.getThrown());
+                    }
+                }
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
+        });
+    }
+
     public void execute(EmbeddedServer embeddedServer) throws RuntimeException {
         embeddedServer.setPort(port);
 
         if (contextPath == null || contextPath.equals("/"))
             contextPath = "";
         embeddedServer.setBaseDir(".");
+
+        loadFeatures();
+        initLogger();
 
         try {
             embeddedServer.start();
