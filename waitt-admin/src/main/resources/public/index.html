@@ -75,7 +75,7 @@
     function pageApplication() {
       setContent(loading());
       apiFetch('/application').then(function (data) {
-        var config = data.configuration || {};
+        var config = data;
         var div = h('div', {});
 
         div.appendChild(h('h2', {}, ['Application']));
