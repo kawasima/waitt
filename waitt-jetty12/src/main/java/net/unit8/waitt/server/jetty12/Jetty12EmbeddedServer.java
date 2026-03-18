@@ -46,6 +46,9 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     private final Server server;
     private final ContextHandlerCollection handlers;
     private WebAppContext mainWebapp;
+    private String mainContextPath;
+    private String mainBaseDir;
+    private ClassLoader mainLoader;
     private List<WebappDecorator> decorators;
     private boolean started = false;
 
@@ -73,6 +76,9 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
 
     @Override
     public void setMainContext(String contextPath, String baseDir, ClassLoader loader) {
+        this.mainContextPath = contextPath;
+        this.mainBaseDir = baseDir;
+        this.mainLoader = loader;
         mainWebapp = addWebapp(contextPath, baseDir, loader, true);
     }
 
@@ -122,6 +128,8 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
         }
         try {
             mainWebapp.stop();
+            handlers.removeHandler(mainWebapp);
+            mainWebapp = addWebapp(mainContextPath, mainBaseDir, mainLoader, true);
             mainWebapp.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
