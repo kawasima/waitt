@@ -21,7 +21,6 @@ import java.util.logging.Logger;
  */
 public class JacocoClassLoader extends URLClassLoader {
     private static final Logger logger = Logger.getLogger(JacocoClassLoader.class.getName());
-    private static volatile JacocoClassLoader instance;
     private Set<String> targetPackages = Collections.emptySet();
 
     private Instrumenter instrumenter = null;
@@ -31,18 +30,8 @@ public class JacocoClassLoader extends URLClassLoader {
         initInstrumenter();
     }
 
-    public static synchronized JacocoClassLoader create(ClassLoader parent) {
-        if (instance == null) {
-            instance = new JacocoClassLoader(parent);
-        }
-        return instance;
-    }
-
-    public static JacocoClassLoader getInstance() {
-        if (instance == null) {
-            throw new IllegalStateException("JacocoClassLoader hasn't been instantiated yet.");
-        }
-        return instance;
+    public static JacocoClassLoader create(ClassLoader parent) {
+        return new JacocoClassLoader(parent);
     }
 
     private void initInstrumenter() {
