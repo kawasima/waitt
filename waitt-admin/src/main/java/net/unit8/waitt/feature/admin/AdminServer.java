@@ -112,6 +112,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
     @Override
     public void stop() {
         System.getProperties().remove("waitt.request.log");
+        System.getProperties().remove("waitt.request.log.count");
         if (adminServer != null) {
             adminServer.stop(0);
         }

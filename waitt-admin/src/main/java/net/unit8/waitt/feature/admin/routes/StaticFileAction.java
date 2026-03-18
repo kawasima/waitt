@@ -25,7 +25,15 @@ public class StaticFileAction implements Route {
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         // Decode percent-encoded sequences before checking for traversal
-        String decoded = URLDecoder.decode(path, "UTF-8");
+        String decoded;
+        try {
+            decoded = URLDecoder.decode(path, "UTF-8");
+        } catch (IllegalArgumentException e) {
+            byte[] body = "Bad Request".getBytes("UTF-8");
+            exchange.sendResponseHeaders(400, body.length);
+            exchange.getResponseBody().write(body);
+            return;
+        }
         if (decoded.contains("..") || decoded.contains("\\")) {
             byte[] body = "Forbidden".getBytes("UTF-8");
             exchange.sendResponseHeaders(403, body.length);
