@@ -7,7 +7,7 @@
     <packaging>war</packaging>
     <description/>
     <properties>
-        <waitt.version>1.4.1-SNAPSHOT</waitt.version>
+        <waitt.version>1.5.0</waitt.version>
     </properties>
     <build>
         <finalName>${artifactId}</finalName>
