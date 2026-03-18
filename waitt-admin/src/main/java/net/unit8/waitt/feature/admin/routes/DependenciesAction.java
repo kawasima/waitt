@@ -12,18 +12,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 
 /**
  * Show dependency libraries (JARs on classpath with Maven coordinates).
+ * Dependencies are parsed once at construction time and cached.
  *
  * @author kawasima
  */
 public class DependenciesAction implements Route {
-    private final ClassLoader appClassLoader;
+    private static final Logger LOG = Logger.getLogger(DependenciesAction.class.getName());
+    private final List<JSONObject> cachedDeps;
 
     public DependenciesAction(ClassLoader appClassLoader) {
-        this.appClassLoader = appClassLoader;
+        cachedDeps = buildDependencyList(appClassLoader);
     }
 
     @Override
@@ -35,8 +39,12 @@ public class DependenciesAction implements Route {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         JSONObject json = new JSONObject();
-        List<JSONObject> deps = new ArrayList<JSONObject>();
+        json.put("dependencies", cachedDeps);
+        ResponseUtils.responseJSON(exchange, json);
+    }
 
+    private List<JSONObject> buildDependencyList(ClassLoader appClassLoader) {
+        List<JSONObject> deps = new ArrayList<JSONObject>();
         ClassLoader cl = appClassLoader;
         while (cl != null) {
             URL[] urls = null;
@@ -69,9 +77,7 @@ public class DependenciesAction implements Route {
             }
             cl = cl.getParent();
         }
-
-        json.put("dependencies", deps);
-        ResponseUtils.responseJSON(exchange, json);
+        return deps;
     }
 
     private JSONObject parseJar(String jarPath) {
@@ -99,6 +105,7 @@ public class DependenciesAction implements Route {
             dep.put("artifactId", name.replaceAll("-[0-9].*\\.jar$", ""));
             dep.put("version", extractVersion(name));
         } catch (IOException e) {
+            LOG.log(Level.FINE, "Failed to parse JAR: " + jarPath, e);
             String name = new java.io.File(jarPath).getName();
             dep.put("artifactId", name);
         }

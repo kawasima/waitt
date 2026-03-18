@@ -31,7 +31,7 @@ public class Tomcat9EmbeddedServer implements EmbeddedServer {
     final Tomcat tomcat;
     Context context;
     List<WebappDecorator> decorators;
-    private RequestListener requestListener;
+    private volatile RequestListener requestListener;
 
     @Override
     public void setRequestListener(RequestListener listener) {

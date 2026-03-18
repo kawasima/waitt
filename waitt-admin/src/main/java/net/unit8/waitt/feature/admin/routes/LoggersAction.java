@@ -53,13 +53,15 @@ public class LoggersAction implements Route {
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), "UTF-8"));
-        StringBuilder body = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            body.append(line);
+        String bodyStr;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getRequestBody(), "UTF-8"))) {
+            StringBuilder body = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                body.append(line);
+            }
+            bodyStr = body.toString();
         }
-        String bodyStr = body.toString();
 
         // Read name from path (/loggers/{name}) or from body ({"name":"...","level":"..."})
         String path = exchange.getRequestURI().getPath();

@@ -58,7 +58,7 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     private ClassLoader mainLoader;
     private List<WebappDecorator> decorators;
     private boolean started = false;
-    private RequestListener requestListener;
+    private volatile RequestListener requestListener;
 
     @Override
     public void setRequestListener(RequestListener listener) {
