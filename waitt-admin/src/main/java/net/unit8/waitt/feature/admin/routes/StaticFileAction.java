@@ -23,6 +23,12 @@ public class StaticFileAction implements Route {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
+        if (path.contains("..") || path.contains("\\")) {
+            byte[] body = "Forbidden".getBytes("UTF-8");
+            exchange.sendResponseHeaders(403, body.length);
+            exchange.getResponseBody().write(body);
+            return;
+        }
         if ("/".equals(path) || path.isEmpty()) {
             path = "/index.html";
         }

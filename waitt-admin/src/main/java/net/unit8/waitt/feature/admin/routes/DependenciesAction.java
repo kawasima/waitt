@@ -95,11 +95,11 @@ public class DependenciesAction implements Route {
                 }
             }
             // No pom.properties, extract name from filename
-            String name = jarPath.substring(jarPath.lastIndexOf('/') + 1);
+            String name = new java.io.File(jarPath).getName();
             dep.put("artifactId", name.replaceAll("-[0-9].*\\.jar$", ""));
             dep.put("version", extractVersion(name));
         } catch (IOException e) {
-            String name = jarPath.substring(jarPath.lastIndexOf('/') + 1);
+            String name = new java.io.File(jarPath).getName();
             dep.put("artifactId", name);
         }
         return dep;
