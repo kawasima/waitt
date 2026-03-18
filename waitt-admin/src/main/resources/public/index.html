@@ -132,7 +132,9 @@
           block.appendChild(h('strong', {}, [t.threadName + ' (' + t.threadState + ')']));
           var pre = document.createElement('pre');
           pre.className = 'stack-trace';
-          pre.textContent = (t.stackTrace || []).join('\n');
+          pre.textContent = (t.stackTrace || []).map(function (s) {
+            return '  at ' + s.className + '.' + s.methodName + '(' + (s.fileName || 'Unknown') + ':' + s.lineNumber + ')';
+          }).join('\n');
           block.appendChild(pre);
           div.appendChild(block);
         });
