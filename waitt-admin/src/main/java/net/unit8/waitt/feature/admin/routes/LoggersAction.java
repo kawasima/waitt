@@ -149,8 +149,9 @@ public class LoggersAction implements Route {
             if (!logbackLoggerClass.isInstance(logger)) return false;
 
             Class<?> logbackLevelClass = Class.forName("ch.qos.logback.classic.Level");
-            Method toLevel = logbackLevelClass.getMethod("toLevel", String.class);
-            Object levelObj = toLevel.invoke(null, level);
+            Method toLevel = logbackLevelClass.getMethod("toLevel", String.class, logbackLevelClass);
+            Object levelObj = toLevel.invoke(null, level, null);
+            if (levelObj == null) return false;
 
             Method setLevel = logbackLoggerClass.getMethod("setLevel", logbackLevelClass);
             setLevel.invoke(logger, levelObj);
@@ -180,11 +181,21 @@ public class LoggersAction implements Route {
         }
     }
 
+    private String toJulLevelName(String level) {
+        switch (level.toUpperCase()) {
+            case "TRACE": return "FINEST";
+            case "DEBUG": return "FINE";
+            case "WARN":  return "WARNING";
+            case "ERROR": return "SEVERE";
+            default:      return level.toUpperCase();
+        }
+    }
+
     private boolean setJulLevel(String loggerName, String level) {
         try {
             String julName = "ROOT".equals(loggerName) ? "" : loggerName;
             Logger logger = Logger.getLogger(julName);
-            logger.setLevel(Level.parse(level.toUpperCase()));
+            logger.setLevel(Level.parse(toJulLevelName(level)));
             LOG.info("Set logger " + loggerName + " to " + level + " (jul)");
             return true;
         } catch (Exception e) {

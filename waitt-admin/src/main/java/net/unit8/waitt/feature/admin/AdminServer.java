@@ -45,6 +45,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
     String rrdPath;
 
     final AdminApplication app = new AdminApplication();
+    PrometheusAction prometheusAction;
     int adminPort = 1192;
 
     @Override
@@ -57,7 +58,8 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         app.addRoutes(new LoggersAction());
         app.addRoutes(new StartupAction());
         app.addRoutes(new RequestLogAction());
-        app.addRoutes(new PrometheusAction());
+        prometheusAction = new PrometheusAction();
+        app.addRoutes(prometheusAction);
 
         for (Feature feature : config.getFeatures()) {
             if ("waitt-admin".equals(feature.getArtifactId()) && "net.unit8.waitt.feature".equals(feature.getGroupId())) {
@@ -111,8 +113,10 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void stop() {
-        System.getProperties().remove("waitt.request.log");
-        System.getProperties().remove("waitt.request.log.count");
+        System.getProperties().remove(RequestLogAction.LOG_KEY);
+        if (prometheusAction != null) {
+            prometheusAction.close();
+        }
         if (adminServer != null) {
             adminServer.stop(0);
         }
