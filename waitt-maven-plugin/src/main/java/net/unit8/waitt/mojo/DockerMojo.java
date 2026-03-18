@@ -14,6 +14,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Build a Docker/OCI image from a standalone JAR using Jib (no Docker daemon required).
@@ -36,14 +37,15 @@ public class DockerMojo extends JarMojo {
         if (docker == null) {
             docker = new DockerConfiguration();
         }
-        if (dockerTo != null) {
+        if (dockerTo != null && !dockerTo.isEmpty()) {
             docker.setTo(dockerTo);
         }
         String imageName = docker.getImageName() != null ? docker.getImageName() : project.getArtifactId();
         String imageTag = docker.getImageTag() != null ? docker.getImageTag() : project.getVersion();
         String imageRef = imageName + ":" + imageTag;
 
-        int appPort = docker.getPorts().isEmpty() ? 8080 : docker.getPorts().get(0);
+        List<Integer> ports = docker.getPorts() != null ? docker.getPorts() : Collections.singletonList(8080);
+        int appPort = ports.isEmpty() ? 8080 : ports.get(0);
 
         try {
             JibContainerBuilder builder = Jib.from(docker.getBaseImage())
@@ -53,12 +55,12 @@ public class DockerMojo extends JarMojo {
                     )
                     .setWorkingDirectory(AbsoluteUnixPath.get("/app"));
 
-            for (int port : docker.getPorts()) {
+            for (int port : ports) {
                 builder.addExposedPort(Port.tcp(port));
             }
 
             if (docker.getJavaOpts() != null && !docker.getJavaOpts().isEmpty()) {
-                builder.addEnvironmentVariable("JAVA_OPTS", docker.getJavaOpts());
+                builder.addEnvironmentVariable("JAVA_TOOL_OPTIONS", docker.getJavaOpts());
             }
 
             builder.setEntrypoint(Arrays.asList(
@@ -69,7 +71,8 @@ public class DockerMojo extends JarMojo {
             Containerizer containerizer = createContainerizer(imageRef);
             builder.containerize(containerizer);
 
-            getLog().info("Successfully built image: " + imageRef + " (to=" + docker.getTo() + ")");
+            String to = docker.getTo() != null ? docker.getTo() : "daemon";
+            getLog().info("Successfully built image: " + imageRef + " (to=" + to + ")");
         } catch (Exception e) {
             throw new MojoExecutionException("Failed to build Docker image: " + e.getMessage(), e);
         }
@@ -77,13 +80,15 @@ public class DockerMojo extends JarMojo {
 
     private Containerizer createContainerizer(String imageRef) throws MojoFailureException, InvalidImageReferenceException {
         String to = docker.getTo();
+        if (to == null || to.isEmpty()) {
+            to = "daemon";
+        }
         switch (to) {
             case "daemon":
                 return Containerizer.to(DockerDaemonImage.named(imageRef));
             case "tar":
                 Path tarPath = new File(project.getBuild().getDirectory(),
-                        docker.getImageName() != null ? docker.getImageName() + ".tar" : project.getArtifactId() + ".tar")
-                        .toPath();
+                        project.getArtifactId() + ".tar").toPath();
                 return Containerizer.to(TarImage.at(tarPath).named(imageRef));
             case "registry":
                 return Containerizer.to(RegistryImage.named(imageRef));
