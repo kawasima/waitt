@@ -33,9 +33,8 @@
 
   <script>
   (function () {
-    // Derive base from the servlet's context path.
-    // e.g. if served at /_dashboard/index.html, BASE becomes "/_dashboard"
-    var BASE = window.location.pathname.replace(/\/[^/]*$/, '');
+    // Admin server serves both API and UI from the same origin.
+    var BASE = '';
 
     function apiFetch(path) {
       return fetch(BASE + path, { headers: { Accept: 'application/json' } })

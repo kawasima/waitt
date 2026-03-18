@@ -48,12 +48,6 @@
                          </feature>
                          <feature>
                             <groupId>net.unit8.waitt.feature</groupId>
-                            <artifactId>waitt-dashboard</artifactId>
-                            <version>${waitt.version}</version>
-                            <type>war</type>
-                         </feature>
-                         <feature>
-                            <groupId>net.unit8.waitt.feature</groupId>
                             <artifactId>waitt-devtools</artifactId>
                             <version>${waitt.version}</version>
                          </feature>
