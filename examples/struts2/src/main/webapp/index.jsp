@@ -12,5 +12,7 @@
   <body>
     <h1>Welcome To Struts 2!</h1>
     <p><a href="hello.action">Hello World</a></p>
+    <p><a href="greeting.action">Greeting Form</a></p>
+    <p><a href="calculator.action">Calculator</a></p>
   </body>
 </html>
