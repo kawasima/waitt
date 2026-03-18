@@ -109,18 +109,17 @@ public class Tomcat11EmbeddedServer implements EmbeddedServer {
         tomcat.getHost().getPipeline().addValve(new ValveBase() {
             @Override
             public void invoke(Request request, Response response) throws java.io.IOException, jakarta.servlet.ServletException {
-                long t0 = System.nanoTime();
-                try {
-                    getNext().invoke(request, response);
-                } finally {
-                    if (requestListener != null) {
+                RequestListener rl = requestListener;
+                if (rl != null) {
+                    long t0 = System.nanoTime();
+                    try {
+                        getNext().invoke(request, response);
+                    } finally {
                         long duration = (System.nanoTime() - t0) / 1_000_000;
-                        requestListener.onRequest(
-                                request.getMethod(),
-                                request.getRequestURI(),
-                                response.getStatus(),
-                                duration);
+                        rl.onRequest(request.getMethod(), request.getRequestURI(), response.getStatus(), duration);
                     }
+                } else {
+                    getNext().invoke(request, response);
                 }
             }
         });

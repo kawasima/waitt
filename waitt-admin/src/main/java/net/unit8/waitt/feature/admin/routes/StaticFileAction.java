@@ -1,6 +1,7 @@
 package net.unit8.waitt.feature.admin.routes;
 
 import com.sun.net.httpserver.HttpExchange;
+import net.unit8.waitt.feature.admin.ResponseUtils;
 import net.unit8.waitt.feature.admin.Route;
 
 import java.io.IOException;
@@ -29,15 +30,11 @@ public class StaticFileAction implements Route {
         try {
             decoded = URLDecoder.decode(path, "UTF-8");
         } catch (IllegalArgumentException e) {
-            byte[] body = "Bad Request".getBytes("UTF-8");
-            exchange.sendResponseHeaders(400, body.length);
-            exchange.getResponseBody().write(body);
+            ResponseUtils.sendError(exchange, 400, "Bad Request");
             return;
         }
         if (decoded.contains("..") || decoded.contains("\\")) {
-            byte[] body = "Forbidden".getBytes("UTF-8");
-            exchange.sendResponseHeaders(403, body.length);
-            exchange.getResponseBody().write(body);
+            ResponseUtils.sendError(exchange, 403, "Forbidden");
             return;
         }
         path = decoded;
@@ -47,9 +44,7 @@ public class StaticFileAction implements Route {
         String resourcePath = "/public" + path;
         InputStream in = getClass().getResourceAsStream(resourcePath);
         if (in == null) {
-            byte[] body = "Not found".getBytes("UTF-8");
-            exchange.sendResponseHeaders(404, body.length);
-            exchange.getResponseBody().write(body);
+            ResponseUtils.sendError(exchange, 404, "Not found");
             return;
         }
 

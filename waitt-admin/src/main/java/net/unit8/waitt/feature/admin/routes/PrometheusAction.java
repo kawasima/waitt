@@ -8,6 +8,7 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import net.unit8.waitt.feature.admin.Route;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
@@ -17,12 +18,14 @@ import java.util.Collections;
  *
  * @author kawasima
  */
-public class PrometheusAction implements Route {
+public class PrometheusAction implements Route, Closeable {
     private final PrometheusMeterRegistry registry;
+    private final JvmGcMetrics gcMetrics;
 
     public PrometheusAction() {
         registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-        new JvmGcMetrics().bindTo(registry);
+        gcMetrics = new JvmGcMetrics();
+        gcMetrics.bindTo(registry);
         new JvmMemoryMetrics().bindTo(registry);
         new JvmThreadMetrics().bindTo(registry);
     }
@@ -42,5 +45,11 @@ public class PrometheusAction implements Route {
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(body);
         }
+    }
+
+    @Override
+    public void close() {
+        gcMetrics.close();
+        registry.close();
     }
 }
