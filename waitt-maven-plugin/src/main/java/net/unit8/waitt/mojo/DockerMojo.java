@@ -17,7 +17,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Build a Docker/OCI image from a standalone JAR using Jib (no Docker daemon required).
+ * Build a Docker image from a standalone JAR using Jib (no Docker daemon required).
+ *
+ * <p>All configured ports are exposed in the image, but only the first port
+ * is passed as {@code --port} to the embedded server at runtime.</p>
  *
  * @author kawasima
  */
@@ -47,6 +50,8 @@ public class DockerMojo extends JarMojo {
         List<Integer> ports = docker.getPorts() != null ? docker.getPorts() : Collections.singletonList(8080);
         int appPort = ports.isEmpty() ? 8080 : ports.get(0);
 
+        Containerizer containerizer = createContainerizer(imageRef, imageTag);
+
         try {
             JibContainerBuilder builder = Jib.from(docker.getBaseImage())
                     .addLayer(
@@ -68,7 +73,6 @@ public class DockerMojo extends JarMojo {
                     "--port", String.valueOf(appPort)
             ));
 
-            Containerizer containerizer = createContainerizer(imageRef);
             builder.containerize(containerizer);
 
             String to = docker.getTo() != null ? docker.getTo() : "daemon";
@@ -78,23 +82,27 @@ public class DockerMojo extends JarMojo {
         }
     }
 
-    private Containerizer createContainerizer(String imageRef) throws MojoFailureException, InvalidImageReferenceException {
+    private Containerizer createContainerizer(String imageRef, String imageTag) throws MojoFailureException {
         String to = docker.getTo();
         if (to == null || to.isEmpty()) {
             to = "daemon";
         }
-        switch (to) {
-            case "daemon":
-                return Containerizer.to(DockerDaemonImage.named(imageRef));
-            case "tar":
-                Path tarPath = new File(project.getBuild().getDirectory(),
-                        project.getArtifactId() + ".tar").toPath();
-                return Containerizer.to(TarImage.at(tarPath).named(imageRef));
-            case "registry":
-                return Containerizer.to(RegistryImage.named(imageRef));
-            default:
-                throw new MojoFailureException("Invalid docker.to value: " + to
-                        + ". Must be one of: daemon, tar, registry");
+        try {
+            switch (to) {
+                case "daemon":
+                    return Containerizer.to(DockerDaemonImage.named(imageRef));
+                case "tar":
+                    Path tarPath = new File(project.getBuild().getDirectory(),
+                            project.getArtifactId() + "-" + imageTag + ".tar").toPath();
+                    return Containerizer.to(TarImage.at(tarPath).named(imageRef));
+                case "registry":
+                    return Containerizer.to(RegistryImage.named(imageRef));
+                default:
+                    throw new MojoFailureException("Invalid docker.to value: " + to
+                            + ". Must be one of: daemon, tar, registry");
+            }
+        } catch (InvalidImageReferenceException e) {
+            throw new MojoFailureException("Invalid image reference: " + imageRef, e);
         }
     }
 }
