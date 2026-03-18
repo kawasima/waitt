@@ -8,6 +8,7 @@ import net.unit8.waitt.api.configuration.WebappConfiguration;
 
 import java.io.File;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -19,6 +20,7 @@ public class DevToolsMonitor implements ServerMonitor, ConfigurableFeature {
     private static final Logger LOG = Logger.getLogger(DevToolsMonitor.class.getName());
     private static final long DEFAULT_POLL_INTERVAL = 1000L;
     private static final long DEFAULT_QUIET_PERIOD = 500L;
+    private static final long MIN_INTERVAL = 100L;
 
     private File outputDirectory;
     private long pollInterval = DEFAULT_POLL_INTERVAL;
@@ -29,19 +31,33 @@ public class DevToolsMonitor implements ServerMonitor, ConfigurableFeature {
     @Override
     public void config(WebappConfiguration config) {
         outputDirectory = config.getOutputDirectory();
+        if (outputDirectory == null && config.getBaseDirectory() != null) {
+            outputDirectory = new File(config.getBaseDirectory(), "target/classes");
+        }
         for (Feature feature : config.getFeatures()) {
             if ("waitt-devtools".equals(feature.getArtifactId())
                     && "net.unit8.waitt.feature".equals(feature.getGroupId())) {
                 Map<String, String> featureConfig = feature.getConfiguration();
                 if (featureConfig != null) {
-                    if (featureConfig.containsKey("poll.interval")) {
-                        pollInterval = Long.parseLong(featureConfig.get("poll.interval"));
-                    }
-                    if (featureConfig.containsKey("quiet.period")) {
-                        quietPeriod = Long.parseLong(featureConfig.get("quiet.period"));
-                    }
+                    pollInterval = parseLong(featureConfig, "poll.interval", DEFAULT_POLL_INTERVAL);
+                    quietPeriod = parseLong(featureConfig, "quiet.period", DEFAULT_QUIET_PERIOD);
                 }
             }
+        }
+        pollInterval = Math.max(MIN_INTERVAL, pollInterval);
+        quietPeriod = Math.max(0, quietPeriod);
+    }
+
+    private long parseLong(Map<String, String> config, String key, long defaultValue) {
+        if (!config.containsKey(key)) {
+            return defaultValue;
+        }
+        try {
+            return Long.parseLong(config.get(key));
+        } catch (NumberFormatException e) {
+            LOG.log(Level.WARNING, "Invalid value for " + key + ": " + config.get(key)
+                    + ". Using default: " + defaultValue);
+            return defaultValue;
         }
     }
 
