@@ -186,6 +186,19 @@ Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with T
   </feature>
 ```
 
+### DevTools (Auto-Reload)
+
+Automatically reloads the application when compiled classes change in `target/classes`.
+No manual reload trigger needed — just run `mvn compile` in another terminal.
+
+```xml
+  <feature>
+    <groupId>net.unit8.waitt.feature</groupId>
+    <artifactId>waitt-devtools</artifactId>
+    <version>1.4.1-SNAPSHOT</version>
+  </feature>
+```
+
 ## Examples
 
 The `examples/` directory contains sample applications:

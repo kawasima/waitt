@@ -153,6 +153,7 @@ public abstract class AbstractRunMojo extends AbstractMojo {
         webappConfig.setBaseDirectory(docBase);
         webappConfig.setPackages(PackageScanner.scan(new File(project.getBuild().getSourceDirectory())));
         webappConfig.setSourceDirectory(new File(project.getBuild().getSourceDirectory()));
+        webappConfig.setOutputDirectory(new File(project.getBuild().getOutputDirectory()));
 
         ClassRealm waittRealm = (ClassRealm) Thread.currentThread().getContextClassLoader();
 
