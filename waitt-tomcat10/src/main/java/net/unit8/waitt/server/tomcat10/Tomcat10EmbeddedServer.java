@@ -106,14 +106,14 @@ public class Tomcat10EmbeddedServer implements EmbeddedServer {
         server.setParentClassLoader(getClass().getClassLoader());
         tomcat.getConnector().setURIEncoding("UTF-8");
         tomcat.getConnector().setUseBodyEncodingForURI(true);
-        if (requestListener != null) {
-            tomcat.getHost().getPipeline().addValve(new ValveBase() {
-                @Override
-                public void invoke(Request request, Response response) throws java.io.IOException, jakarta.servlet.ServletException {
-                    long t0 = System.nanoTime();
-                    try {
-                        getNext().invoke(request, response);
-                    } finally {
+        tomcat.getHost().getPipeline().addValve(new ValveBase() {
+            @Override
+            public void invoke(Request request, Response response) throws java.io.IOException, jakarta.servlet.ServletException {
+                long t0 = System.nanoTime();
+                try {
+                    getNext().invoke(request, response);
+                } finally {
+                    if (requestListener != null) {
                         long duration = (System.nanoTime() - t0) / 1_000_000;
                         requestListener.onRequest(
                                 request.getMethod(),
@@ -122,8 +122,8 @@ public class Tomcat10EmbeddedServer implements EmbeddedServer {
                                 duration);
                     }
                 }
-            });
-        }
+            }
+        });
         try {
             server.start();
         } catch (LifecycleException e) {
