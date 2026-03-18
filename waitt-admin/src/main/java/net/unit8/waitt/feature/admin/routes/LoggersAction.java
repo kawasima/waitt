@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 /**
  * List loggers and change log levels dynamically.
- * Supports SLF4J backends (Logback, Log4j2) via reflection, and j.u.l as fallback.
+ * Supports SLF4J Logback via reflection, with j.u.l as fallback.
  *
  * @author kawasima
  */
@@ -24,7 +24,7 @@ public class LoggersAction implements Route {
     public boolean canHandle(HttpExchange exchange) {
         String path = exchange.getRequestURI().getPath();
         String method = exchange.getRequestMethod();
-        return path.startsWith("/loggers") &&
+        return (path.equals("/loggers") || path.startsWith("/loggers/")) &&
                 ("GET".equalsIgnoreCase(method) || "POST".equalsIgnoreCase(method));
     }
 

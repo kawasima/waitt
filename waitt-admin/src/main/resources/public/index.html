@@ -16,7 +16,7 @@
       <ul>
         <li><a class="nav-link" data-page="application">Application</a></li>
         <li><a class="nav-link" data-page="server">Server</a></li>
-        <li><a class="nav-link" data-page="requests">Request Log</a></li>
+        <li><a class="nav-link" data-page="requests">Admin Log</a></li>
         <li><a class="nav-link" data-page="loggers">Loggers</a></li>
         <li><a class="nav-link" data-page="thread">Thread dump</a></li>
         <li><a class="nav-link" data-page="heap">Heap dump</a></li>
@@ -302,7 +302,7 @@
       apiFetch('/requests').then(function (data) {
         var reqs = data.requests || [];
         var div = h('div', {});
-        div.appendChild(h('h2', {}, ['Request Log (' + reqs.length + ' entries)']));
+        div.appendChild(h('h2', {}, ['Admin Request Log (' + reqs.length + ' entries)']));
         if (!reqs.length) {
           div.appendChild(h('p', {}, ['No requests recorded yet.']));
           setContent(div); return;

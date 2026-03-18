@@ -208,6 +208,8 @@ public abstract class AbstractRunMojo extends AbstractMojo {
                 serverMonitor.stop();
             }
             embeddedServer.stop();
+            System.getProperties().remove("waitt.startup.timeline");
+            System.getProperties().remove("waitt.webapp.classloader");
             if (webappRealm != null) {
                 try {
                     webappRealm.close();
