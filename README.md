@@ -146,21 +146,10 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   </feature>
 ```
 
-### Dashboard
+### Dashboard & Admin
 
-```xml
-  <feature>
-    <groupId>net.unit8.waitt.feature</groupId>
-    <artifactId>waitt-dashboard</artifactId>
-    <version>1.4.1-SNAPSHOT</version>
-    <type>war</type>
-  </feature>
-```
-
-When you access to `/_dashboard/`, you can see the information of your application.
-
-In dashboard, you can monitor the memory usage / cpu load of a server and redeploy your application.
-Add `waitt-admin` feature to your configuration.
+The admin server provides a built-in dashboard UI and monitoring API.
+Access `http://localhost:1192/` to view the dashboard (application info, JVM metrics, thread/heap dumps, loggers, dependencies, etc.).
 
 ```xml
   <feature>

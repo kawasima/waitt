@@ -383,12 +383,6 @@
                                 <artifactId>waitt-admin</artifactId>
                                 <version>${waitt.version}</version>
                             </feature>
-                            <feature>
-                                <groupId>net.unit8.waitt.feature</groupId>
-                                <artifactId>waitt-dashboard</artifactId>
-                                <version>${waitt.version}</version>
-                                <type>war</type>
-                            </feature>
                     </features>
                 </configuration>
             </plugin>

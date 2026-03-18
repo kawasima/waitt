@@ -27,7 +27,6 @@
         <module>waitt-tomcat10</module>
         <module>waitt-tomcat11</module>
         <module>waitt-jacoco</module>
-        <module>waitt-dashboard</module>
         <module>waitt-admin</module>
         <module>waitt-tracer</module>
         <module>waitt-devtools</module>

@@ -57,6 +57,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         app.addRoutes(new LoggersAction());
         app.addRoutes(new StartupAction());
         app.addRoutes(new RequestLogAction());
+        app.addRoutes(new PrometheusAction());
 
         for (Feature feature : config.getFeatures()) {
             if ("waitt-admin".equals(feature.getArtifactId()) && "net.unit8.waitt.feature".equals(feature.getGroupId())) {
@@ -88,6 +89,8 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         app.addRoutes(new ReloadAction(server));
         app.addRoutes(new ClassLoadersAction(Thread.currentThread().getContextClassLoader()));
         app.addRoutes(new DependenciesAction(Thread.currentThread().getContextClassLoader()));
+        // Static file handler must be last (fallback for dashboard UI)
+        app.addRoutes(new StaticFileAction());
         try {
             adminServer = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), adminPort), 0);
             adminServer.setExecutor(executorService);
