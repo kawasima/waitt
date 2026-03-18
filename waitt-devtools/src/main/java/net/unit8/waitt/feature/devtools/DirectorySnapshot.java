@@ -14,7 +14,7 @@ class DirectorySnapshot {
 
     DirectorySnapshot(File directory) {
         files = new HashMap<String, FileInfo>();
-        if (directory.exists()) {
+        if (directory.isDirectory()) {
             scan(directory, directory);
         }
     }
@@ -56,7 +56,9 @@ class DirectorySnapshot {
 
         @Override
         public int hashCode() {
-            return (int) (31 * lastModified + size);
+            int result = Long.hashCode(lastModified);
+            result = 31 * result + Long.hashCode(size);
+            return result;
         }
     }
 }

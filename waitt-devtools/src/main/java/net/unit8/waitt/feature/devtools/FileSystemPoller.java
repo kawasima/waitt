@@ -23,8 +23,8 @@ class FileSystemPoller implements Runnable {
     FileSystemPoller(File directory, EmbeddedServer server, long pollInterval, long quietPeriod) {
         this.directory = directory;
         this.server = server;
-        this.pollInterval = pollInterval;
-        this.quietPeriod = quietPeriod;
+        this.pollInterval = Math.max(100, pollInterval);
+        this.quietPeriod = Math.max(0, quietPeriod);
     }
 
     @Override
