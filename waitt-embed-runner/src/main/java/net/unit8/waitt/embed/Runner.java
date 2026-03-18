@@ -1,9 +1,11 @@
 package net.unit8.waitt.embed;
 
+import net.unit8.waitt.api.ConfigurableFeature;
 import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.LogListener;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.WebappDecorator;
+import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -26,27 +28,50 @@ public class Runner {
     private final List<ServerMonitor> serverMonitors = new ArrayList<ServerMonitor>();
     private final List<LogListener> logListeners = new ArrayList<LogListener>();
     private final List<WebappDecorator> webappDecorators = new ArrayList<WebappDecorator>();
+    private boolean featuresLoaded = false;
     private String contextPath = "";
     private String docBase = ".";
     private int port = 3000;
 
     private void loadFeatures() {
+        if (featuresLoaded) {
+            return;
+        }
+        serverMonitors.clear();
+        logListeners.clear();
+        webappDecorators.clear();
+
+        WebappConfiguration config = new WebappConfiguration();
+        config.setBaseDirectory(new File(docBase));
+        config.setSourceDirectory(new File(docBase, "src/main/java"));
+
         for (ServerMonitor monitor : ServiceLoader.load(ServerMonitor.class)) {
+            if (monitor instanceof ConfigurableFeature) {
+                ((ConfigurableFeature) monitor).config(config);
+            }
             serverMonitors.add(monitor);
         }
         for (LogListener listener : ServiceLoader.load(LogListener.class)) {
+            if (listener instanceof ConfigurableFeature) {
+                ((ConfigurableFeature) listener).config(config);
+            }
             logListeners.add(listener);
         }
         for (WebappDecorator decorator : ServiceLoader.load(WebappDecorator.class)) {
+            if (decorator instanceof ConfigurableFeature) {
+                ((ConfigurableFeature) decorator).config(config);
+            }
             webappDecorators.add(decorator);
         }
+        featuresLoaded = true;
     }
 
     private void initLogger() {
         if (logListeners.isEmpty()) {
             return;
         }
-        Logger logger = Logger.getLogger("");
+        Logger logger = Logger.getLogger("net.unit8.waitt");
+        logger.setLevel(Level.ALL);
         logger.addHandler(new Handler() {
             @Override
             public void publish(LogRecord record) {
