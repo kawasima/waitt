@@ -6,7 +6,7 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
-import org.jacoco.agent.rt.RT;
+import org.jacoco.core.JaCoCo;
 import org.jacoco.core.analysis.IBundleCoverage;
 import org.jacoco.core.data.ExecutionDataStore;
 import org.jacoco.core.tools.ExecFileLoader;
@@ -18,6 +18,8 @@ import org.jacoco.report.html.HTMLFormatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -79,14 +81,12 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             @Override
             public void run() {
                 try {
-                    byte[] data = RT.getAgent().getExecutionData(false);
-                    ExecFileLoader loader = new ExecFileLoader();
-                    loader.load(new java.io.ByteArrayInputStream(data));
+                    ExecutionDataStore executionDataStore = collectExecutionData();
                     final IReportVisitor visitor = createVisitor(Locale.getDefault());
                     visitor.visitInfo(
-                            loader.getSessionInfoStore().getInfos(),
-                            loader.getExecutionDataStore().getContents());
-                    createReport(visitor, loader.getExecutionDataStore());
+                            new ArrayList<>(),
+                            executionDataStore.getContents());
+                    createReport(visitor, executionDataStore);
                     visitor.visitEnd();
                     consecutiveFailures.set(0);
                 } catch (Exception ex) {
@@ -103,6 +103,57 @@ public class JacocoMonitor implements ServerMonitor,ConfigurableFeature {
             }
         }, 30L, 30L, TimeUnit.SECONDS);
     }
+
+    /**
+     * Collect execution data from JaCoCo's Offline runtime via reflection.
+     * The Offline class stores probe data in a private RuntimeData field.
+     * We access it reflectively because waitt uses offline instrumentation
+     * (not -javaagent), so RT.getAgent() is not available.
+     */
+    private ExecutionDataStore collectExecutionData() throws Exception {
+        // Try RT.getAgent() first (works when -javaagent is used)
+        try {
+            byte[] data = org.jacoco.agent.rt.RT.getAgent().getExecutionData(false);
+            ExecFileLoader loader = new ExecFileLoader();
+            loader.load(new java.io.ByteArrayInputStream(data));
+            return loader.getExecutionDataStore();
+        } catch (IllegalStateException e) {
+            // Agent not started — fall through to offline approach
+        }
+
+        // Offline instrumentation: access RuntimeData via reflection on Offline class.
+        // JaCoCo.RUNTIMEPACKAGE resolves the version-specific internal package name.
+        Class<?> offlineClass = Class.forName(JaCoCo.RUNTIMEPACKAGE + ".Offline");
+        // Call getRuntimeData() which initializes data if needed
+        Method getRuntimeData = offlineClass.getDeclaredMethod("getRuntimeData");
+        getRuntimeData.setAccessible(true);
+        Object runtimeData = getRuntimeData.invoke(null);
+
+        // RuntimeData has a 'store' field of type ExecutionDataStore
+        Field storeField = runtimeData.getClass().getDeclaredField("store");
+        storeField.setAccessible(true);
+        Object internalStore = storeField.get(runtimeData);
+
+        // The internal ExecutionDataStore is a shaded class, so we transfer data
+        // by iterating contents and reconstructing with our classpath's types.
+        ExecutionDataStore store = new ExecutionDataStore();
+        Method getContentsMethod = internalStore.getClass().getMethod("getContents");
+        java.util.Collection<?> contents = (java.util.Collection<?>) getContentsMethod.invoke(internalStore);
+
+        for (Object execData : contents) {
+            Method getId = execData.getClass().getMethod("getId");
+            Method getName = execData.getClass().getMethod("getName");
+            Method getProbes = execData.getClass().getMethod("getProbes");
+            long id = (Long) getId.invoke(execData);
+            String name = (String) getName.invoke(execData);
+            boolean[] probes = (boolean[]) getProbes.invoke(execData);
+            store.get(id, name, probes.length).merge(
+                    new org.jacoco.core.data.ExecutionData(id, name, probes));
+        }
+
+        return store;
+    }
+
     void createReport(final IReportGroupVisitor visitor, ExecutionDataStore executionDataStore) throws IOException {
         final BundleCreator creator = new BundleCreator();
         final IBundleCoverage bundle = creator.createBundle(executionDataStore);
