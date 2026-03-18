@@ -6,6 +6,7 @@ import net.unit8.waitt.feature.admin.Route;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URLDecoder;
 import java.util.Collections;
 
 /**
@@ -23,12 +24,15 @@ public class StaticFileAction implements Route {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if (path.contains("..") || path.contains("\\")) {
+        // Decode percent-encoded sequences before checking for traversal
+        String decoded = URLDecoder.decode(path, "UTF-8");
+        if (decoded.contains("..") || decoded.contains("\\")) {
             byte[] body = "Forbidden".getBytes("UTF-8");
             exchange.sendResponseHeaders(403, body.length);
             exchange.getResponseBody().write(body);
             return;
         }
+        path = decoded;
         if ("/".equals(path) || path.isEmpty()) {
             path = "/index.html";
         }

@@ -91,7 +91,6 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void start(EmbeddedServer server) {
-        long startedAt = System.currentTimeMillis();
         app.addRoutes(new ServerAction(server, rrdPath));
         app.addRoutes(new ReloadAction(server));
         Object webappCl = System.getProperties().get("waitt.webapp.classloader");
@@ -112,6 +111,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
 
     @Override
     public void stop() {
+        System.getProperties().remove("waitt.request.log");
         if (adminServer != null) {
             adminServer.stop(0);
         }
