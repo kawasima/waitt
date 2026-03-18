@@ -18,11 +18,15 @@ import org.eclipse.jetty.ee.webapp.CachingWebAppClassLoader;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.ee10.webapp.WebInfConfiguration;
 import org.eclipse.jetty.ee10.webapp.WebXmlConfiguration;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.ResourceFactory;
 
@@ -54,6 +58,12 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     private ClassLoader mainLoader;
     private List<WebappDecorator> decorators;
     private boolean started = false;
+    private RequestListener requestListener;
+
+    @Override
+    public void setRequestListener(RequestListener listener) {
+        this.requestListener = listener;
+    }
 
     public Jetty12EmbeddedServer() {
         server = new Server();
@@ -117,6 +127,35 @@ public class Jetty12EmbeddedServer implements EmbeddedServer {
     }
 
     private void doStart() {
+        if (requestListener != null) {
+            Handler original = server.getHandler();
+            server.setHandler(new Handler.Wrapper(original) {
+                @Override
+                public boolean handle(Request request, Response response, Callback callback) throws Exception {
+                    long t0 = System.nanoTime();
+                    Callback wrapped = Callback.from(
+                            () -> {
+                                long duration = (System.nanoTime() - t0) / 1_000_000;
+                                requestListener.onRequest(
+                                        request.getMethod(),
+                                        Request.getPathInContext(request),
+                                        response.getStatus(),
+                                        duration);
+                                callback.succeeded();
+                            },
+                            (t) -> {
+                                long duration = (System.nanoTime() - t0) / 1_000_000;
+                                requestListener.onRequest(
+                                        request.getMethod(),
+                                        Request.getPathInContext(request),
+                                        response.getStatus(),
+                                        duration);
+                                callback.failed(t);
+                            });
+                    return super.handle(request, response, wrapped);
+                }
+            });
+        }
         try {
             server.start();
         } catch (Exception e) {
