@@ -12,7 +12,7 @@
     <packaging>maven-plugin</packaging>
 
     <properties>
-        <maven.version>3.9.9</maven.version>
+        <maven.version>3.9.14</maven.version>
         <mavenPluginPluginVersion>3.15.2</mavenPluginPluginVersion>
         <maven.archiver.version>3.6.6</maven.archiver.version>
     </properties>
@@ -110,11 +110,6 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.fusesource.jansi</groupId>
