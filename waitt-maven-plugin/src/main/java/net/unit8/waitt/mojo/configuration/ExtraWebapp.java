@@ -1,17 +1,23 @@
 package net.unit8.waitt.mojo.configuration;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 
 /**
  *
  * @author kawasima
  */
-@Data
-@AllArgsConstructor
 public class ExtraWebapp {
-    private String name;
-    private String warPath;
-    private ClassRealm realm;
+    private final String name;
+    private final String warPath;
+    private final ClassRealm realm;
+
+    public ExtraWebapp(String name, String warPath, ClassRealm realm) {
+        this.name = name;
+        this.warPath = warPath;
+        this.realm = realm;
+    }
+
+    public String getName() { return name; }
+    public String getWarPath() { return warPath; }
+    public ClassRealm getRealm() { return realm; }
 }

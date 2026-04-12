@@ -40,13 +40,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.14.0</version>
                     <configuration>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>1.18.42</version>
-                            </path>
-                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -151,14 +144,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>1.18.42</version>
-            </dependency>
-            <dependency>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-classworlds</artifactId>
-                <version>2.6.0</version>
+                <version>2.10.0</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -168,7 +156,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>4.5.0</version>
+                <version>4.11.0</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -178,7 +166,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.11.0</version>
+                <version>2.13.2</version>
             </dependency>
             <dependency>
                 <groupId>org.gridkit.jvmtool</groupId>
@@ -188,7 +176,7 @@
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
-                <version>1.46.0</version>
+                <version>1.61.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

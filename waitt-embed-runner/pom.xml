@@ -19,11 +19,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>net.unit8.waitt</groupId>
             <artifactId>waitt-api</artifactId>
             <version>${project.parent.version}</version>
