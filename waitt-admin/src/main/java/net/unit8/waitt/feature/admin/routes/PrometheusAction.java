@@ -1,33 +1,24 @@
 package net.unit8.waitt.feature.admin.routes;
 
 import com.sun.net.httpserver.HttpExchange;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import net.unit8.waitt.feature.admin.AdminMetrics;
+import net.unit8.waitt.feature.admin.ResponseUtils;
 import net.unit8.waitt.feature.admin.Route;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
 
 /**
- * Expose Prometheus metrics.
+ * Expose Prometheus metrics from the shared {@link AdminMetrics} registry.
  *
  * @author kawasima
  */
-public class PrometheusAction implements Route, Closeable {
-    private final PrometheusMeterRegistry registry;
-    private final JvmGcMetrics gcMetrics;
+public class PrometheusAction implements Route {
+    private final AdminMetrics metrics;
 
-    public PrometheusAction() {
-        registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
-        gcMetrics = new JvmGcMetrics();
-        gcMetrics.bindTo(registry);
-        new JvmMemoryMetrics().bindTo(registry);
-        new JvmThreadMetrics().bindTo(registry);
+    public PrometheusAction(AdminMetrics metrics) {
+        this.metrics = metrics;
     }
 
     @Override
@@ -38,18 +29,13 @@ public class PrometheusAction implements Route, Closeable {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        byte[] body = registry.scrape().getBytes("UTF-8");
+        byte[] body = metrics.scrape().getBytes("UTF-8");
         exchange.getResponseHeaders().put("Content-Type",
                 Collections.singletonList("text/plain; version=0.0.4; charset=utf-8"));
+        ResponseUtils.applyCorsOrigin(exchange);
         exchange.sendResponseHeaders(200, body.length);
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(body);
         }
-    }
-
-    @Override
-    public void close() {
-        gcMetrics.close();
-        registry.close();
     }
 }

@@ -151,11 +151,30 @@ When you access to `/_coverage/`, you can see the coverages of your code.
 The admin server provides a built-in dashboard UI and monitoring API.
 Access `http://localhost:1192/` to view the dashboard (application info, JVM metrics, thread/heap dumps, loggers, dependencies, etc.).
 
+It streams live over Server-Sent Events (`/stream`), so the dashboard needs no external
+observability stack to watch your app during development:
+
+- **Request Log** and **Logs** pages tail in real time as requests arrive and the app writes to stdout/stderr.
+- **Metrics** page exposes a Prometheus scrape endpoint (`/prometheus`, including `http.server.requests`) you can point Prometheus/Grafana at.
+
 ```xml
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
     <version>1.5.1-SNAPSHOT</version>
+  </feature>
+```
+
+The log buffer size is configurable (default 1000 lines):
+
+```xml
+  <feature>
+    <groupId>net.unit8.waitt.feature</groupId>
+    <artifactId>waitt-admin</artifactId>
+    <version>1.5.1-SNAPSHOT</version>
+    <configuration>
+      <log.buffer.size>2000</log.buffer.size>
+    </configuration>
   </feature>
 ```
 

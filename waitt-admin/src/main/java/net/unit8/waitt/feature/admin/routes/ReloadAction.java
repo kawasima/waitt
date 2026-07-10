@@ -2,10 +2,10 @@ package net.unit8.waitt.feature.admin.routes;
 
 import com.sun.net.httpserver.HttpExchange;
 import net.unit8.waitt.api.EmbeddedServer;
+import net.unit8.waitt.feature.admin.ResponseUtils;
 import net.unit8.waitt.feature.admin.Route;
 
 import java.io.IOException;
-import java.util.Collections;
 
 /**
  * Provide a feature to reload the server.
@@ -28,11 +28,7 @@ public class ReloadAction implements Route {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         server.reload();
-        String origin = exchange.getRequestHeaders().getFirst("Origin");
-        if (origin != null && origin.startsWith("http://localhost")) {
-            exchange.getResponseHeaders().put("Access-Control-Allow-Origin", Collections.singletonList(origin));
-        }
-        exchange.getResponseHeaders().put("Access-Control-Allow-Headers", Collections.singletonList("Content-Type, Accept"));
+        ResponseUtils.applyCorsOrigin(exchange);
         exchange.sendResponseHeaders(204, -1);
     }
 }
