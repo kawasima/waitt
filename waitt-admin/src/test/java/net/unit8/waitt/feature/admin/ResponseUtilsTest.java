@@ -12,6 +12,7 @@ public class ResponseUtilsTest {
         assertTrue(ResponseUtils.isLocalOrigin("http://localhost:8080"));
         assertTrue(ResponseUtils.isLocalOrigin("http://127.0.0.1:1192"));
         assertTrue(ResponseUtils.isLocalOrigin("http://[::1]:3000"));
+        assertTrue(ResponseUtils.isLocalOrigin("HTTP://LocalHost:8080")); // case-insensitive host
     }
 
     @Test

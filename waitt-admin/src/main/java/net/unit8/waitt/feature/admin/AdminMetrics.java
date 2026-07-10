@@ -8,6 +8,7 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 import java.io.Closeable;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,7 +39,7 @@ public class AdminMetrics implements Closeable {
      */
     public void recordHttpRequest(String method, int status, long durationMs) {
         Timer.builder("http.server.requests")
-                .tag("method", method == null ? "UNKNOWN" : method)
+                .tag("method", method == null ? "UNKNOWN" : method.toUpperCase(Locale.ROOT))
                 .tag("status", Integer.toString(status))
                 .register(registry)
                 .record(durationMs, TimeUnit.MILLISECONDS);

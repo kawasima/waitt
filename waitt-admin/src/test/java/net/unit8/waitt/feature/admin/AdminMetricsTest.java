@@ -36,8 +36,11 @@ public class AdminMetricsTest {
         metrics.recordHttpRequest("POST", 500, 7);
 
         String scrape = metrics.scrape();
-        // Two requests on the {POST,500} series render a count of 2.0.
-        assertTrue(scrape.contains("http_server_requests_seconds_count{method=\"POST\",status=\"500\",} 2.0"));
+        // Two requests on the {POST,500} series render a count of 2.0. Accept the
+        // series with or without the trailing comma before '}' (differs by
+        // Prometheus client format version).
+        assertTrue(scrape.contains("http_server_requests_seconds_count{method=\"POST\",status=\"500\",} 2.0")
+                || scrape.contains("http_server_requests_seconds_count{method=\"POST\",status=\"500\"} 2.0"));
     }
 
     @Test

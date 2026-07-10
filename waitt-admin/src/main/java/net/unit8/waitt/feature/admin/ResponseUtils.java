@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.Locale;
 
 public class ResponseUtils {
     public static void sendError(HttpExchange exchange, int status, String message) throws IOException {
@@ -29,6 +30,10 @@ public class ResponseUtils {
         }
         try {
             String host = new URI(origin).getHost();
+            if (host == null) {
+                return false;
+            }
+            host = host.toLowerCase(Locale.ROOT); // hostnames are case-insensitive
             return "localhost".equals(host)
                     || "127.0.0.1".equals(host)
                     || "::1".equals(host)
@@ -53,6 +58,8 @@ public class ResponseUtils {
 
     public static void responseJSON(HttpExchange exchange, JSONObject jsonObject) throws IOException {
         applyCorsOrigin(exchange);
+        exchange.getResponseHeaders().put("Content-Type",
+                Collections.singletonList("application/json; charset=utf-8"));
         byte[] json = jsonObject.toJSONString().getBytes("UTF-8");
         exchange.sendResponseHeaders(200, json.length);
         try (OutputStream os = exchange.getResponseBody()) {
