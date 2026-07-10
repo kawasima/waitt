@@ -121,3 +121,52 @@ pre.stack-trace {
 .text-muted { color: #777; font-size: .85em; margin: .2rem 0; }
 .url-list { font-size: .8em; color: #555; max-height: 150px; overflow-y: auto; }
 select { padding: .2rem; font-size: .85em; }
+
+/* Live indicator (masthead) */
+.masthead { display: flex; align-items: center; gap: 1rem; }
+.live-indicator {
+    font-size: .8rem;
+    font-weight: bold;
+    letter-spacing: .02em;
+}
+.live-indicator.live-on { color: #7ed07e; }
+.live-indicator.live-off { color: #b0a9d0; }
+
+/* Inline "live" badge next to page headings */
+.live-badge {
+    font-size: .6em;
+    font-weight: bold;
+    vertical-align: middle;
+    color: #fff;
+    background: #4caf50;
+    border-radius: 3px;
+    padding: .1em .4em;
+    margin-left: .5rem;
+}
+
+/* Request Log status coloring */
+tr.req-4xx td { background: #fff6e5; }
+tr.req-5xx td { background: #fdecea; }
+
+/* Logs page */
+.log-controls { display: flex; gap: .5rem; margin-bottom: .5rem; }
+.log-filter { flex: 1; padding: .3rem .5rem; font-size: .85em; }
+.log-view {
+    font-family: monospace;
+    font-size: .8em;
+    line-height: 1.4;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: .5rem .75rem;
+    border-radius: 4px;
+    height: 60vh;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.log-line { padding: 0; }
+.log-time { color: #7a7a7a; }
+.log-src { color: #569cd6; }
+.log-line.log-warn { color: #dcdc7d; }
+.log-line.log-error { color: #f48771; }
+.metrics-scrape { max-height: 60vh; overflow: auto; background: #f8f8f8; padding: .5rem; }

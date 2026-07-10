@@ -9,6 +9,7 @@
 <body>
   <header class="masthead">
     <span class="masthead-logo">WAITT</span>
+    <span id="live-indicator" class="live-indicator live-off" title="Live stream status">● live</span>
   </header>
 
   <div class="layout">
@@ -16,7 +17,9 @@
       <ul>
         <li><a class="nav-link" data-page="application">Application</a></li>
         <li><a class="nav-link" data-page="server">Server</a></li>
+        <li><a class="nav-link" data-page="metrics">Metrics</a></li>
         <li><a class="nav-link" data-page="requests">Request Log</a></li>
+        <li><a class="nav-link" data-page="logs">Logs</a></li>
         <li><a class="nav-link" data-page="loggers">Loggers</a></li>
         <li><a class="nav-link" data-page="thread">Thread dump</a></li>
         <li><a class="nav-link" data-page="heap">Heap dump</a></li>
@@ -57,6 +60,11 @@
     }
 
     function setContent(el) {
+      // Swapping content invalidates any previously bound live targets; clear
+      // them so stream events can't append to a detached, off-screen subtree.
+      live.requestsTbody = null;
+      live.requestsEmpty = null;
+      live.logsView = null;
       var c = document.getElementById('content');
       c.innerHTML = '';
       c.appendChild(el);
@@ -289,7 +297,7 @@
         var btn = h('button', { class: 'btn btn-warning' }, ['Reload']);
         btn.addEventListener('click', function () {
           btn.disabled = true;
-          fetch(BASE + '/server/reload', { method: 'POST' })
+          fetch(BASE + '/reload', { method: 'POST' })
             .then(function () { btn.textContent = 'Reloaded'; })
             .catch(function () { btn.textContent = 'Failed'; })
             .finally(function () { btn.disabled = false; });
@@ -299,35 +307,115 @@
       }).catch(function (e) { setContent(errorMsg(e.message)); });
     }
 
+    function requestRow(r) {
+      var time = r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : '';
+      var cls = r.status >= 500 ? 'req-5xx' : (r.status >= 400 ? 'req-4xx' : '');
+      return h('tr', cls ? { class: cls } : {}, [
+        h('td', {}, [time]),
+        h('td', {}, [r.method || '']),
+        h('td', {}, [r.path || '']),
+        h('td', {}, [String(r.status || '')]),
+        h('td', {}, [r.duration !== undefined ? r.duration + 'ms' : '']),
+      ]);
+    }
+
     function pageRequests() {
+      var token = live.navToken;
       setContent(loading());
       apiFetch('/requests').then(function (data) {
+        if (token !== live.navToken) return; // navigated away before this resolved
         var reqs = data.requests || [];
         var div = h('div', {});
-        div.appendChild(h('h2', {}, ['Request Log (' + reqs.length + ' entries)']));
-        if (!reqs.length) {
-          div.appendChild(h('p', {}, ['No requests recorded yet.']));
-          setContent(div); return;
-        }
+        div.appendChild(h('h2', {}, ['Request Log ', h('span', { class: 'live-badge' }, ['live'])]));
         var table = h('table', {});
         table.appendChild(h('thead', {}, [h('tr', {}, [
           h('th', {}, ['Time']), h('th', {}, ['Method']), h('th', {}, ['Path']),
           h('th', {}, ['Status']), h('th', {}, ['Duration'])
         ])]));
         var tbody = h('tbody', {});
-        reqs.forEach(function (r) {
-          var time = r.timestamp ? new Date(r.timestamp).toLocaleTimeString() : '';
-          tbody.appendChild(h('tr', {}, [
-            h('td', {}, [time]),
-            h('td', {}, [r.method || '']),
-            h('td', {}, [r.path || '']),
-            h('td', {}, [String(r.status || '')]),
-            h('td', {}, [r.duration !== undefined ? r.duration + 'ms' : '']),
-          ]));
-        });
+        // /requests returns newest first; render as-is so newest stays on top.
+        reqs.forEach(function (r) { tbody.appendChild(requestRow(r)); });
         table.appendChild(tbody);
         div.appendChild(table);
+        var empty = h('p', { class: 'text-muted' }, ['No requests recorded yet.']);
+        if (reqs.length) empty.style.display = 'none';
+        div.appendChild(empty);
         setContent(div);
+        live.requestsTbody = tbody;
+        live.requestsEmpty = empty;
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function pageMetrics() {
+      setContent(loading());
+      fetch(BASE + '/prometheus', { headers: { Accept: 'text/plain' } })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+        .then(function (text) {
+          var div = h('div', {});
+          div.appendChild(h('h2', {}, ['Metrics']));
+          div.appendChild(h('p', { class: 'text-muted' },
+            ['Prometheus scrape endpoint (/prometheus). Point Prometheus/Grafana here. Includes http.server.requests after traffic.']));
+          var pre = document.createElement('pre');
+          pre.className = 'stack-trace metrics-scrape';
+          pre.textContent = text;
+          div.appendChild(pre);
+          setContent(div);
+        }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function logLineNode(entry) {
+      var t = entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : '';
+      var upper = (entry.text || '').toUpperCase();
+      var cls = 'log-line';
+      if (entry.stream === 'ERR' || upper.indexOf('ERROR') >= 0 || upper.indexOf('SEVERE') >= 0) cls += ' log-error';
+      else if (upper.indexOf('WARN') >= 0) cls += ' log-warn';
+      return h('div', { class: cls }, [
+        h('span', { class: 'log-time' }, [t + ' ']),
+        h('span', { class: 'log-src' }, ['[' + entry.stream + '] ']),
+        document.createTextNode(entry.text || ''),
+      ]);
+    }
+
+    function logMatches(entry) {
+      if (live.logStream !== 'ALL' && entry.stream !== live.logStream) return false;
+      if (live.logFilter && (entry.text || '').toLowerCase().indexOf(live.logFilter) < 0) return false;
+      return true;
+    }
+
+    function renderLogs() {
+      if (!live.logsView) return;
+      live.logsView.innerHTML = '';
+      live.logEntries.forEach(function (entry) {
+        if (logMatches(entry)) live.logsView.appendChild(logLineNode(entry));
+      });
+      live.logsView.scrollTop = live.logsView.scrollHeight;
+    }
+
+    function pageLogs() {
+      var token = live.navToken;
+      setContent(loading());
+      apiFetch('/logs').then(function (data) {
+        if (token !== live.navToken) return; // navigated away before this resolved
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Logs ', h('span', { class: 'live-badge' }, ['live'])]));
+        var controls = h('div', { class: 'log-controls' });
+        var filterInput = h('input', { type: 'text', class: 'log-filter', placeholder: 'filter…' });
+        var streamSel = h('select', {});
+        ['ALL', 'OUT', 'ERR'].forEach(function (s) { streamSel.appendChild(h('option', { value: s }, [s])); });
+        controls.appendChild(filterInput);
+        controls.appendChild(streamSel);
+        div.appendChild(controls);
+        var view = h('div', { class: 'log-view' });
+        div.appendChild(view);
+        setContent(div);
+
+        live.logsView = view;
+        live.logFilter = '';
+        live.logStream = 'ALL';
+        live.logEntries = data.logs || [];
+        filterInput.addEventListener('input', function () { live.logFilter = filterInput.value.toLowerCase(); renderLogs(); });
+        streamSel.addEventListener('change', function () { live.logStream = streamSel.value; renderLogs(); });
+        renderLogs();
       }).catch(function (e) { setContent(errorMsg(e.message)); });
     }
 
@@ -448,12 +536,78 @@
       }).catch(function (e) { setContent(errorMsg(e.message)); });
     }
 
+    // ---- Live stream (SSE) ----
+
+    // Holds references to DOM targets of the currently displayed page so stream
+    // events can update them in place. Cleared on navigation.
+    var live = {
+      navToken: 0,
+      requestsTbody: null,
+      requestsEmpty: null,
+      logsView: null,
+      logEntries: [],
+      logFilter: '',
+      logStream: 'ALL',
+    };
+    var MAX_LIVE_LOG_ENTRIES = 2000;
+
+    function setIndicator(state) {
+      var el = document.getElementById('live-indicator');
+      if (!el) return;
+      el.className = 'live-indicator live-' + state;
+    }
+
+    function onRequestEvent(e) {
+      if (!live.requestsTbody) return;
+      var r = JSON.parse(e.data);
+      live.requestsTbody.insertBefore(requestRow(r), live.requestsTbody.firstChild);
+      if (live.requestsEmpty) live.requestsEmpty.style.display = 'none';
+      while (live.requestsTbody.childNodes.length > 200) {
+        live.requestsTbody.removeChild(live.requestsTbody.lastChild);
+      }
+    }
+
+    function onLogEvent(e) {
+      var entry = JSON.parse(e.data);
+      live.logEntries.push(entry);
+      if (live.logEntries.length > MAX_LIVE_LOG_ENTRIES) live.logEntries.shift();
+      if (live.logsView && logMatches(entry)) {
+        var atBottom = live.logsView.scrollTop + live.logsView.clientHeight >= live.logsView.scrollHeight - 4;
+        live.logsView.appendChild(logLineNode(entry));
+        // Bound the rendered DOM the same way live.logEntries is bounded.
+        while (live.logsView.childNodes.length > MAX_LIVE_LOG_ENTRIES) {
+          live.logsView.removeChild(live.logsView.firstChild);
+        }
+        if (atBottom) live.logsView.scrollTop = live.logsView.scrollHeight;
+      }
+    }
+
+    function onMetricsEvent(e) {
+      var el = document.getElementById('live-indicator');
+      if (!el) return;
+      var m = JSON.parse(e.data);
+      var usedMb = Math.round((m.heapUsed || 0) / 1048576);
+      el.title = 'Heap ' + usedMb + ' MB · ' + (m.threadCount || 0) + ' threads';
+    }
+
+    function connectStream() {
+      if (typeof EventSource === 'undefined') return;
+      var es = new EventSource(BASE + '/stream');
+      es.addEventListener('open', function () { setIndicator('on'); });
+      es.addEventListener('error', function () { setIndicator('off'); });
+      es.addEventListener('request', onRequestEvent);
+      es.addEventListener('log', onLogEvent);
+      es.addEventListener('metrics', onMetricsEvent);
+    }
+
     // ---- Router ----
 
     var pages = {
       application: pageApplication,
       server: pageServer,
+      metrics: pageMetrics,
       requests: pageRequests,
+      logs: pageLogs,
       loggers: pageLoggers,
       thread: pageThread,
       heap: pageHeap,
@@ -464,6 +618,9 @@
     };
 
     function navigate(page) {
+      // Bump the token so an in-flight loader from the page being left can
+      // detect it is stale and skip rendering. setContent() clears live targets.
+      live.navToken++;
       document.querySelectorAll('[data-page]').forEach(function (a) {
         a.classList.toggle('active', a.dataset.page === page);
       });
@@ -478,6 +635,7 @@
     // Initial route from hash
     var initial = (window.location.hash || '#application').replace(/^#/, '') || 'application';
     navigate(pages[initial] ? initial : 'application');
+    connectStream();
   })();
   </script>
 </body>
