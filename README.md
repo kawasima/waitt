@@ -187,7 +187,9 @@ request detail — a span waterfall plus the logs and exception for that request
 with no external stack required.
 
 Note: waitt-tracer uses the Jakarta Servlet API, so the Traces view is only
-available on Tomcat 10/11 and Jetty 12.
+available on Tomcat 10/11 and Jetty 12. Correlation is thread-bound, so it covers
+synchronous request handling; work an app dispatches to other threads (async
+servlets) is not correlated to its request.
 
 ```xml
   <feature>

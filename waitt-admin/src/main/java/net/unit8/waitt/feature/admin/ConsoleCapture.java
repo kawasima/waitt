@@ -72,8 +72,12 @@ public class ConsoleCapture {
         LogEntry entry = new LogEntry(now, streamName, line);
         buffer.add(entry);
         // Correlate to the in-flight request when this line was written on a
-        // request thread (no-op when tracing is off or no trace is current).
-        TraceStore.getInstance().recordLog(new LogLine(now, streamName, line));
+        // request thread. Guard on isEnabled() so the common no-tracer case does
+        // not allocate a throwaway LogLine per console line.
+        TraceStore store = TraceStore.getInstance();
+        if (store.isEnabled()) {
+            store.recordLog(new LogLine(now, streamName, line));
+        }
         if (broadcaster.hasSubscribers()) {
             broadcaster.publish("log", entry.toJSON().toJSONString());
         }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Process-wide correlation hub for the dashboard's request-detail view.
@@ -32,6 +33,7 @@ public final class TraceStore {
 
     private final Map<String, RequestTrace> active = new ConcurrentHashMap<String, RequestTrace>();
     private final Deque<RequestTrace> completed = new ConcurrentLinkedDeque<RequestTrace>();
+    private final AtomicInteger completedCount = new AtomicInteger(0);
     private final ThreadLocal<String> currentTraceId = new ThreadLocal<String>();
     private volatile TraceListener listener;
 
@@ -88,10 +90,13 @@ public final class TraceStore {
             return;
         }
         completed.addFirst(trace);
-        while (completed.size() > capacity) {
+        completedCount.incrementAndGet();
+        // O(1) trim: ConcurrentLinkedDeque.size() is O(n), so track the count.
+        while (completedCount.get() > capacity) {
             if (completed.pollLast() == null) {
                 break;
             }
+            completedCount.decrementAndGet();
         }
         TraceListener l = listener;
         if (l != null) {
@@ -153,12 +158,13 @@ public final class TraceStore {
         return null;
     }
 
-    public int size() { return completed.size(); }
+    public int size() { return completedCount.get(); }
 
     /** Drop all retained state (used on shutdown and by tests). */
     public void clear() {
         active.clear();
         completed.clear();
+        completedCount.set(0);
         currentTraceId.remove();
     }
 }

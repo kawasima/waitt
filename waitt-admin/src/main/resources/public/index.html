@@ -353,7 +353,7 @@
       var time = t.startEpochMillis ? new Date(t.startEpochMillis).toLocaleTimeString() : '';
       var cls = t.hasError ? 'req-5xx' : (t.statusCode >= 400 ? 'req-4xx' : '');
       var counts = (t.spanCount || 0) + 's / ' + (t.sqlCount || 0) + 'q / ' + (t.logCount || 0) + 'log';
-      var row = h('tr', { class: (cls ? cls + ' ' : '') + 'trace-row' }, [
+      var row = h('tr', { class: (cls ? cls + ' ' : '') + 'trace-row', 'data-trace-id': t.traceId }, [
         h('td', {}, [time]),
         h('td', {}, [t.method || '']),
         h('td', {}, [t.path || '']),
@@ -415,9 +415,11 @@
     }
 
     function showTraceDetail(traceId) {
+      var token = live.navToken;
       live.tracesTbody = null;
       setContent(loading());
       apiFetch('/traces/' + encodeURIComponent(traceId)).then(function (t) {
+        if (token !== live.navToken) return; // navigated away before this resolved
         var div = h('div', {});
         var back = h('a', { class: 'nav-link back-link' }, ['← Traces']);
         back.addEventListener('click', pageTraces);
@@ -716,6 +718,8 @@
     function onTraceEvent(e) {
       if (!live.tracesTbody) return;
       var t = JSON.parse(e.data);
+      // The /traces snapshot and this live event can race; skip if already shown.
+      if (t.traceId && live.tracesTbody.querySelector('[data-trace-id="' + t.traceId + '"]')) return;
       live.tracesTbody.insertBefore(traceRow(t), live.tracesTbody.firstChild);
       if (live.tracesEmpty) live.tracesEmpty.style.display = 'none';
       while (live.tracesTbody.childNodes.length > 200) {

@@ -1,5 +1,6 @@
 package net.unit8.waitt.feature.tracer;
 
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.SpanId;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.sdk.trace.ReadWriteSpan;
@@ -22,10 +23,14 @@ import java.util.Map;
  * writes only {@code waitt-api} types, so the admin realm reads them with no
  * reflection.
  * <p>
- * On a root span's start it opens the request's trace and binds the trace id to
- * the current thread (via {@link TraceStore#setCurrentTraceId(String)}) so SQL and
- * console lines emitted on that thread correlate; on the root span's end it
- * finalizes the trace and clears the thread binding.
+ * The <em>first</em> span seen for a trace id opens the trace and binds that id to
+ * the current thread (so SQL and console lines emitted on that thread correlate);
+ * the trace is finalized when that same opener span ends. Keying on the opener
+ * span rather than on "is root" keeps this correct when the HTTP span has an
+ * ambient/incoming parent, and avoids a nested span finalizing the trace early.
+ * <p>
+ * Note: correlation is thread-bound, so it covers synchronous request handling;
+ * work dispatched to other threads (async servlets) is not correlated.
  *
  * @author kawasima
  */
@@ -38,9 +43,9 @@ public class TraceRetentionProcessor implements SpanProcessor {
 
     @Override
     public void onStart(Context parentContext, ReadWriteSpan span) {
-        if (isRoot(span.getParentSpanContext().getSpanId())) {
-            String traceId = span.getSpanContext().getTraceId();
-            store.beginTrace(traceId, System.currentTimeMillis());
+        String traceId = span.getSpanContext().getTraceId();
+        RequestTrace trace = store.beginTrace(traceId, System.currentTimeMillis());
+        if (trace != null && trace.markOpener(span.getSpanContext().getSpanId())) {
             store.setCurrentTraceId(traceId);
         }
     }
@@ -54,14 +59,16 @@ public class TraceRetentionProcessor implements SpanProcessor {
     public void onEnd(ReadableSpan span) {
         SpanData data = span.toSpanData();
         String traceId = data.getTraceId();
-        boolean root = isRoot(data.getParentSpanId());
+        store.addSpan(traceId, toRecord(data));
 
-        store.addSpan(traceId, toRecord(data, root));
-
-        if (root) {
-            finalizeTrace(traceId, data);
-            store.completeTrace(traceId);
-            store.clearCurrentTraceId();
+        RequestTrace trace = store.getTrace(traceId);
+        if (trace != null && data.getSpanId().equals(trace.getOpenerSpanId())) {
+            try {
+                finalizeTrace(trace, data);
+            } finally {
+                store.completeTrace(traceId);
+                store.clearCurrentTraceId();
+            }
         }
     }
 
@@ -74,18 +81,18 @@ public class TraceRetentionProcessor implements SpanProcessor {
         return parentSpanId == null || SpanId.getInvalid().equals(parentSpanId);
     }
 
-    private SpanRecord toRecord(SpanData data, boolean root) {
+    private SpanRecord toRecord(SpanData data) {
         final Map<String, String> attrs = new LinkedHashMap<String, String>();
-        data.getAttributes().forEach(new java.util.function.BiConsumer<io.opentelemetry.api.common.AttributeKey<?>, Object>() {
+        data.getAttributes().forEach(new java.util.function.BiConsumer<AttributeKey<?>, Object>() {
             @Override
-            public void accept(io.opentelemetry.api.common.AttributeKey<?> key, Object value) {
+            public void accept(AttributeKey<?> key, Object value) {
                 attrs.put(key.getKey(), String.valueOf(value));
             }
         });
         boolean error = data.getStatus().getStatusCode() == StatusData.error().getStatusCode();
         return new SpanRecord(
                 data.getSpanId(),
-                root ? null : data.getParentSpanId(),
+                isRoot(data.getParentSpanId()) ? null : data.getParentSpanId(),
                 data.getName(),
                 data.getStartEpochNanos(),
                 data.getEndEpochNanos(),
@@ -93,20 +100,12 @@ public class TraceRetentionProcessor implements SpanProcessor {
                 attrs);
     }
 
-    private void finalizeTrace(String traceId, SpanData data) {
-        RequestTrace trace = store.getTrace(traceId);
-        if (trace == null) {
-            return;
-        }
-        trace.setMethod(attr(data, "http.request.method"));
-        trace.setPath(attr(data, "url.path"));
-        String status = attr(data, "http.response.status_code");
+    private void finalizeTrace(RequestTrace trace, SpanData data) {
+        trace.setMethod(stringAttr(data, "http.request.method"));
+        trace.setPath(stringAttr(data, "url.path"));
+        Long status = data.getAttributes().get(AttributeKey.longKey("http.response.status_code"));
         if (status != null) {
-            try {
-                trace.setStatusCode((int) Double.parseDouble(status));
-            } catch (NumberFormatException ignored) {
-                // leave status unset
-            }
+            trace.setStatusCode(status.intValue());
         }
         trace.setDurationMillis((data.getEndEpochNanos() - data.getStartEpochNanos()) / 1_000_000L);
         extractException(trace, data);
@@ -116,42 +115,21 @@ public class TraceRetentionProcessor implements SpanProcessor {
         for (EventData event : data.getEvents()) {
             if ("exception".equals(event.getName())) {
                 trace.setException(
-                        stringAttr(event, "exception.type"),
-                        stringAttr(event, "exception.message"),
-                        stringAttr(event, "exception.stacktrace"));
+                        eventAttr(event, "exception.type"),
+                        eventAttr(event, "exception.message"),
+                        eventAttr(event, "exception.stacktrace"));
                 return;
             }
         }
     }
 
-    private static String attr(SpanData data, String key) {
-        Object v = data.getAttributes().get(io.opentelemetry.api.common.AttributeKey.stringKey(key));
-        if (v != null) {
-            return String.valueOf(v);
-        }
-        // status_code is a long attribute; fall back to a generic scan.
-        final String[] found = new String[1];
-        data.getAttributes().forEach(new java.util.function.BiConsumer<io.opentelemetry.api.common.AttributeKey<?>, Object>() {
-            @Override
-            public void accept(io.opentelemetry.api.common.AttributeKey<?> k, Object value) {
-                if (k.getKey().equals(key)) {
-                    found[0] = String.valueOf(value);
-                }
-            }
-        });
-        return found[0];
+    private static String stringAttr(SpanData data, String key) {
+        Object v = data.getAttributes().get(AttributeKey.stringKey(key));
+        return v == null ? null : String.valueOf(v);
     }
 
-    private static String stringAttr(EventData event, String key) {
-        final String[] found = new String[1];
-        event.getAttributes().forEach(new java.util.function.BiConsumer<io.opentelemetry.api.common.AttributeKey<?>, Object>() {
-            @Override
-            public void accept(io.opentelemetry.api.common.AttributeKey<?> k, Object value) {
-                if (k.getKey().equals(key)) {
-                    found[0] = String.valueOf(value);
-                }
-            }
-        });
-        return found[0];
+    private static String eventAttr(EventData event, String key) {
+        Object v = event.getAttributes().get(AttributeKey.stringKey(key));
+        return v == null ? null : String.valueOf(v);
     }
 }

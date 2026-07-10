@@ -62,12 +62,6 @@ public class OtelTracingFilter implements Filter {
 
             scope = otel.makeCurrent.invoke(span);
             chain.doFilter(request, response);
-
-            int statusCode = res.getStatus();
-            otel.spanSetAttributeLong.invoke(span, "http.response.status_code", (long) statusCode);
-            if (statusCode >= 500) {
-                otel.setStatus.invoke(span, otel.statusError);
-            }
         } catch (IOException | ServletException e) {
             recordError(span, e);
             throw e;
@@ -78,9 +72,22 @@ public class OtelTracingFilter implements Filter {
             recordError(span, e);
             throw new ServletException(e);
         } finally {
+            // Set status in finally so a thrown request still records its code
+            // (the success path would otherwise skip it).
+            recordStatus(span, res.getStatus());
             closeQuietly(scope);
             endQuietly(span);
         }
+    }
+
+    private void recordStatus(Object span, int statusCode) {
+        if (span == null || otel == null) return;
+        try {
+            otel.spanSetAttributeLong.invoke(span, "http.response.status_code", (long) statusCode);
+            if (statusCode >= 500) {
+                otel.setStatus.invoke(span, otel.statusError);
+            }
+        } catch (Exception ignored) {}
     }
 
     private void recordError(Object span, Exception e) {

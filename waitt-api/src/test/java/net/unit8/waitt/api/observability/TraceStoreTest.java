@@ -94,6 +94,17 @@ public class TraceStoreTest {
         assertEquals("t1", notified.get());
     }
 
+    @Test
+    public void onlyFirstMarkOpenerWins() {
+        RequestTrace t = store.beginTrace("t1", 1L);
+        assertTrue(t.markOpener("spanA"));
+        assertEquals("spanA", t.getOpenerSpanId());
+        // A later span (nested, or the HTTP span under an ambient parent) must not
+        // steal the opener slot — that keeps finalization tied to the right span.
+        assertFalse(t.markOpener("spanB"));
+        assertEquals("spanA", t.getOpenerSpanId());
+    }
+
     private static SpanRecord span(String id, String parent, String name) {
         return new SpanRecord(id, parent, name, 0L, 1_000_000L, false,
                 Collections.<String, String>emptyMap());

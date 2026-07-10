@@ -1,7 +1,7 @@
 package net.unit8.waitt.api.observability;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Everything captured for one HTTP request, keyed by its OpenTelemetry trace id:
@@ -23,10 +23,15 @@ public final class RequestTrace {
     private volatile String exceptionType;
     private volatile String exceptionMessage;
     private volatile String exceptionStack;
+    private volatile String openerSpanId;
 
-    private final List<SpanRecord> spans = new CopyOnWriteArrayList<SpanRecord>();
-    private final List<SqlEvent> sqlEvents = new CopyOnWriteArrayList<SqlEvent>();
-    private final List<LogLine> logs = new CopyOnWriteArrayList<LogLine>();
+    // Single-writer high-frequency appends (all from the request thread); readers
+    // (the admin thread, at request end) get a synchronized snapshot. A plain
+    // synchronized ArrayList beats CopyOnWriteArrayList here, whose per-add full
+    // copy would be O(n^2) for a request that logs many lines.
+    private final List<SpanRecord> spans = new ArrayList<SpanRecord>();
+    private final List<SqlEvent> sqlEvents = new ArrayList<SqlEvent>();
+    private final List<LogLine> logs = new ArrayList<LogLine>();
 
     public RequestTrace(String traceId, long startEpochMillis) {
         this.traceId = traceId;
@@ -35,6 +40,22 @@ public final class RequestTrace {
 
     public String getTraceId() { return traceId; }
     public long getStartEpochMillis() { return startEpochMillis; }
+
+    /**
+     * The span that opened this trace (the first span seen for the trace id).
+     * The trace is finalized when this span ends, which is robust against a
+     * non-root HTTP span (ambient parent) and against nested spans.
+     */
+    public String getOpenerSpanId() { return openerSpanId; }
+
+    /** Claim this trace's opener slot; true only for the first caller. */
+    public synchronized boolean markOpener(String spanId) {
+        if (openerSpanId == null) {
+            openerSpanId = spanId;
+            return true;
+        }
+        return false;
+    }
 
     public String getMethod() { return method; }
     public void setMethod(String method) { this.method = method; }
@@ -54,11 +75,11 @@ public final class RequestTrace {
         this.exceptionStack = stack;
     }
 
-    public void addSpan(SpanRecord span) { spans.add(span); }
-    public void addSqlEvent(SqlEvent event) { sqlEvents.add(event); }
-    public void addLog(LogLine line) { logs.add(line); }
+    public void addSpan(SpanRecord span) { synchronized (spans) { spans.add(span); } }
+    public void addSqlEvent(SqlEvent event) { synchronized (sqlEvents) { sqlEvents.add(event); } }
+    public void addLog(LogLine line) { synchronized (logs) { logs.add(line); } }
 
-    public List<SpanRecord> getSpans() { return spans; }
-    public List<SqlEvent> getSqlEvents() { return sqlEvents; }
-    public List<LogLine> getLogs() { return logs; }
+    public List<SpanRecord> getSpans() { synchronized (spans) { return new ArrayList<SpanRecord>(spans); } }
+    public List<SqlEvent> getSqlEvents() { synchronized (sqlEvents) { return new ArrayList<SqlEvent>(sqlEvents); } }
+    public List<LogLine> getLogs() { synchronized (logs) { return new ArrayList<LogLine>(logs); } }
 }
