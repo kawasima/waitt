@@ -5,7 +5,7 @@
     <parent>
         <groupId>net.unit8.waitt</groupId>
         <artifactId>waitt-parent</artifactId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
     </parent>
 
     <groupId>net.unit8.waitt.server</groupId>
@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <tomcat.version>11.0.18</tomcat.version>
+        <tomcat.version>11.0.22</tomcat.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>

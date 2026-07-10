@@ -1,6 +1,7 @@
 package net.unit8.waitt.feature.admin.routes;
 
 import com.sun.net.httpserver.HttpExchange;
+import net.unit8.waitt.feature.admin.EventBroadcaster;
 import net.unit8.waitt.feature.admin.ResponseUtils;
 import net.unit8.waitt.feature.admin.Route;
 import net.unit8.waitt.feature.admin.json.JSONObject;
@@ -46,6 +47,13 @@ public class RequestLogAction implements Route {
         log.addFirst(entry);
         while (log.size() > MAX_ENTRIES) {
             if (log.pollLast() == null) break;
+        }
+
+        EventBroadcaster broadcaster = EventBroadcaster.getInstance();
+        if (broadcaster.hasSubscribers()) {
+            JSONObject event = new JSONObject();
+            event.putAll(entry);
+            broadcaster.publish("request", event.toJSONString());
         }
     }
 

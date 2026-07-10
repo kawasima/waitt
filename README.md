@@ -17,13 +17,13 @@ Add plugin to your pom.xml
 <plugin>
   <groupId>net.unit8.waitt</groupId>
   <artifactId>waitt-maven-plugin</artifactId>
-  <version>1.5.0</version>
+  <version>1.5.1-SNAPSHOT</version>
   <configuration>
     <servers>
       <server>
         <groupId>net.unit8.waitt.server</groupId>
         <artifactId>waitt-tomcat9</artifactId>
-        <version>1.5.0</version>
+        <version>1.5.1-SNAPSHOT</version>
       </server>
     </servers>
   </configuration>
@@ -96,7 +96,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat9</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -106,7 +106,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat10</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -116,7 +116,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-tomcat11</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -126,7 +126,7 @@ Choose a server based on the Servlet API version your application uses.
   <server>
     <groupId>net.unit8.waitt.server</groupId>
     <artifactId>waitt-jetty12</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </server>
 ```
 
@@ -142,7 +142,7 @@ When you access to `/_coverage/`, you can see the coverages of your code.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-jacoco</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </feature>
 ```
 
@@ -151,29 +151,63 @@ When you access to `/_coverage/`, you can see the coverages of your code.
 The admin server provides a built-in dashboard UI and monitoring API.
 Access `http://localhost:1192/` to view the dashboard (application info, JVM metrics, thread/heap dumps, loggers, dependencies, etc.).
 
+It streams live over Server-Sent Events (`/stream`), so the dashboard needs no external
+observability stack to watch your app during development:
+
+- **Request Log** and **Logs** pages tail in real time as requests arrive and the app writes to stdout/stderr.
+- **Metrics** page exposes a Prometheus scrape endpoint (`/prometheus`, including `http.server.requests`) you can point Prometheus/Grafana at.
+
 ```xml
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-admin</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
+  </feature>
+```
+
+The log buffer size is configurable (default 1000 lines):
+
+```xml
+  <feature>
+    <groupId>net.unit8.waitt.feature</groupId>
+    <artifactId>waitt-admin</artifactId>
+    <version>1.5.1-SNAPSHOT</version>
+    <configuration>
+      <log.buffer.size>2000</log.buffer.size>
+    </configuration>
   </feature>
 ```
 
 ### Tracer
 
-You can show and search HTTP request/response logs at development in Kibana.
-Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with Tomcat 10/11 and Jetty 12.
+`waitt-tracer` creates an OpenTelemetry span for each HTTP request. Spans are
+always retained in-process so the admin dashboard's **Traces** page can show a
+correlated request detail — a span waterfall plus the logs and exception for that
+request — with no external stack required. OTLP export to an external collector
+(such as Jaeger) is opt-in: it happens only when you set `otel.endpoint`. Leave it
+unset and the tracer runs purely in-process, so no collector is required and no
+connection errors are logged.
+
+Note: waitt-tracer uses the Jakarta Servlet API, so the Traces view is only
+available on Tomcat 10/11 and Jetty 12. Correlation is thread-bound, so it covers
+synchronous request handling; work an app dispatches to other threads (async
+servlets) is not correlated to its request.
 
 ```xml
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-tracer</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
     <configuration>
-      <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
+      <!-- Optional: OTLP/HTTP collector endpoint. Omit to run in-process only. -->
+      <otel.endpoint>http://localhost:4318</otel.endpoint>
+      <!-- number of recent traces kept for the dashboard (default 100) -->
+      <trace.retention.size>100</trace.retention.size>
     </configuration>
   </feature>
 ```
+
+Pair it with `waitt-admin` to view the Traces page at `http://localhost:1192/#traces`.
 
 ### DevTools (Auto-Reload)
 
@@ -184,7 +218,7 @@ No manual reload trigger needed — just run `mvn compile` in another terminal.
   <feature>
     <groupId>net.unit8.waitt.feature</groupId>
     <artifactId>waitt-devtools</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1-SNAPSHOT</version>
   </feature>
 ```
 
