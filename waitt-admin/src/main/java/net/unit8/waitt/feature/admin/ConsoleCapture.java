@@ -1,5 +1,8 @@
 package net.unit8.waitt.feature.admin;
 
+import net.unit8.waitt.api.observability.LogLine;
+import net.unit8.waitt.api.observability.TraceStore;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -65,8 +68,12 @@ public class ConsoleCapture {
     }
 
     private void emit(String streamName, String line) {
-        LogEntry entry = new LogEntry(System.currentTimeMillis(), streamName, line);
+        long now = System.currentTimeMillis();
+        LogEntry entry = new LogEntry(now, streamName, line);
         buffer.add(entry);
+        // Correlate to the in-flight request when this line was written on a
+        // request thread (no-op when tracing is off or no trace is current).
+        TraceStore.getInstance().recordLog(new LogLine(now, streamName, line));
         if (broadcaster.hasSubscribers()) {
             broadcaster.publish("log", entry.toJSON().toJSONString());
         }

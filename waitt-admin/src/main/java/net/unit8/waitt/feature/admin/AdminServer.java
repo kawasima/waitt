@@ -6,6 +6,8 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.Feature;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
+import net.unit8.waitt.api.observability.RequestTrace;
+import net.unit8.waitt.api.observability.TraceStore;
 import net.unit8.waitt.feature.admin.json.JSONObject;
 import net.unit8.waitt.feature.admin.routes.*;
 
@@ -100,6 +102,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         app.addRoutes(new PrometheusAction(metrics));
         app.addRoutes(new StreamAction(broadcaster));
         app.addRoutes(new LogsAction(logBuffer));
+        app.addRoutes(new TracesAction());
 
         rrdPath = "target/rrd/" + config.getApplicationName() + ".rrd";
     }
@@ -118,6 +121,15 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
                     metrics.recordHttpRequest(method, status, durationMs);
                 } catch (RuntimeException e) {
                     LOG.log(Level.FINE, "Failed to record request telemetry", e);
+                }
+            }
+        });
+        // Push completed traces to the dashboard live.
+        TraceStore.getInstance().setListener(new TraceStore.TraceListener() {
+            @Override
+            public void onTraceCompleted(RequestTrace trace) {
+                if (broadcaster.hasSubscribers()) {
+                    broadcaster.publish("trace", TracesAction.summary(trace).toJSONString());
                 }
             }
         });
@@ -194,6 +206,7 @@ public class AdminServer implements ServerMonitor, ConfigurableFeature {
         if (metricsScheduler != null) {
             metricsScheduler.shutdownNow();
         }
+        TraceStore.getInstance().setListener(null);
         broadcaster.shutdown();
         System.getProperties().remove(RequestLogAction.LOG_KEY);
         if (metrics != null) {

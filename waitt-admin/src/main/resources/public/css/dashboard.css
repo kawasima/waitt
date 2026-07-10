@@ -170,3 +170,35 @@ tr.req-5xx td { background: #fdecea; }
 .log-line.log-warn { color: #dcdc7d; }
 .log-line.log-error { color: #f48771; }
 .metrics-scrape { max-height: 60vh; overflow: auto; background: #f8f8f8; padding: .5rem; }
+
+/* Traces */
+tr.trace-row { cursor: pointer; }
+tr.trace-row:hover td { background: #ede9f7; }
+.back-link { display: inline-block; padding: .2rem 0; margin-bottom: .5rem; color: #463381; font-weight: bold; }
+
+/* Waterfall */
+.waterfall { margin-bottom: 1rem; }
+.wf-row { display: flex; align-items: center; margin-bottom: 2px; }
+.wf-label {
+    width: 34%;
+    flex-shrink: 0;
+    font-size: .8em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: .5rem;
+}
+.wf-track { position: relative; flex: 1; height: 18px; background: #f2f2f2; border-radius: 2px; }
+.wf-bar {
+    position: absolute;
+    top: 0;
+    height: 18px;
+    min-width: 2px;
+    background: #6b8fd6;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.wf-bar.wf-db { background: #4caf72; }
+.wf-bar.wf-error { background: #e06c62; }
+.wf-dur { font-size: .7em; color: #fff; padding: 0 .25rem; line-height: 18px; white-space: nowrap; }
+code { font-family: monospace; font-size: .95em; word-break: break-all; }

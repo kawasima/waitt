@@ -19,6 +19,7 @@
         <li><a class="nav-link" data-page="server">Server</a></li>
         <li><a class="nav-link" data-page="metrics">Metrics</a></li>
         <li><a class="nav-link" data-page="requests">Request Log</a></li>
+        <li><a class="nav-link" data-page="traces">Traces</a></li>
         <li><a class="nav-link" data-page="logs">Logs</a></li>
         <li><a class="nav-link" data-page="loggers">Loggers</a></li>
         <li><a class="nav-link" data-page="thread">Thread dump</a></li>
@@ -64,6 +65,8 @@
       // them so stream events can't append to a detached, off-screen subtree.
       live.requestsTbody = null;
       live.requestsEmpty = null;
+      live.tracesTbody = null;
+      live.tracesEmpty = null;
       live.logsView = null;
       var c = document.getElementById('content');
       c.innerHTML = '';
@@ -346,6 +349,132 @@
       }).catch(function (e) { setContent(errorMsg(e.message)); });
     }
 
+    function traceRow(t) {
+      var time = t.startEpochMillis ? new Date(t.startEpochMillis).toLocaleTimeString() : '';
+      var cls = t.hasError ? 'req-5xx' : (t.statusCode >= 400 ? 'req-4xx' : '');
+      var counts = (t.spanCount || 0) + 's / ' + (t.sqlCount || 0) + 'q / ' + (t.logCount || 0) + 'log';
+      var row = h('tr', { class: (cls ? cls + ' ' : '') + 'trace-row' }, [
+        h('td', {}, [time]),
+        h('td', {}, [t.method || '']),
+        h('td', {}, [t.path || '']),
+        h('td', {}, [String(t.statusCode || '')]),
+        h('td', {}, [t.durationMillis >= 0 ? t.durationMillis + 'ms' : '']),
+        h('td', {}, [counts]),
+      ]);
+      row.addEventListener('click', function () { showTraceDetail(t.traceId); });
+      return row;
+    }
+
+    function pageTraces() {
+      var token = live.navToken;
+      setContent(loading());
+      apiFetch('/traces').then(function (data) {
+        if (token !== live.navToken) return;
+        var traces = data.traces || [];
+        var div = h('div', {});
+        div.appendChild(h('h2', {}, ['Traces ', h('span', { class: 'live-badge' }, ['live'])]));
+        div.appendChild(h('p', { class: 'text-muted' }, ['Click a row for the correlated request detail (waterfall, SQL, logs, exception). Requires waitt-tracer.']));
+        var table = h('table', {});
+        table.appendChild(h('thead', {}, [h('tr', {}, [
+          h('th', {}, ['Time']), h('th', {}, ['Method']), h('th', {}, ['Path']),
+          h('th', {}, ['Status']), h('th', {}, ['Duration']), h('th', {}, ['spans/sql/logs'])
+        ])]));
+        var tbody = h('tbody', {});
+        traces.forEach(function (t) { tbody.appendChild(traceRow(t)); });
+        table.appendChild(tbody);
+        div.appendChild(table);
+        var empty = h('p', { class: 'text-muted' }, ['No traces yet. Send a request to your app.']);
+        if (traces.length) empty.style.display = 'none';
+        div.appendChild(empty);
+        setContent(div);
+        live.tracesTbody = tbody;
+        live.tracesEmpty = empty;
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
+    function renderWaterfall(spans, windowNanos) {
+      var wrap = h('div', { class: 'waterfall' });
+      if (!spans.length) { wrap.appendChild(h('p', { class: 'text-muted' }, ['No spans.'])); return wrap; }
+      var win = Math.max(1, windowNanos || 0);
+      spans.slice().sort(function (a, b) { return a.startOffsetNanos - b.startOffsetNanos; }).forEach(function (s) {
+        var left = (s.startOffsetNanos / win) * 100;
+        var width = Math.max(0.4, (s.durationNanos / win) * 100);
+        var ms = (s.durationNanos / 1e6).toFixed(1) + 'ms';
+        var barCls = 'wf-bar' + (s.error ? ' wf-error' : (s.database ? ' wf-db' : ''));
+        var bar = h('div', { class: barCls }, [h('span', { class: 'wf-dur' }, [ms])]);
+        bar.style.left = left + '%';
+        bar.style.width = width + '%';
+        bar.title = s.name + ' — ' + ms;
+        var row = h('div', { class: 'wf-row' }, [
+          h('div', { class: 'wf-label', title: s.name }, [s.name]),
+          h('div', { class: 'wf-track' }, [bar]),
+        ]);
+        wrap.appendChild(row);
+      });
+      return wrap;
+    }
+
+    function showTraceDetail(traceId) {
+      live.tracesTbody = null;
+      setContent(loading());
+      apiFetch('/traces/' + encodeURIComponent(traceId)).then(function (t) {
+        var div = h('div', {});
+        var back = h('a', { class: 'nav-link back-link' }, ['← Traces']);
+        back.addEventListener('click', pageTraces);
+        div.appendChild(back);
+        div.appendChild(h('h2', {}, [(t.method || '') + ' ' + (t.path || '')]));
+        var meta = h('p', { class: 'text-muted' }, [
+          'Status ' + (t.statusCode || '?') + ' · ' + (t.durationMillis >= 0 ? t.durationMillis + 'ms' : '?') +
+          ' · trace ' + t.traceId
+        ]);
+        div.appendChild(meta);
+
+        if (t.exception) {
+          div.appendChild(h('h3', { class: 'text-danger' }, ['Exception: ' + (t.exception.type || '')]));
+          div.appendChild(h('p', {}, [t.exception.message || '']));
+          if (t.exception.stack) {
+            var pre = document.createElement('pre'); pre.className = 'stack-trace'; pre.textContent = t.exception.stack;
+            div.appendChild(pre);
+          }
+        }
+
+        div.appendChild(h('h3', {}, ['Timeline']));
+        div.appendChild(renderWaterfall(t.spans || [], t.windowNanos));
+
+        var sqls = t.sqlEvents || [];
+        div.appendChild(h('h3', {}, ['SQL (' + sqls.length + ')']));
+        if (sqls.length) {
+          var sqlTable = h('table', {});
+          sqlTable.appendChild(h('thead', {}, [h('tr', {}, [h('th', {}, ['#']), h('th', {}, ['Duration']), h('th', {}, ['Rows']), h('th', {}, ['Statement'])])]));
+          var sb = h('tbody', {});
+          sqls.forEach(function (q, i) {
+            sb.appendChild(h('tr', q.success ? {} : { class: 'req-5xx' }, [
+              h('td', {}, [String(i + 1)]),
+              h('td', {}, [q.durationMillis + 'ms']),
+              h('td', {}, [q.rowCount >= 0 ? String(q.rowCount) : '']),
+              h('td', {}, [h('code', {}, [q.sql || (q.error || '')])]),
+            ]));
+          });
+          sqlTable.appendChild(sb);
+          div.appendChild(sqlTable);
+        } else {
+          div.appendChild(h('p', { class: 'text-muted' }, ['No SQL captured (requires waitt-jdbc).']));
+        }
+
+        var logs = t.logs || [];
+        div.appendChild(h('h3', {}, ['Logs (' + logs.length + ')']));
+        if (logs.length) {
+          var lv = h('div', { class: 'log-view' });
+          logs.forEach(function (entry) { lv.appendChild(logLineNode(entry)); });
+          div.appendChild(lv);
+        } else {
+          div.appendChild(h('p', { class: 'text-muted' }, ['No correlated logs.']));
+        }
+
+        setContent(div);
+      }).catch(function (e) { setContent(errorMsg(e.message)); });
+    }
+
     function pageMetrics() {
       setContent(loading());
       fetch(BASE + '/prometheus', { headers: { Accept: 'text/plain' } })
@@ -544,6 +673,8 @@
       navToken: 0,
       requestsTbody: null,
       requestsEmpty: null,
+      tracesTbody: null,
+      tracesEmpty: null,
       logsView: null,
       logEntries: [],
       logFilter: '',
@@ -582,6 +713,16 @@
       }
     }
 
+    function onTraceEvent(e) {
+      if (!live.tracesTbody) return;
+      var t = JSON.parse(e.data);
+      live.tracesTbody.insertBefore(traceRow(t), live.tracesTbody.firstChild);
+      if (live.tracesEmpty) live.tracesEmpty.style.display = 'none';
+      while (live.tracesTbody.childNodes.length > 200) {
+        live.tracesTbody.removeChild(live.tracesTbody.lastChild);
+      }
+    }
+
     function onMetricsEvent(e) {
       var el = document.getElementById('live-indicator');
       if (!el) return;
@@ -596,6 +737,7 @@
       es.addEventListener('open', function () { setIndicator('on'); });
       es.addEventListener('error', function () { setIndicator('off'); });
       es.addEventListener('request', onRequestEvent);
+      es.addEventListener('trace', onTraceEvent);
       es.addEventListener('log', onLogEvent);
       es.addEventListener('metrics', onMetricsEvent);
     }
@@ -607,6 +749,7 @@
       server: pageServer,
       metrics: pageMetrics,
       requests: pageRequests,
+      traces: pageTraces,
       logs: pageLogs,
       loggers: pageLoggers,
       thread: pageThread,

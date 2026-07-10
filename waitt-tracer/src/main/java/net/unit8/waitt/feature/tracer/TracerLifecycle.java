@@ -13,6 +13,7 @@ import net.unit8.waitt.api.EmbeddedServer;
 import net.unit8.waitt.api.ServerMonitor;
 import net.unit8.waitt.api.configuration.Feature;
 import net.unit8.waitt.api.configuration.WebappConfiguration;
+import net.unit8.waitt.api.observability.TraceStore;
 
 import java.util.Map;
 import java.util.logging.Level;
@@ -32,6 +33,7 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
     private OpenTelemetrySdk sdk;
     private String endpoint = DEFAULT_ENDPOINT;
     private String serviceName = "waitt-app";
+    private int retentionSize = 100;
 
     @Override
     public void config(WebappConfiguration config) {
@@ -48,6 +50,13 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                     }
                     if (featureConfig.containsKey("otel.service.name")) {
                         serviceName = featureConfig.get("otel.service.name");
+                    }
+                    if (featureConfig.containsKey("trace.retention.size")) {
+                        try {
+                            retentionSize = Integer.parseInt(featureConfig.get("trace.retention.size"));
+                        } catch (NumberFormatException e) {
+                            LOG.warning("Invalid trace.retention.size: " + featureConfig.get("trace.retention.size"));
+                        }
                     }
                 }
             }
@@ -70,8 +79,13 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                     .setEndpoint(tracesEndpoint)
                     .build();
 
+            TraceStore store = TraceStore.getInstance();
+            store.setCapacity(retentionSize);
+            store.setEnabled(true);
+
             SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
                     .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
+                    .addSpanProcessor(new TraceRetentionProcessor(store))
                     .setResource(resource)
                     .build();
 
@@ -95,6 +109,7 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
     @Override
     public void stop() {
         System.getProperties().remove(TRACER_PROPERTY_KEY);
+        TraceStore.getInstance().setEnabled(false);
         if (sdk != null) {
             sdk.close();
             LOG.info("OpenTelemetry tracer shut down.");
