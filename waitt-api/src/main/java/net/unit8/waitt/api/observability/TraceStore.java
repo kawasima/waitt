@@ -154,4 +154,11 @@ public final class TraceStore {
     }
 
     public int size() { return completed.size(); }
+
+    /** Drop all retained state (used on shutdown and by tests). */
+    public void clear() {
+        active.clear();
+        completed.clear();
+        currentTraceId.remove();
+    }
 }

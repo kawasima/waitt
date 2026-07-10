@@ -109,7 +109,9 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
     @Override
     public void stop() {
         System.getProperties().remove(TRACER_PROPERTY_KEY);
-        TraceStore.getInstance().setEnabled(false);
+        TraceStore store = TraceStore.getInstance();
+        store.setEnabled(false);
+        store.clear();
         if (sdk != null) {
             sdk.close();
             LOG.info("OpenTelemetry tracer shut down.");

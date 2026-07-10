@@ -180,8 +180,14 @@ The log buffer size is configurable (default 1000 lines):
 
 ### Tracer
 
-You can show and search HTTP request/response logs at development in Kibana.
-Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with Tomcat 10/11 and Jetty 12.
+`waitt-tracer` creates an OpenTelemetry span for each HTTP request. Spans are both
+exported over OTLP (to an external collector such as Jaeger) **and** retained
+in-process so the admin dashboard's **Traces** page can show a correlated
+request detail — a span waterfall plus the logs and exception for that request —
+with no external stack required.
+
+Note: waitt-tracer uses the Jakarta Servlet API, so the Traces view is only
+available on Tomcat 10/11 and Jetty 12.
 
 ```xml
   <feature>
@@ -189,10 +195,15 @@ Note: waitt-tracer uses the Jakarta Servlet API, so it is only compatible with T
     <artifactId>waitt-tracer</artifactId>
     <version>1.5.1-SNAPSHOT</version>
     <configuration>
-      <elasticsearch.url>http://[es host]:9200</elasticsearch.url>
+      <!-- OTLP/HTTP collector endpoint (default http://localhost:4318) -->
+      <otel.endpoint>http://localhost:4318</otel.endpoint>
+      <!-- number of recent traces kept for the dashboard (default 100) -->
+      <trace.retention.size>100</trace.retention.size>
     </configuration>
   </feature>
 ```
+
+Pair it with `waitt-admin` to view the Traces page at `http://localhost:1192/#traces`.
 
 ### DevTools (Auto-Reload)
 
