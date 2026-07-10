@@ -180,11 +180,13 @@ The log buffer size is configurable (default 1000 lines):
 
 ### Tracer
 
-`waitt-tracer` creates an OpenTelemetry span for each HTTP request. Spans are both
-exported over OTLP (to an external collector such as Jaeger) **and** retained
-in-process so the admin dashboard's **Traces** page can show a correlated
-request detail — a span waterfall plus the logs and exception for that request —
-with no external stack required.
+`waitt-tracer` creates an OpenTelemetry span for each HTTP request. Spans are
+always retained in-process so the admin dashboard's **Traces** page can show a
+correlated request detail — a span waterfall plus the logs and exception for that
+request — with no external stack required. OTLP export to an external collector
+(such as Jaeger) is opt-in: it happens only when you set `otel.endpoint`. Leave it
+unset and the tracer runs purely in-process, so no collector is required and no
+connection errors are logged.
 
 Note: waitt-tracer uses the Jakarta Servlet API, so the Traces view is only
 available on Tomcat 10/11 and Jetty 12. Correlation is thread-bound, so it covers
@@ -197,7 +199,7 @@ servlets) is not correlated to its request.
     <artifactId>waitt-tracer</artifactId>
     <version>1.5.1-SNAPSHOT</version>
     <configuration>
-      <!-- OTLP/HTTP collector endpoint (default http://localhost:4318) -->
+      <!-- Optional: OTLP/HTTP collector endpoint. Omit to run in-process only. -->
       <otel.endpoint>http://localhost:4318</otel.endpoint>
       <!-- number of recent traces kept for the dashboard (default 100) -->
       <trace.retention.size>100</trace.retention.size>

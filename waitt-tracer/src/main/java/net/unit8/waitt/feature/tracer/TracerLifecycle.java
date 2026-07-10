@@ -7,6 +7,7 @@ import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import net.unit8.waitt.api.ConfigurableFeature;
 import net.unit8.waitt.api.EmbeddedServer;
@@ -32,6 +33,7 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
 
     private OpenTelemetrySdk sdk;
     private String endpoint = DEFAULT_ENDPOINT;
+    private boolean endpointConfigured = false;
     private String serviceName = "waitt-app";
     private int retentionSize = 100;
 
@@ -47,6 +49,7 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                 if (featureConfig != null) {
                     if (featureConfig.containsKey("otel.endpoint")) {
                         endpoint = featureConfig.get("otel.endpoint");
+                        endpointConfigured = true;
                     }
                     if (featureConfig.containsKey("otel.service.name")) {
                         serviceName = featureConfig.get("otel.service.name");
@@ -72,30 +75,38 @@ public class TracerLifecycle implements ServerMonitor, ConfigurableFeature {
                     ))
             );
 
-            String tracesEndpoint = endpoint.contains("/v1/traces") ? endpoint
-                    : endpoint.endsWith("/") ? endpoint + "v1/traces"
-                    : endpoint + "/v1/traces";
-            OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
-                    .setEndpoint(tracesEndpoint)
-                    .build();
-
             TraceStore store = TraceStore.getInstance();
             store.setCapacity(retentionSize);
             store.setEnabled(true);
 
-            SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-                    .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
+            SdkTracerProviderBuilder tracerProviderBuilder = SdkTracerProvider.builder()
                     .addSpanProcessor(new TraceRetentionProcessor(store))
-                    .setResource(resource)
-                    .build();
+                    .setResource(resource);
+
+            // The in-process TraceStore already powers the built-in Traces view, so the
+            // OTLP exporter is opt-in: register it only when an endpoint was explicitly
+            // configured. Otherwise a missing collector would spam connection errors.
+            if (endpointConfigured) {
+                String tracesEndpoint = endpoint.contains("/v1/traces") ? endpoint
+                        : endpoint.endsWith("/") ? endpoint + "v1/traces"
+                        : endpoint + "/v1/traces";
+                OtlpHttpSpanExporter spanExporter = OtlpHttpSpanExporter.builder()
+                        .setEndpoint(tracesEndpoint)
+                        .build();
+                tracerProviderBuilder.addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build());
+            }
 
             sdk = OpenTelemetrySdk.builder()
-                    .setTracerProvider(tracerProvider)
+                    .setTracerProvider(tracerProviderBuilder.build())
                     .build();
 
             Tracer tracer = sdk.getTracer("waitt-tracer");
             System.getProperties().put(TRACER_PROPERTY_KEY, tracer);
-            LOG.info("OpenTelemetry tracer initialized (endpoint=" + endpoint + ", service=" + serviceName + ")");
+            if (endpointConfigured) {
+                LOG.info("OpenTelemetry tracer initialized (OTLP export -> " + endpoint + ", service=" + serviceName + ")");
+            } else {
+                LOG.info("OpenTelemetry tracer initialized (in-process TraceStore only, service=" + serviceName + ")");
+            }
         } catch (Exception e) {
             LOG.log(Level.WARNING, "Failed to initialize OpenTelemetry tracer", e);
         }
